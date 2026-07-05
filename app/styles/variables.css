@@ -1,0 +1,90 @@
+/* ============================================
+   PDF Section — Design Tokens (from DESIGN.md)
+   Linear-inspired dark design system
+   ============================================ */
+
+:root {
+  /* ── Brand & Accent ── */
+  --primary: #5e6ad2;
+  --on-primary: #ffffff;
+  --primary-hover: #828fff;
+  --primary-focus: #5e69d1;
+  --brand-secure: #7a7fad;
+
+  /* ── Surface Ladder ── */
+  --canvas: #010102;
+  --surface-1: #0f1011;
+  --surface-2: #141516;
+  --surface-3: #18191a;
+  --surface-4: #191a1b;
+
+  /* ── Hairline Borders ── */
+  --hairline: #23252a;
+  --hairline-strong: #34343a;
+  --hairline-tertiary: #3e3e44;
+
+  /* ── Ink (Text) ── */
+  --ink: #f7f8f8;
+  --ink-muted: #d0d6e0;
+  --ink-subtle: #8a8f98;
+  --ink-tertiary: #62666d;
+
+  /* ── Inverse ── */
+  --inverse-canvas: #ffffff;
+  --inverse-surface-1: #f5f6f6;
+  --inverse-surface-2: #f6f7f7;
+  --inverse-ink: #000000;
+
+  /* ── Semantic ── */
+  --semantic-success: #27a644;
+  --semantic-error: #e5484d;
+  --semantic-warning: #f5a623;
+  --semantic-overlay: #000000;
+
+  /* ── Tool Category Colors ── */
+  --tool-organize: #e07c5a;
+  --tool-optimize: #d4574e;
+  --tool-convert-to: #4a90d9;
+  --tool-convert-from: #6b5ce7;
+  --tool-edit: #2ea043;
+  --tool-security: #c9822f;
+  --tool-intelligence: #9b59b6;
+
+  /* ── Spacing ── */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
+
+  /* ── Border Radius ── */
+  --rounded-xs: 4px;
+  --rounded-sm: 6px;
+  --rounded-md: 8px;
+  --rounded-lg: 12px;
+  --rounded-xl: 16px;
+  --rounded-xxl: 24px;
+  --rounded-pill: 9999px;
+  --rounded-full: 9999px;
+
+  /* ── Typography ── */
+  --font-display: 'Inter', 'SF Pro Display', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-text: 'Inter', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ── Transitions ── */
+  --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+
+  /* ── Layout ── */
+  --nav-height: 56px;
+  --max-content: 1280px;
+  --max-content-narrow: 960px;
+}

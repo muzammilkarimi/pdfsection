@@ -1,0 +1,217 @@
+/* ============================================
+   PDF Section — Animations
+   Fade, slide, scale, progress, card hover
+   ============================================ */
+
+/* ── Page transitions ── */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Modal ── */
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Toast ── */
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ── Progress fill ── */
+
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.progress-fill.indeterminate {
+  width: 30% !important;
+  animation: progress-indeterminate 1.5s var(--ease-default) infinite;
+}
+
+/* ── Dropzone pulse ── */
+
+@keyframes dropzone-pulse {
+  0%, 100% { border-color: var(--primary); }
+  50% { border-color: var(--primary-hover); }
+}
+
+.dropzone.drag-over {
+  animation: dropzone-pulse 1.2s ease-in-out infinite;
+}
+
+/* ── Stagger animation for tool card grid ── */
+
+.tool-card {
+  animation: slide-up var(--duration-slow) var(--ease-out) both;
+}
+
+.tool-card:nth-child(1) { animation-delay: 0ms; }
+.tool-card:nth-child(2) { animation-delay: 30ms; }
+.tool-card:nth-child(3) { animation-delay: 60ms; }
+.tool-card:nth-child(4) { animation-delay: 90ms; }
+.tool-card:nth-child(5) { animation-delay: 120ms; }
+.tool-card:nth-child(6) { animation-delay: 150ms; }
+.tool-card:nth-child(7) { animation-delay: 180ms; }
+.tool-card:nth-child(8) { animation-delay: 210ms; }
+.tool-card:nth-child(9) { animation-delay: 240ms; }
+.tool-card:nth-child(10) { animation-delay: 270ms; }
+
+/* ── Subtle shimmer for hero text ── */
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--ink) 0%,
+    var(--primary-hover) 50%,
+    var(--ink) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s linear infinite;
+}
+
+/* ── Spin for loading states ── */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ── Page enter animation ── */
+
+.page-enter {
+  animation: fade-in var(--duration-slow) var(--ease-out),
+             slide-up var(--duration-slow) var(--ease-out);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Attention Catching Button Animation ── */
+
+@keyframes attention-glow-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(94, 106, 210, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(94, 106, 210, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(94, 106, 210, 0);
+  }
+}
+
+@keyframes sweep-shine {
+  0% {
+    left: -150%;
+  }
+  50% {
+    left: 150%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+.btn-attention {
+  animation: attention-glow-pulse 2s infinite !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn-attention::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: skewX(-25deg);
+  animation: sweep-shine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
