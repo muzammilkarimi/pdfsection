@@ -16,31 +16,19 @@ export default function ToolPageLayout({
           {/* Tool page header */}
           <div className="tool-page-header">
             <div
+              className="tool-page-icon"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 'var(--space-lg)',
+                backgroundColor: `color-mix(in srgb, ${iconColor || 'var(--primary)'} 14%, var(--surface-2))`,
+                color: iconColor || 'var(--primary)',
               }}
             >
-              <div
-                className="tool-card-icon"
-                style={{
-                  width: 56,
-                  height: 56,
-                  fontSize: 28,
-                  backgroundColor: `color-mix(in srgb, ${iconColor || 'var(--primary)'} 15%, var(--surface-2))`,
-                  color: iconColor || 'var(--primary)',
-                  borderRadius: 'var(--rounded-lg)',
-                }}
-              >
-                <ToolIcon name={icon || 'pdf'} size={28} />
-              </div>
+              <ToolIcon name={icon || 'pdf'} size={22} />
             </div>
-            <h1 className="tool-page-title">{title}</h1>
-            <p className="tool-page-description">{description}</p>
+            <div className="tool-page-heading">
+              <h1 className="tool-page-title">{title}</h1>
+              <p className="tool-page-description">{description}</p>
+            </div>
           </div>
-
           {/* Tool page body */}
           <div className="tool-page-body">{children}</div>
         </div>

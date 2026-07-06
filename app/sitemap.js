@@ -1,4 +1,4 @@
-import { ALL_TOOLS } from '@/lib/tools';
+import { LIVE_TOOLS } from '@/lib/tools';
 
 export default function sitemap() {
   const baseUrl = 'https://pdfsection.com';
@@ -14,7 +14,7 @@ export default function sitemap() {
   ];
 
   // All tool pages
-  ALL_TOOLS.forEach((tool) => {
+  LIVE_TOOLS.forEach((tool) => {
     routes.push({
       url: `${baseUrl}${tool.route}`,
       lastModified: new Date(),

@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageThumbnails from '@/components/PageThumbnails';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
 
@@ -47,7 +48,7 @@ export default function ProtectPDFClient() {
       } else if (typeof pdfDoc.setProtection === 'function') {
         pdfDoc.setProtection(encryptOptions);
       } else {
-        throw new Error('Encryption API not supported by this version of pdf-lib');
+        throw new Error('Password encryption is not supported by the current browser PDF engine.');
       }
 
       const pdfBytes = await pdfDoc.save();
@@ -63,7 +64,7 @@ export default function ProtectPDFClient() {
   return (
     <ToolPageLayout
       title="Protect PDF"
-      description="Encrypt your PDF with a password. Protect sensitive information."
+      description="Add password protection when the active browser PDF engine supports encryption."
       icon="lock"
       iconColor="var(--tool-security)"
     >
@@ -137,6 +138,20 @@ export default function ProtectPDFClient() {
           <div className="tool-action-sidebar">
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Security Credentials</p>
+              <div
+                style={{
+                  padding: 'var(--space-sm)',
+                  backgroundColor: 'rgba(245, 166, 35, 0.08)',
+                  borderRadius: 'var(--rounded-md)',
+                  border: '1px solid rgba(245, 166, 35, 0.2)',
+                  color: 'var(--semantic-warning)',
+                  fontSize: '12px',
+                  lineHeight: 1.5,
+                }}
+              >
+                Browser-only password encryption depends on PDF engine support. If unavailable,
+                this tool will stop before downloading instead of creating an unprotected file.
+              </div>
               
               {/* User password */}
               <div>

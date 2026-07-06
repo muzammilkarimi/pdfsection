@@ -73,7 +73,7 @@ export default function CompressPDFClient() {
   return (
     <ToolPageLayout
       title="Compress PDF"
-      description="Reduce file size while maintaining quality"
+      description="Optimize PDF structure in your browser. Image-heavy files may need server-side recompression for larger savings."
       icon="compress"
       iconColor="var(--tool-optimize)"
     >
@@ -131,6 +131,20 @@ export default function CompressPDFClient() {
           <div className="tool-action-sidebar">
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Compression Actions</p>
+              <div
+                style={{
+                  padding: 'var(--space-sm)',
+                  backgroundColor: 'rgba(245, 166, 35, 0.08)',
+                  borderRadius: 'var(--rounded-md)',
+                  border: '1px solid rgba(245, 166, 35, 0.2)',
+                  color: 'var(--semantic-warning)',
+                  fontSize: '12px',
+                  lineHeight: 1.5,
+                }}
+              >
+                This browser tool rewrites PDF structure and removes unused objects. It does not
+                recompress embedded images, so savings vary by file.
+              </div>
               
               <div style={{ fontSize: 13 }}>
                 <span className="ink-muted">Selected Level: </span>

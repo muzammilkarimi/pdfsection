@@ -54,6 +54,29 @@ export default function EditPDFClient() {
     }
   }, []);
 
+  // Redraw freehand drawings on the overlay canvas
+  const redrawCurrentPageDrawings = useCallback(() => {
+    const dCanvas = drawingCanvasRef.current;
+    if (!dCanvas) return;
+    const ctx = dCanvas.getContext('2d');
+    ctx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+
+    const pageDraws = drawings[currentPageIndex] || [];
+    pageDraws.forEach((stroke) => {
+      if (stroke.points.length < 2) return;
+      ctx.beginPath();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(stroke.points[0][0] * dCanvas.width, stroke.points[0][1] * dCanvas.height);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i][0] * dCanvas.width, stroke.points[i][1] * dCanvas.height);
+      }
+      ctx.stroke();
+    });
+  }, [drawings, currentPageIndex]);
+
   // Render current page to canvas
   const renderCurrentPage = useCallback(async () => {
     if (!pdfRenderDoc || !canvasRef.current) return;
@@ -76,42 +99,18 @@ export default function EditPDFClient() {
     } finally {
       setRenderingPage(false);
     }
-  }, [pdfRenderDoc, currentPageIndex]);
+  }, [pdfRenderDoc, currentPageIndex, redrawCurrentPageDrawings]);
 
   useEffect(() => {
     if (pdfRenderDoc) {
       renderCurrentPage();
     }
-  }, [pdfRenderDoc, currentPageIndex, renderCurrentPage]);
-
-  // Redraw freehand drawings on the overlay canvas
-  const redrawCurrentPageDrawings = () => {
-    const dCanvas = drawingCanvasRef.current;
-    if (!dCanvas) return;
-    const ctx = dCanvas.getContext('2d');
-    ctx.clearRect(0, 0, dCanvas.width, dCanvas.height);
-
-    const pageDraws = drawings[currentPageIndex] || [];
-    pageDraws.forEach((stroke) => {
-      if (stroke.points.length < 2) return;
-      ctx.beginPath();
-      ctx.strokeStyle = stroke.color;
-      ctx.lineWidth = stroke.width;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.moveTo(stroke.points[0][0] * dCanvas.width, stroke.points[0][1] * dCanvas.height);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i][0] * dCanvas.width, stroke.points[i][1] * dCanvas.height);
-      }
-      ctx.stroke();
-    });
-  };
+  }, [pdfRenderDoc, renderCurrentPage]);
 
   // Redraw drawings on dynamic state change
   useEffect(() => {
     redrawCurrentPageDrawings();
-  }, [drawings, currentPageIndex]);
-
+  }, [redrawCurrentPageDrawings]);
   // Handle click on canvas to add text annotation
   const handleWorkspaceClick = (e) => {
     if (tool !== 'text' || !canvasRef.current) return;

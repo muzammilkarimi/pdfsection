@@ -60,7 +60,7 @@ export const metadata = {
       'Every PDF tool you need in one place. Merge, split, compress, convert, edit, and secure PDFs for free.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'PDF Section — Free Online PDF Tools',
@@ -72,7 +72,7 @@ export const metadata = {
     title: 'PDF Section — Free Online PDF Tools',
     description:
       'Every PDF tool you need in one place. 100% free and private.',
-    images: ['/og-image.png'],
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,

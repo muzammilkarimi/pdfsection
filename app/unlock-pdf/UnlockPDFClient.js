@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageThumbnails from '@/components/PageThumbnails';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { downloadBlob } from '@/lib/pdfUtils';

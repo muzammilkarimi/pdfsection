@@ -344,6 +344,7 @@ export default function OrganizePDFClient() {
                           backgroundColor: 'var(--canvas)',
                         }}
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- Page previews are generated as client-side data URLs. */}
                         <img
                           src={page.dataUrl}
                           alt={`Page ${page.pageIndexInFile + 1}`}

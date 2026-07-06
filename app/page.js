@@ -3,17 +3,17 @@
 import { useState, useMemo } from 'react';
 import ToolCard from '@/components/ToolCard';
 import { ToolIcon } from '@/components/Icons';
-import { TOOL_CATEGORIES, searchTools, ALL_TOOLS } from '@/lib/tools';
+import { LIVE_TOOL_CATEGORIES, searchLiveTools, LIVE_TOOLS } from '@/lib/tools';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTools = useMemo(() => {
     if (!searchQuery.trim()) return null; // show categories
-    return searchTools(searchQuery);
+    return searchLiveTools(searchQuery);
   }, [searchQuery]);
 
-  const toolCount = ALL_TOOLS.length;
+  const toolCount = LIVE_TOOLS.length;
 
   return (
     <main className="main">
@@ -123,7 +123,7 @@ export default function HomePage() {
           </div>
         ) : (
           /* ── Tool Categories Grid ── */
-          TOOL_CATEGORIES.map((category) => (
+          LIVE_TOOL_CATEGORIES.map((category) => (
             <section
               key={category.id}
               className="category-section"

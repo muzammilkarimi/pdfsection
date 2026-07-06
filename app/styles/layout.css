@@ -320,31 +320,51 @@
   gap: var(--space-md);
 }
 
-/* ── Tool Page Layout ── */
+/* Tool Page Layout */
 
 .tool-page {
-  padding: var(--space-xxl) 0;
+  padding: var(--space-lg) 0 var(--space-xl);
 }
 
 .tool-page-header {
-  text-align: center;
-  margin-bottom: var(--space-xxl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: 1140px;
+  margin: 0 auto var(--space-lg);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.tool-page-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--rounded-md);
+}
+
+.tool-page-heading {
+  min-width: 0;
 }
 
 .tool-page-title {
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.15;
-  letter-spacing: -1.0px;
-  margin-bottom: var(--space-sm);
+  letter-spacing: -0.6px;
+  margin-bottom: 4px;
 }
 
 .tool-page-description {
-  font-size: 18px;
+  font-size: 15px;
   color: var(--ink-muted);
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 720px;
+  margin: 0;
+  line-height: 1.45;
 }
 
 .tool-page-body {
@@ -363,12 +383,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  min-width: 0; /* Prevents flex children from breaking grids */
+  min-width: 0;
 }
 
 .tool-action-sidebar {
   position: sticky;
-  top: calc(var(--nav-height) + var(--space-md));
+  top: calc(var(--nav-height) + var(--space-sm));
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -378,6 +398,7 @@
   .tool-workspace {
     grid-template-columns: 1fr;
   }
+
   .tool-action-sidebar {
     position: static;
   }
@@ -388,9 +409,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  margin-top: var(--space-xl);
+  margin-top: var(--space-lg);
 }
-
 /* ── Hero ── */
 
 .hero {
@@ -661,5 +681,27 @@
 
   .category-section {
     margin-bottom: var(--space-xl);
+  }
+}
+
+/* App-like compact tool pages */
+@media (max-width: 768px) {
+  .tool-page {
+    padding: var(--space-md) 0 var(--space-lg);
+  }
+
+  .tool-page-header {
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) 0 var(--space-md);
+  }
+
+  .tool-page-title {
+    font-size: 24px;
+    letter-spacing: -0.4px;
+  }
+
+  .tool-page-description {
+    font-size: 14px;
   }
 }

@@ -19,13 +19,18 @@ export default function PageThumbnails({
 
   useEffect(() => {
     if (!file) {
-      setThumbnails([]);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setProgress(0);
+
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setProgress(0);
+        setThumbnails([]);
+      }
+    });
 
     generateAllThumbnails(file, maxWidth, (current, total) => {
       if (!cancelled) setProgress(Math.round((current / total) * 100));
@@ -40,6 +45,8 @@ export default function PageThumbnails({
 
     return () => { cancelled = true; };
   }, [file, maxWidth]);
+
+  if (!file) return null;
 
   if (loading) {
     return (
@@ -108,6 +115,7 @@ export default function PageThumbnails({
             )}
 
             {/* Thumbnail image */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- PDF thumbnails are generated as client-side data URLs. */}
             <img
               src={thumb.dataUrl}
               alt={`Page ${thumb.pageNumber}`}

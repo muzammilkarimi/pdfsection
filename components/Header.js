@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ToolIcon } from './Icons';
-import { TOOL_CATEGORIES } from '@/lib/tools';
+import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,7 +23,18 @@ export default function Header() {
         <div className="nav-inner">
           {/* Brand */}
           <Link href="/" className="nav-brand" aria-label="PDF Section Home" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
-            <img src="/logo.png" alt="PDF Section" style={{ width: 28, height: 28, borderRadius: 'var(--rounded-sm)', display: 'block' }} />
+            <Image
+              src="/logo.png"
+              alt=""
+              width={36}
+              height={36}
+              priority
+              style={{
+                borderRadius: 'var(--rounded-sm)',
+                flexShrink: 0,
+                objectFit: 'contain',
+              }}
+            />
             <span>PDF Section</span>
           </Link>
 
@@ -34,7 +46,7 @@ export default function Header() {
               
               <div className="mega-menu">
                 <div className="mega-menu-grid-flat">
-                  {TOOL_CATEGORIES.map((cat) =>
+                  {LIVE_TOOL_CATEGORIES.map((cat) =>
                     cat.tools.map((tool) => (
                       <Link key={tool.id} href={tool.route} className="mega-menu-tool-link-compact">
                         <ToolIcon name={tool.icon} size={15} style={{ color: cat.color, flexShrink: 0 }} />
@@ -86,7 +98,7 @@ export default function Header() {
         <hr className="divider" style={{ margin: '12px 0' }} />
 
         {/* Tool categories in mobile menu */}
-        {TOOL_CATEGORIES.map((cat) => (
+        {LIVE_TOOL_CATEGORIES.map((cat) => (
           <div key={cat.id} style={{ marginBottom: '16px' }}>
             <div className="eyebrow" style={{ color: cat.color, padding: '8px 16px', fontSize: '11px' }}>
               {cat.label}

@@ -1,31 +1,75 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import { ToolIcon } from '@/components/Icons';
 import { mergePdfs, downloadPdf } from '@/lib/pdfUtils';
+
+const MAX_FILES = 20;
 
 export default function MergePDFClient() {
   const [files, setFiles] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const addInputRef = useRef(null);
 
   const handleFilesSelected = useCallback((newFiles) => {
-    setFiles(newFiles);
+    setFiles(newFiles.slice(0, MAX_FILES));
+    setDone(false);
+  }, []);
+
+  const appendFiles = useCallback((newFiles) => {
+    const incoming = Array.from(newFiles || []).filter((file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+    if (incoming.length === 0) return;
+
+    setFiles((prev) => [...prev, ...incoming].slice(0, MAX_FILES));
     setDone(false);
   }, []);
 
   const moveFile = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= files.length || fromIndex === toIndex) return;
     const updated = [...files];
     const [moved] = updated.splice(fromIndex, 1);
     updated.splice(toIndex, 0, moved);
     setFiles(updated);
+    setDone(false);
   };
 
   const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setDone(false);
+  };
+
+  const clearFiles = () => {
+    setFiles([]);
+    setDone(false);
+    setProgress(0);
+  };
+
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+    setDragOverIndex(index);
+  };
+
+  const handleDragOver = (event, index) => {
+    event.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (event, index) => {
+    event.preventDefault();
+    if (dragIndex !== null) moveFile(dragIndex, index);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleMerge = async () => {
@@ -47,94 +91,155 @@ export default function MergePDFClient() {
     }
   };
 
+  const formatSize = (bytes) => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+
   return (
     <ToolPageLayout
       title="Merge PDF"
-      description="Combine multiple PDF files into a single document. Drag to reorder."
+      description="Combine multiple PDF files into one document. Drag files to set the final order."
       icon="merge"
       iconColor="var(--tool-organize)"
     >
-      <FileDropzone
-        accept=".pdf"
-        multiple={true}
-        maxFiles={20}
-        onFilesSelected={handleFilesSelected}
-        label="Drop your PDF files here"
-        sublabel="or click to browse · PDF · Up to 20 files"
-        id="merge-dropzone"
-      />
+      {files.length === 0 ? (
+        <FileDropzone
+          accept=".pdf"
+          multiple={true}
+          maxFiles={MAX_FILES}
+          onFilesSelected={handleFilesSelected}
+          label="Drop your PDF files here"
+          id="merge-dropzone"
+        />
+      ) : (
+        <div className="merge-workspace">
+          <div className="merge-main-panel">
+            <div className="merge-panel-header">
+              <div>
+                <p className="eyebrow ink-subtle">Reorder files</p>
+                <h2 className="merge-panel-title">Drag into the final PDF order</h2>
+              </div>
+              <span className="badge">{files.length} of {MAX_FILES} files</span>
+            </div>
 
-      {/* Split Workspace */}
-      {files.length > 0 && (
-        <div className="tool-workspace" style={{ marginTop: 'var(--space-lg)' }}>
-          {/* Left panel: File list */}
-          <div className="tool-main-panel">
-            <p className="eyebrow" style={{ marginBottom: 'var(--space-xs)', color: 'var(--ink-subtle)' }}>
-              Reorder Files ({files.length} selected)
-            </p>
-            <div className="file-list">
-              {files.map((file, index) => (
-                <div key={`${file.name}-${index}`} className="file-item" style={{ gap: 'var(--space-sm)' }}>
-                  {/* Order controls */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <button
-                      className="file-item-remove"
-                      onClick={() => index > 0 && moveFile(index, index - 1)}
-                      disabled={index === 0}
-                      aria-label="Move up"
-                      style={{ opacity: index === 0 ? 0.3 : 1, width: 20, height: 16 }}
-                    >
-                      ▲
-                    </button>
-                    <button
-                      className="file-item-remove"
-                      onClick={() => index < files.length - 1 && moveFile(index, index + 1)}
-                      disabled={index === files.length - 1}
-                      aria-label="Move down"
-                      style={{ opacity: index === files.length - 1 ? 0.3 : 1, width: 20, height: 16 }}
-                    >
-                      ▼
-                    </button>
+            <div className="merge-drop-hint">
+              <ToolIcon name="reorder" size={16} />
+              <span>Drag a row up or down. The first file becomes the first pages in your merged PDF.</span>
+            </div>
+
+            <div className="merge-file-list">
+              {files.map((file, index) => {
+                const isDragging = dragIndex === index;
+                const isDropTarget = dragOverIndex === index && dragIndex !== null;
+
+                return (
+                  <div
+                    key={`${file.name}-${file.size}-${index}`}
+                    className={`merge-file-row ${isDragging ? 'is-dragging' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(event) => handleDragOver(event, index)}
+                    onDrop={(event) => handleDrop(event, index)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="merge-drag-handle" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+
+                    <div className="merge-file-index">{index + 1}</div>
+
+                    <div className="merge-file-icon">
+                      <ToolIcon name="pdf" size={18} />
+                    </div>
+
+                    <div className="merge-file-meta">
+                      <span className="merge-file-name">{file.name}</span>
+                      <span className="merge-file-detail">{formatSize(file.size)}</span>
+                    </div>
+
+                    <div className="merge-row-actions">
+                      <button
+                        type="button"
+                        className="merge-icon-button"
+                        onClick={() => moveFile(index, index - 1)}
+                        disabled={index === 0}
+                        aria-label={`Move ${file.name} up`}
+                      >
+                        Up
+                      </button>
+                      <button
+                        type="button"
+                        className="merge-icon-button"
+                        onClick={() => moveFile(index, index + 1)}
+                        disabled={index === files.length - 1}
+                        aria-label={`Move ${file.name} down`}
+                      >
+                        Down
+                      </button>
+                      <button
+                        type="button"
+                        className="merge-remove-button"
+                        onClick={() => removeFile(index)}
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        <ToolIcon name="x" size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <span style={{ fontSize: 13, color: 'var(--ink-tertiary)', width: 24, textAlign: 'center' }}>
-                    {index + 1}
-                  </span>
-                  <ToolIcon name="pdf" size={18} className="ink-subtle" />
-                  <span className="file-item-name">{file.name}</span>
-                  <span className="file-item-size">
-                    {(file.size / (1024 * 1024)).toFixed(1)} MB
-                  </span>
-                  <button className="file-item-remove" onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`}>
-                    <ToolIcon name="x" size={14} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Extra file drop slot */}
-            <div style={{ marginTop: 'var(--space-md)' }}>
-              <FileDropzone
-                accept=".pdf"
-                multiple={true}
-                onFilesSelected={(newFiles) => setFiles((prev) => [...prev, ...newFiles])}
-                label="Add more PDF files"
-                sublabel="Drag and drop or click to append"
-                id="merge-append-dropzone"
-              />
-            </div>
+            <button
+              type="button"
+              className="merge-add-card"
+              onClick={() => addInputRef.current?.click()}
+              disabled={files.length >= MAX_FILES}
+            >
+              <ToolIcon name="upload" size={18} />
+              <span>{files.length >= MAX_FILES ? 'Maximum files added' : 'Add more PDFs'}</span>
+            </button>
+            <input
+              ref={addInputRef}
+              type="file"
+              accept=".pdf"
+              multiple
+              onChange={(event) => {
+                appendFiles(event.target.files);
+                event.target.value = '';
+              }}
+              style={{ display: 'none' }}
+              aria-hidden="true"
+            />
           </div>
 
-          {/* Right panel: Actions Sidebar */}
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Merge configuration</p>
-              
-              <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="ink-muted">Files to merge:</span>
-                  <span style={{ fontWeight: 600 }}>{files.length}</span>
+          <aside className="merge-sidebar">
+            <div className="card merge-summary-card">
+              <p className="eyebrow ink-subtle">Merge configuration</p>
+
+              <div className="merge-summary-list">
+                <div>
+                  <span className="ink-muted">Files</span>
+                  <strong>{files.length}</strong>
+                </div>
+                <div>
+                  <span className="ink-muted">Total size</span>
+                  <strong>{formatSize(totalSize)}</strong>
+                </div>
+                <div>
+                  <span className="ink-muted">Output</span>
+                  <strong>merged.pdf</strong>
                 </div>
               </div>
+
+              {files.length < 2 && (
+                <div className="merge-warning">Add at least 2 PDFs to merge.</div>
+              )}
 
               {processing && (
                 <div>
@@ -148,20 +253,7 @@ export default function MergePDFClient() {
               )}
 
               {done && (
-                <div
-                  style={{
-                    padding: 'var(--space-sm)',
-                    backgroundColor: 'rgba(39, 166, 68, 0.08)',
-                    borderRadius: 'var(--rounded-md)',
-                    border: '1px solid rgba(39, 166, 68, 0.2)',
-                    textAlign: 'center',
-                    color: 'var(--semantic-success)',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                  }}
-                >
-                  ✓ Merge successful!
-                </div>
+                <div className="merge-success">Merge complete. Check your downloaded file.</div>
               )}
 
               <button
@@ -172,10 +264,20 @@ export default function MergePDFClient() {
                 id="merge-button"
               >
                 {processing ? 'Merging...' : 'Merge PDFs'}
-                <ToolIcon name="merge" size={16} style={{ marginLeft: 6 }} />
+                <ToolIcon name="merge" size={16} />
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={clearFiles}
+                disabled={processing}
+                style={{ width: '100%' }}
+              >
+                Start over
               </button>
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </ToolPageLayout>

@@ -13,7 +13,10 @@ export default function ToolCard({ tool, categoryColor }) {
       >
         <ToolIcon name={tool.icon} size={20} />
       </div>
-      <div className="tool-card-title">{tool.name}</div>
+      <div className="tool-card-title-row">
+        <div className="tool-card-title">{tool.name}</div>
+        {tool.status === 'preview' && <span className="badge badge-warning">Preview</span>}
+      </div>
       <div className="tool-card-description">{tool.description}</div>
     </Link>
   );

@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import { ToolIcon } from '@/components/Icons';
-import { getToolById, getToolByRoute } from '@/lib/tools';
+import { getToolByRoute } from '@/lib/tools';
 import { loadPdfForRender } from '@/lib/renderUtils';
 import { downloadBlob } from '@/lib/pdfUtils';
 
@@ -14,6 +14,7 @@ export default function FeatureSandbox({ route }) {
     description: 'Manage and modify your PDF files',
     icon: 'pdf',
     categoryColor: 'var(--primary)',
+    status: 'preview',
   };
 
   const [file, setFile] = useState(null);
@@ -21,7 +22,10 @@ export default function FeatureSandbox({ route }) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
-  const [extractedText, setExtractedText] = useState('');
+
+  const isHtml = toolInfo.id === 'html-to-pdf';
+  const isPreviewOnly = toolInfo.status === 'preview';
+  const acceptsOfficeInput = ['word-to-pdf', 'excel-to-pdf', 'powerpoint-to-pdf'].includes(toolInfo.id);
 
   const handleFilesSelected = useCallback((files) => {
     setFile(files[0] || null);
@@ -30,16 +34,17 @@ export default function FeatureSandbox({ route }) {
   }, []);
 
   const handleRunTool = async () => {
+    if (isPreviewOnly) return;
+
     setProcessing(true);
     setProgress(10);
 
     try {
-      // Functional implementation for PDF to Markdown
       if (toolInfo.id === 'pdf-to-markdown' && file) {
         setProgress(30);
         const pdf = await loadPdfForRender(file);
         let mdText = `# ${file.name.replace('.pdf', '')}\n\n`;
-        
+
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
@@ -49,68 +54,12 @@ export default function FeatureSandbox({ route }) {
         }
 
         setProgress(95);
-        downloadBlob(new Blob([mdText], { type: 'text/markdown' }), file.name.replace('.pdf', '.md'), 'text/markdown');
+        downloadBlob(
+          new Blob([mdText], { type: 'text/markdown' }),
+          file.name.replace('.pdf', '.md'),
+          'text/markdown'
+        );
         pdf.destroy();
-      }
-
-      // Functional implementation for AI Summarizer
-      else if (toolInfo.id === 'summarizer' && file) {
-        setProgress(30);
-        const pdf = await loadPdfForRender(file);
-        // Extract first page text
-        const page = await pdf.getPage(1);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item) => item.str).join(' ').slice(0, 1500);
-        
-        setProgress(60);
-        // Create an elegant summary
-        const summary = `# AI Summary: ${file.name}\n\n` +
-          `## Document Details\n` +
-          `- Total Pages: ${pdf.numPages}\n` +
-          `- File Size: ${(file.size / (1024 * 1024)).toFixed(2)} MB\n\n` +
-          `## Key Highlights (Extracted from Page 1)\n` +
-          `${pageText.length > 100 ? pageText : 'Summary could not be generated from empty page text.'}...\n\n` +
-          `*Note: AI Summarization is performed client-side using page text analysis.*`;
-
-        setProgress(95);
-        downloadBlob(new Blob([summary], { type: 'text/plain' }), file.name.replace('.pdf', '-summary.txt'), 'text/plain');
-        pdf.destroy();
-      }
-
-      // Simulation for Office conversions
-      else {
-        let interval = setInterval(() => {
-          setProgress((p) => {
-            if (p >= 90) {
-              clearInterval(interval);
-              return 90;
-            }
-            return p + 15;
-          });
-        }, 300);
-
-        await new Promise((r) => setTimeout(r, 2200));
-        clearInterval(interval);
-        
-        // Download a template mock file
-        let downloadName = 'output.pdf';
-        let mime = 'application/pdf';
-        let mockContent = 'PDF conversion output';
-
-        if (toolInfo.id.includes('to-pdf')) {
-          downloadName = (file ? file.name.split('.')[0] : 'document') + '.pdf';
-        } else if (toolInfo.id === 'pdf-to-word') {
-          downloadName = (file ? file.name.replace('.pdf', '') : 'document') + '.docx';
-          mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        } else if (toolInfo.id === 'pdf-to-excel') {
-          downloadName = (file ? file.name.replace('.pdf', '') : 'document') + '.xlsx';
-          mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        } else if (toolInfo.id === 'pdf-to-powerpoint') {
-          downloadName = (file ? file.name.replace('.pdf', '') : 'document') + '.pptx';
-          mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        }
-
-        downloadBlob(new Blob([mockContent], { type: mime }), downloadName, mime);
       }
 
       setProgress(100);
@@ -122,8 +71,6 @@ export default function FeatureSandbox({ route }) {
     }
   };
 
-  const isHtml = toolInfo.id === 'html-to-pdf';
-
   return (
     <ToolPageLayout
       title={toolInfo.name}
@@ -131,7 +78,27 @@ export default function FeatureSandbox({ route }) {
       icon={toolInfo.icon}
       iconColor={toolInfo.categoryColor}
     >
-      {/* HTML input vs File Drop */}
+      {isPreviewOnly && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 'var(--space-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-xs)',
+            borderColor: 'rgba(245, 166, 35, 0.3)',
+          }}
+        >
+          <span className="badge badge-warning" style={{ alignSelf: 'flex-start' }}>
+            Preview tool
+          </span>
+          <p className="body-sm ink-muted" style={{ lineHeight: 1.6 }}>
+            This page is a product preview. The client-side conversion engine for this tool is not
+            connected yet, so it will not generate or download placeholder output.
+          </p>
+        </div>
+      )}
+
       {isHtml ? (
         <div className="card" style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           <label className="body-sm ink-muted">Enter Website URL</label>
@@ -145,7 +112,7 @@ export default function FeatureSandbox({ route }) {
         </div>
       ) : !file ? (
         <FileDropzone
-          accept={toolInfo.id.includes('to-pdf') ? '.docx,.doc,.xlsx,.xls,.pptx,.ppt' : '.pdf'}
+          accept={acceptsOfficeInput ? '.docx,.doc,.xlsx,.xls,.pptx,.ppt' : '.pdf'}
           multiple={false}
           onFilesSelected={handleFilesSelected}
           label={`Upload files for ${toolInfo.name}`}
@@ -161,24 +128,24 @@ export default function FeatureSandbox({ route }) {
             </button>
           </div>
 
-          {/* Settings sandbox panel */}
-          <div className="card" style={{ padding: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-            <p className="eyebrow" style={{ marginBottom: 'var(--space-sm)' }}>Options</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', fontSize: '14px' }}>
-                <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
-                <span>Optimize formatting and fonts</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', fontSize: '14px' }}>
-                <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
-                <span>Perform structural analysis</span>
-              </label>
+          {!isPreviewOnly && (
+            <div className="card" style={{ padding: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+              <p className="eyebrow" style={{ marginBottom: 'var(--space-sm)' }}>Options</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', fontSize: '14px' }}>
+                  <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
+                  <span>Preserve page breaks</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', fontSize: '14px' }}>
+                  <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
+                  <span>Extract text from all pages</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
 
-      {/* Progress */}
       {processing && (
         <div style={{ marginTop: 'var(--space-lg)' }}>
           <div className="progress-track">
@@ -190,8 +157,7 @@ export default function FeatureSandbox({ route }) {
         </div>
       )}
 
-      {/* Success */}
-      {done && (
+      {done && !isPreviewOnly && (
         <div
           style={{
             marginTop: 'var(--space-lg)',
@@ -204,7 +170,7 @@ export default function FeatureSandbox({ route }) {
             fontWeight: 500,
           }}
         >
-          ✓ Processed successfully! Check your downloaded file.
+          Processed successfully. Check your downloaded file.
         </div>
       )}
 
@@ -212,10 +178,10 @@ export default function FeatureSandbox({ route }) {
         <button
           className="btn btn-primary btn-lg"
           onClick={handleRunTool}
-          disabled={processing || (!file && !isHtml)}
+          disabled={processing || isPreviewOnly || (!file && !isHtml)}
           id="sandbox-run-button"
         >
-          {processing ? 'Processing...' : `Run ${toolInfo.name}`}
+          {isPreviewOnly ? 'Preview only' : processing ? 'Processing...' : `Run ${toolInfo.name}`}
           <ToolIcon name="arrowRight" size={18} />
         </button>
       </div>

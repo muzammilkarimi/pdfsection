@@ -297,19 +297,21 @@ export default function SignPDFClient() {
                 {/* Draw placed signatures */}
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                   {(stampedSignatures[currentPageIndex] || []).map((sig, idx) => (
-                    <img
-                      key={idx}
-                      src={sig.imgData}
-                      alt="Placed signature"
-                      style={{
-                        position: 'absolute',
-                        left: `${sig.x * 100}%`,
-                        top: `${sig.y * 100}%`,
-                        width: `${(sig.w / 600) * 100}%`,
-                        height: 'auto',
-                        border: '1px dashed var(--primary)',
-                      }}
-                    />
+                    <span key={idx}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Signature stamps are generated as client-side data URLs. */}
+                      <img
+                        src={sig.imgData}
+                        alt="Placed signature"
+                        style={{
+                          position: 'absolute',
+                          left: `${sig.x * 100}%`,
+                          top: `${sig.y * 100}%`,
+                          width: `${(sig.w / 600) * 100}%`,
+                          height: 'auto',
+                          border: '1px dashed var(--primary)',
+                        }}
+                      />
+                    </span>
                   ))}
                 </div>
 
@@ -398,6 +400,7 @@ export default function SignPDFClient() {
               {signatureImage && (
                 <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 'var(--space-sm)', textAlign: 'center' }}>
                   <p className="caption ink-subtle" style={{ marginBottom: 6 }}>Ready to place (click PDF page):</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Signature previews are generated as client-side data URLs. */}
                   <img
                     src={signatureImage}
                     alt="Signature"

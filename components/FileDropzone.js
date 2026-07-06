@@ -19,7 +19,19 @@ export default function FileDropzone({
   const inputRef = useRef(null);
 
   const acceptTypes = accept.split(',').map((t) => t.trim());
-  const acceptLabel = acceptTypes.map((t) => t.replace('.', '').toUpperCase()).join(', ');
+  const acceptLabel = acceptTypes.map((t) => t.replace('.', '').replace('image/', '').toUpperCase()).join(', ');
+  const acceptsImages = accept.includes('image');
+  const acceptsOnlyPdf = acceptTypes.length === 1 && acceptTypes[0] === '.pdf';
+  const uploadLabel = acceptsImages
+    ? 'Select images'
+    : acceptsOnlyPdf
+      ? multiple ? 'Select PDF files' : 'Select PDF file'
+      : multiple ? 'Select files' : 'Select file';
+  const dropHint = acceptsImages
+    ? `or drag and drop ${acceptLabel} images here`
+    : acceptsOnlyPdf
+      ? `or drag and drop PDF ${multiple ? 'files' : 'file'} here`
+      : `or drag and drop ${acceptLabel} files here`;
 
   const validateFile = useCallback(
     (file) => {
@@ -113,34 +125,15 @@ export default function FileDropzone({
           aria-label={label}
           id={id}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: 'var(--space-sm)' }}>
-            <div className="btn-upload-gradient btn-attention" style={{ fontSize: '18px', padding: '16px 44px' }}>
-              <span>{accept.includes('image') ? 'Select Images' : 'Select PDF files'}</span>
+          <div className="dropzone-upload-content">
+            <div className="btn-upload-gradient btn-attention">
+              <ToolIcon name="upload" size={24} />
+              <span>{uploadLabel}</span>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
-              <button 
-                type="button" 
-                className="btn-circle-storage" 
-                title="Google Drive"
-                onClick={(e) => { e.stopPropagation(); alert('Google Drive client-side picker placeholder'); }}
-              >
-                <ToolIcon name="drive" size={14} style={{ color: '#fff' }} />
-              </button>
-              <button 
-                type="button" 
-                className="btn-circle-storage" 
-                title="Dropbox"
-                onClick={(e) => { e.stopPropagation(); alert('Dropbox client-side picker placeholder'); }}
-              >
-                <ToolIcon name="dropbox" size={14} style={{ color: '#fff' }} />
-              </button>
+            <div className="dropzone-subtitle">
+              {dropHint}
             </div>
           </div>
-          <div className="dropzone-subtitle" style={{ opacity: 0.8, fontSize: '14px', fontWeight: 400 }}>
-            {accept.includes('image') ? 'or drop images here' : 'or drop PDFs here'}
-          </div>
-
           <input
             ref={inputRef}
             type="file"
