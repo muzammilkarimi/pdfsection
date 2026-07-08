@@ -4,7 +4,6 @@ import Link from 'next/link';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
-  // Group tools into footer columns
   const footerToolColumns = [
     {
       title: 'Popular Tools',
@@ -47,7 +46,6 @@ export default function Footer() {
   return (
     <footer className="footer" role="contentinfo">
       <div className="footer-inner">
-        {/* Brand column */}
         <div className="footer-brand">
           <div className="footer-brand-name">
             <Image
@@ -67,7 +65,6 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Link columns */}
         {footerToolColumns.map((col) => (
           <div key={col.title}>
             <div className="footer-column-title">{col.title}</div>
@@ -82,9 +79,8 @@ export default function Footer() {
         ))}
       </div>
 
-      {/* Bottom bar */}
       <div className="footer-bottom">
-        <span>© {currentYear} PDF Section. All rights reserved.</span>
+        <span>(c) {currentYear} PDF Section. All rights reserved.</span>
         <span>All processing happens in your browser. Your files never leave your device.</span>
       </div>
     </footer>

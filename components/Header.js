@@ -41,7 +41,7 @@ export default function Header() {
           <nav className="nav-links" aria-label="Main navigation">
             <div className="nav-item-dropdown">
               <Link href="/#tools" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                Tools <span style={{ fontSize: '9px', opacity: 0.6 }}>▼</span>
+                Tools <span style={{ fontSize: '10px', opacity: 0.6 }}>v</span>
               </Link>
               
               <div className="mega-menu">
@@ -67,8 +67,8 @@ export default function Header() {
 
           {/* Actions */}
           <div className="nav-actions">
-            <Link href="/#tools" className="btn btn-primary" style={{ fontSize: '13px', padding: '6px 14px' }}>
-              All Tools
+            <Link href="/merge-pdf" className="btn btn-primary nav-primary-action">
+              Merge PDF
             </Link>
             <button
               className="nav-menu-btn"
@@ -123,3 +123,9 @@ export default function Header() {
     </>
   );
 }
+
+
+
+
+
+

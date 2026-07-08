@@ -4,15 +4,15 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf } from '@/lib/pdfUtils';
+import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
 import { renderPageToImage } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
 
 export default function PDFToJPGClient() {
   const [file, setFile] = useState(null);
-  const [format, setFormat] = useState('image/jpeg'); // 'image/jpeg', 'image/png'
-  const [dpi, setDpi] = useState(150); // 72, 150, 300
+  const [format, setFormat] = useState('image/jpeg');
+  const [dpi, setDpi] = useState(150);
   const [quality, setQuality] = useState(0.9);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -24,25 +24,28 @@ export default function PDFToJPGClient() {
     setProgress(0);
   }, []);
 
+  const resetFile = () => {
+    setFile(null);
+    setDone(false);
+    setProgress(0);
+  };
+
   const handleConvert = async () => {
     if (!file) return;
     setProcessing(true);
     setProgress(0);
 
     try {
-      // Find total pages
       const pdfDoc = await loadPdf(file);
       const pageCount = pdfDoc.getPageCount();
       const ext = format === 'image/jpeg' ? 'jpg' : 'png';
 
       if (pageCount === 1) {
-        // Single page, download directly
         setProgress(50);
         const imageBlob = await renderPageToImage(file, 1, dpi, format, quality);
         setProgress(100);
         downloadBlob(imageBlob, `${file.name.replace('.pdf', '')}.${ext}`, format);
       } else {
-        // Multiple pages, ZIP them
         const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
 
@@ -65,8 +68,8 @@ export default function PDFToJPGClient() {
   };
 
   const formats = [
-    { id: 'image/jpeg', label: 'JPG', desc: 'Standard compressed images' },
-    { id: 'image/png', label: 'PNG', desc: 'Lossless quality, transparent bg' },
+    { id: 'image/jpeg', label: 'JPG' },
+    { id: 'image/png', label: 'PNG' },
   ];
 
   const dpis = [
@@ -81,138 +84,71 @@ export default function PDFToJPGClient() {
       description="Convert PDF pages into high-quality JPG or PNG images."
       icon="image"
       iconColor="var(--tool-convert-from)"
+      showHeader={!file}
+      layoutMode={file ? 'page-preview' : 'page-scroll'}
     >
       {!file ? (
-        <FileDropzone
-          accept=".pdf"
-          multiple={false}
-          onFilesSelected={handleFilesSelected}
-          label="Drop your PDF file here"
-          id="pdf-to-jpg-dropzone"
-        />
+        <FileDropzone accept=".pdf" multiple={false} onFilesSelected={handleFilesSelected} label="Select PDF file" id="pdf-to-jpg-dropzone" />
       ) : (
-        <div className="tool-workspace">
-          {/* Left panel: File details and thumbnail previews */}
-          <div className="tool-main-panel">
-            <div className="file-item">
-              <ToolIcon name="pdf" size={18} className="ink-subtle" />
-              <span className="file-item-name">{file.name}</span>
-              <button
-                className="file-item-remove"
-                onClick={() => {
-                  setFile(null);
-                  setDone(false);
-                }}
-              >
-                <ToolIcon name="x" size={14} />
-              </button>
-            </div>
-
-            <p className="body-sm ink-subtle" style={{ marginTop: 'var(--space-md)', marginBottom: 'var(--space-xs)' }}>
-              PDF Pages:
-            </p>
-            <PageThumbnails file={file} selectable={false} maxWidth={120} />
-          </div>
-
-          {/* Right panel: Format, resolution and compress configurations sidebar */}
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Export Settings</p>
-              
-              {/* Format selection */}
-              <div>
-                <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 6 }}>Format</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xxs)' }}>
-                  {formats.map((f) => (
-                    <button
-                      key={f.id}
-                      className={`btn ${format === f.id ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setFormat(f.id)}
-                      style={{ fontSize: 12, padding: '8px', width: '100%', justifyContent: 'flex-start' }}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* DPI selection */}
-              <div>
-                <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 6 }}>DPI Resolution</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xxs)' }}>
-                  {dpis.map((d) => (
-                    <button
-                      key={d.value}
-                      className={`btn ${dpi === d.value ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setDpi(d.value)}
-                      style={{ fontSize: 12, padding: '8px', width: '100%', justifyContent: 'flex-start' }}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Compression quality (Only for JPG) */}
-              {format === 'image/jpeg' && (
-                <div>
-                  <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>
-                    Quality: {Math.round(quality * 100)}%
-                  </label>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="1.0"
-                    step="0.05"
-                    value={quality}
-                    onChange={(e) => setQuality(parseFloat(e.target.value))}
-                    style={{ width: '100%', accentColor: 'var(--primary)' }}
-                  />
-                </div>
-              )}
-
-              {processing && (
-                <div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="body-sm ink-subtle" style={{ textAlign: 'center', marginTop: 4 }}>
-                    Processing... {progress}%
-                  </p>
-                </div>
-              )}
-
-              {done && (
-                <div
-                  style={{
-                    padding: 'var(--space-sm)',
-                    backgroundColor: 'rgba(39, 166, 68, 0.08)',
-                    borderRadius: 'var(--rounded-md)',
-                    border: '1px solid rgba(39, 166, 68, 0.2)',
-                    textAlign: 'center',
-                    color: 'var(--semantic-success)',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                  }}
-                >
-                  ✓ Export successful!
-                </div>
-              )}
-
-              <button
-                className="btn btn-primary btn-lg btn-attention"
-                onClick={handleConvert}
-                disabled={processing}
-                style={{ width: '100%' }}
-                id="convert-pdf-to-jpg-button"
-              >
-                {processing ? 'Converting...' : 'Convert to Image'}
-                <ToolIcon name="image" size={16} style={{ marginLeft: 6 }} />
-              </button>
+        <PageToolWorkspace
+          title="PDF to JPG"
+          description="Choose image format, resolution, and quality."
+          icon="image"
+          iconColor="var(--tool-convert-from)"
+          file={file}
+          onReset={resetFile}
+          ariaLabel="PDF to image settings"
+          preview={<PageThumbnails file={file} selectable={false} maxWidth={150} className="page-preview-grid" />}
+          footer={(
+            <button className="btn btn-primary btn-lg btn-attention" onClick={handleConvert} disabled={processing} id="convert-pdf-to-jpg-button">
+              {processing ? 'Converting...' : 'Convert to Image'}
+              <ToolIcon name="image" size={16} />
+            </button>
+          )}
+        >
+          <div className="page-field-group">
+            <label className="body-sm ink-muted">Format</label>
+            <div className="page-option-list">
+              {formats.map((item) => (
+                <button key={item.id} className={`btn ${format === item.id ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setFormat(item.id)}>
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+
+          <div className="page-field-group">
+            <label className="body-sm ink-muted">DPI resolution</label>
+            <div className="page-option-list">
+              {dpis.map((item) => (
+                <button key={item.value} className={`btn ${dpi === item.value ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setDpi(item.value)}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {format === 'image/jpeg' && (
+            <div className="page-field-group">
+              <label className="body-sm ink-muted">Quality: {Math.round(quality * 100)}%</label>
+              <input type="range" min="0.5" max="1.0" step="0.05" value={quality} onChange={(event) => setQuality(parseFloat(event.target.value))} className="page-range" />
+            </div>
+          )}
+
+          {processing && (
+            <div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="body-sm ink-subtle" style={{ textAlign: 'center', marginTop: 4 }}>Processing... {progress}%</p>
+            </div>
+          )}
+
+          {done && <div className="merge-success">Export successful. Your images have been downloaded.</div>}
+        </PageToolWorkspace>
       )}
     </ToolPageLayout>
   );
 }
+
+

@@ -1,187 +1,177 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import ToolCard from '@/components/ToolCard';
 import { ToolIcon } from '@/components/Icons';
 import { LIVE_TOOL_CATEGORIES, searchLiveTools, LIVE_TOOLS } from '@/lib/tools';
 
+const ALL_CATEGORY = 'all';
+
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY);
 
-  const filteredTools = useMemo(() => {
-    if (!searchQuery.trim()) return null; // show categories
-    return searchLiveTools(searchQuery);
-  }, [searchQuery]);
+  const selectedCategoryData = LIVE_TOOL_CATEGORIES.find(
+    (category) => category.id === selectedCategory
+  );
 
+  const visibleTools = useMemo(() => {
+    const query = searchQuery.trim();
+
+    if (query) {
+      const results = searchLiveTools(query);
+      if (selectedCategory === ALL_CATEGORY) return results;
+      return results.filter((tool) => tool.category === selectedCategory);
+    }
+
+    if (selectedCategoryData) {
+      return selectedCategoryData.tools.map((tool) => ({
+        ...tool,
+        category: selectedCategoryData.id,
+        categoryLabel: selectedCategoryData.label,
+        categoryColor: selectedCategoryData.color,
+      }));
+    }
+
+    return LIVE_TOOLS;
+  }, [searchQuery, selectedCategory, selectedCategoryData]);
+
+  const categoryTitle = selectedCategoryData?.label || 'All PDF tools';
+  const categoryColor = selectedCategoryData?.color || 'var(--primary)';
   const toolCount = LIVE_TOOLS.length;
 
   return (
-    <main className="main">
-      {/* ── Hero Section ── */}
-      <section className="hero" aria-label="Hero">
-        <div className="container">
-          <h1 className="hero-title">
-            Every PDF tool<br />
-            <span className="shimmer-text">you&apos;ll ever need</span>
-          </h1>
-          <p className="hero-subtitle">
-            {toolCount}+ free tools to merge, split, compress, convert, edit, and secure
-            your PDFs. 100% private — files never leave your browser.
-          </p>
-          <div className="hero-actions">
-            <a href="#tools" className="btn btn-primary btn-lg">
-              Explore All Tools
-              <ToolIcon name="arrowRight" size={18} />
-            </a>
-            <a href="#tools" className="btn btn-secondary btn-lg">
-              How It Works
-            </a>
+    <main className="main home-main">
+      <section className="home-dashboard container" aria-label="PDF tools dashboard">
+        <div className="home-hero-panel">
+          <div className="home-hero-copy">
+            <span className="home-kicker">
+              <ToolIcon name="lock" size={14} />
+              Private browser PDF tools
+            </span>
+            <h1 className="home-title">PDF Section</h1>
+            <p className="home-subtitle">
+              Merge, split, compress, convert, edit, and secure PDF files without
+              uploading them to a server.
+            </p>
           </div>
 
-          {/* Trust indicators */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-xl)',
-              marginTop: 'var(--space-xxl)',
-              flexWrap: 'wrap',
-            }}
-          >
-            {[
-              { icon: 'lock', text: '100% Private' },
-              { icon: 'compress', text: 'No File Limits' },
-              { icon: 'check', text: 'Free Forever' },
-            ].map((item) => (
-              <div
-                key={item.text}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-xs)',
-                  color: 'var(--ink-subtle)',
-                  fontSize: '14px',
-                }}
-              >
-                <ToolIcon name={item.icon} size={16} />
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Search Bar ── */}
-      <section id="tools" className="container" style={{ scrollMarginTop: 'var(--nav-height)' }}>
-        <div className="search-wrapper">
-          <span className="search-icon">
-            <ToolIcon name="search" size={18} />
-          </span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search PDF tools..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search PDF tools"
-            id="tool-search"
-          />
-        </div>
-
-        {/* ── Search Results ── */}
-        {filteredTools !== null ? (
-          <div style={{ marginBottom: 'var(--space-section)' }}>
-            <div
-              className="category-header"
-              style={{ marginBottom: 'var(--space-lg)' }}
-            >
-              <span className="category-label" style={{ color: 'var(--ink-muted)' }}>
-                {filteredTools.length} result{filteredTools.length !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
+          <div className="home-search-panel">
+            <label className="home-search-label" htmlFor="tool-search">
+              Find a PDF tool
+            </label>
+            <div className="search-wrapper home-search-wrapper">
+              <span className="search-icon">
+                <ToolIcon name="search" size={18} />
               </span>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search merge, split, compress..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                aria-label="Search PDF tools"
+                id="tool-search"
+              />
             </div>
-            {filteredTools.length > 0 ? (
-              <div className="tool-grid">
-                {filteredTools.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} categoryColor={tool.categoryColor} />
+          </div>
+        </div>
+
+        <div className="home-app-shell">
+          <aside className="home-sidebar" aria-label="PDF tool categories">
+            <button
+              type="button"
+              className={`home-category-button ${selectedCategory === ALL_CATEGORY ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(ALL_CATEGORY)}
+            >
+              <span className="home-category-icon" style={{ color: 'var(--primary)' }}>
+                <ToolIcon name="reorder" size={18} />
+              </span>
+              <span>
+                <strong>All PDF tools</strong>
+                <small>{toolCount} tools</small>
+              </span>
+            </button>
+
+            {LIVE_TOOL_CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className={`home-category-button ${selectedCategory === category.id ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                <span className="home-category-icon" style={{ color: category.color }}>
+                  <ToolIcon name={category.tools[0]?.icon || 'file'} size={18} />
+                </span>
+                <span>
+                  <strong>{category.label}</strong>
+                  <small>{category.tools.length} tool{category.tools.length === 1 ? '' : 's'}</small>
+                </span>
+              </button>
+            ))}
+          </aside>
+
+          <section className="home-tools-panel" aria-label={categoryTitle}>
+            <div className="home-tools-header">
+              <div>
+                <span className="category-label" style={{ color: categoryColor }}>
+                  {searchQuery.trim() ? 'Search results' : categoryTitle}
+                </span>
+                <h2 className="home-tools-title">
+                  {visibleTools.length} tool{visibleTools.length === 1 ? '' : 's'} ready to use
+                </h2>
+              </div>
+              {searchQuery.trim() && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSearchQuery('')}
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+
+            {visibleTools.length > 0 ? (
+              <div className="tool-grid home-tool-grid">
+                {visibleTools.map((tool) => (
+                  <ToolCard
+                    key={tool.id}
+                    tool={tool}
+                    categoryColor={tool.categoryColor || categoryColor}
+                  />
                 ))}
               </div>
             ) : (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: 'var(--space-xxl)',
-                  color: 'var(--ink-subtle)',
-                }}
-              >
-                <ToolIcon name="search" size={48} className="ink-tertiary" />
-                <p style={{ marginTop: 'var(--space-md)', fontSize: '16px' }}>
-                  No tools found. Try a different search term.
-                </p>
+              <div className="home-empty-state">
+                <ToolIcon name="search" size={42} />
+                <strong>No matching tools</strong>
+                <span>Try another keyword or choose a different category.</span>
               </div>
             )}
-          </div>
-        ) : (
-          /* ── Tool Categories Grid ── */
-          LIVE_TOOL_CATEGORIES.map((category) => (
-            <section
-              key={category.id}
-              className="category-section"
-              aria-label={category.label}
-            >
-              <div className="category-header">
-                <span
-                  className="category-dot"
-                  style={{ backgroundColor: category.color }}
-                />
-                <span className="category-label">{category.label}</span>
-              </div>
-              <div className="tool-grid">
-                {category.tools.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} categoryColor={category.color} />
-                ))}
-              </div>
-            </section>
-          ))
-        )}
-      </section>
-
-      {/* ── CTA Banner ── */}
-      <section className="container" style={{ paddingBottom: 'var(--space-section)' }}>
-        <div
-          className="card card-xl"
-          style={{
-            textAlign: 'center',
-            padding: 'var(--space-xxl)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'var(--space-md)',
-          }}
-        >
-          <h2 className="headline">Your files stay on your device</h2>
-          <p
-            className="body-lg"
-            style={{
-              color: 'var(--ink-muted)',
-              maxWidth: '480px',
-            }}
-          >
-            Every operation runs entirely in your browser using WebAssembly
-            and JavaScript. No uploads, no servers, no data collection.
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {['AES-256 Encryption', 'Zero Server Processing', 'GDPR Compliant'].map(
-              (badge) => (
-                <span key={badge} className="badge">
-                  <ToolIcon name="check" size={12} />
-                  {badge}
-                </span>
-              )
-            )}
-          </div>
+          </section>
         </div>
+
+        <section className="home-trust-strip" aria-label="Privacy and file handling">
+          {[
+            { icon: 'lock', title: 'Private', text: 'Files stay in your browser' },
+            { icon: 'check', title: 'Free', text: 'No account needed' },
+            { icon: 'compress', title: 'Fast', text: 'Start from the tool screen' },
+          ].map((item) => (
+            <div key={item.title} className="home-trust-item">
+              <ToolIcon name={item.icon} size={18} />
+              <span>
+                <strong>{item.title}</strong>
+                <small>{item.text}</small>
+              </span>
+            </div>
+          ))}
+        </section>
       </section>
     </main>
   );
 }
+
+
+
+

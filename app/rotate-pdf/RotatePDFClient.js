@@ -20,7 +20,14 @@ export default function RotatePDFClient() {
     setDone(false);
   }, []);
 
+  const resetFile = () => {
+    setFile(null);
+    setSelectedPages([]);
+    setDone(false);
+  };
+
   const handlePageToggle = (pageIndex) => {
+    setDone(false);
     setSelectedPages((prev) =>
       prev.includes(pageIndex)
         ? prev.filter((i) => i !== pageIndex)
@@ -30,6 +37,7 @@ export default function RotatePDFClient() {
 
   const selectAll = async () => {
     const doc = await loadPdf(file);
+    setDone(false);
     setSelectedPages(doc.getPageIndices());
   };
 
@@ -50,90 +58,119 @@ export default function RotatePDFClient() {
   };
 
   const angles = [
-    { value: 90, label: '90° Right' },
-    { value: 180, label: '180°' },
-    { value: 270, label: '90° Left' },
+    { value: 90, label: '90 deg right' },
+    { value: 180, label: '180 deg' },
+    { value: 270, label: '90 deg left' },
   ];
 
   return (
-    <ToolPageLayout title="Rotate PDF" description="Rotate pages to the correct orientation" icon="rotate" iconColor="var(--tool-edit)">
+    <ToolPageLayout
+      title="Rotate PDF"
+      description="Rotate pages to the correct orientation"
+      icon="rotate"
+      iconColor="var(--tool-edit)"
+      showHeader={!file}
+      layoutMode={file ? 'page-preview' : 'page-scroll'}
+    >
       {!file ? (
-        <FileDropzone accept=".pdf" multiple={false} onFilesSelected={handleFilesSelected} label="Drop your PDF file here" id="rotate-dropzone" />
+        <FileDropzone
+          accept=".pdf"
+          multiple={false}
+          onFilesSelected={handleFilesSelected}
+          label="Select PDF file"
+          id="rotate-dropzone"
+        />
       ) : (
-        <div className="tool-workspace">
-          {/* Left panel: File details and thumbnail pages selection */}
-          <div className="tool-main-panel">
-            <div className="file-item">
-              <ToolIcon name="pdf" size={18} className="ink-subtle" />
-              <span className="file-item-name">{file.name}</span>
-              <button className="file-item-remove" onClick={() => { setFile(null); setDone(false); }}>
-                <ToolIcon name="x" size={14} />
-              </button>
+        <div className="page-editor-workspace">
+          <section className="page-preview-panel" aria-label="PDF page previews">
+            <PageThumbnails
+              file={file}
+              selectedPages={selectedPages}
+              onPageToggle={handlePageToggle}
+              maxWidth={150}
+              className="page-preview-grid"
+            />
+          </section>
+
+          <aside className="page-controls-panel" aria-label="Rotate PDF settings">
+            <div className="page-controls-header">
+              <div
+                className="tool-page-icon"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--tool-edit) 14%, var(--surface-2))',
+                  color: 'var(--tool-edit)',
+                }}
+              >
+                <ToolIcon name="rotate" size={22} />
+              </div>
+              <div className="tool-page-heading">
+                <h1 className="tool-page-title">Rotate PDF</h1>
+                <p className="tool-page-description">Select pages on the left, then choose the rotation angle.</p>
+              </div>
             </div>
 
-            <p className="body-sm ink-subtle" style={{ marginTop: 'var(--space-md)', marginBottom: 'var(--space-xs)' }}>
-              Click pages below to select/deselect them for rotation ({selectedPages.length} selected):
-            </p>
-            
-            <PageThumbnails file={file} selectedPages={selectedPages} onPageToggle={handlePageToggle} maxWidth={140} />
-          </div>
+            <div className="page-controls-body">
+              <div className="page-file-card">
+                <div className="page-file-icon">
+                  <ToolIcon name="pdf" size={18} />
+                </div>
+                <div className="page-file-meta">
+                  <strong>{file.name}</strong>
+                  <span>{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                </div>
+                <button className="file-item-remove" onClick={resetFile} aria-label={`Remove ${file.name}`}>
+                  <ToolIcon name="x" size={14} />
+                </button>
+              </div>
 
-          {/* Right panel: Rotation configurations sidebar */}
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Rotate Settings</p>
-              
-              {/* Rotation angles */}
-              <div>
-                <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 6 }}>Orientation Angle</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
-                  {angles.map((a) => (
+              <div className="page-control-stat">
+                <span>Pages selected</span>
+                <strong>{selectedPages.length}</strong>
+              </div>
+
+              <div className="page-field-group">
+                <label className="body-sm ink-muted">Rotation angle</label>
+                <div className="page-option-list">
+                  {angles.map((option) => (
                     <button
-                      key={a.value}
-                      className={`btn ${angle === a.value ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setAngle(a.value)}
-                      style={{ fontSize: 13, padding: '8px 12px' }}
+                      key={option.value}
+                      className={`btn ${angle === option.value ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setAngle(option.value)}
                     >
-                      {a.label}
+                      {option.label}
                     </button>
                   ))}
-                  <button className="btn btn-tertiary" onClick={selectAll} style={{ fontSize: 13, marginTop: 4 }}>
-                    Select All Pages
-                  </button>
                 </div>
               </div>
 
-              {done && (
-                <div
-                  style={{
-                    padding: 'var(--space-sm)',
-                    backgroundColor: 'rgba(39, 166, 68, 0.08)',
-                    borderRadius: 'var(--rounded-md)',
-                    border: '1px solid rgba(39, 166, 68, 0.2)',
-                    textAlign: 'center',
-                    color: 'var(--semantic-success)',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                  }}
-                >
-                  ✓ Rotate successful!
-                </div>
-              )}
+              <button className="btn btn-secondary" onClick={selectAll}>
+                Select All Pages
+              </button>
 
+              <div className="page-help-note">
+                <ToolIcon name="check" size={16} />
+                <span>The left panel is dedicated to page previews. All rotation settings stay fixed on the right.</span>
+              </div>
+
+              {done && <div className="merge-success">Rotate successful. Your PDF has been downloaded.</div>}
+            </div>
+
+            <div className="page-controls-footer">
               <button
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleRotate}
                 disabled={selectedPages.length === 0 || processing}
-                style={{ width: '100%' }}
                 id="rotate-button"
               >
                 {processing ? 'Rotating...' : `Rotate (${selectedPages.length})`}
-                <ToolIcon name="rotate" size={16} style={{ marginLeft: 6 }} />
+                <ToolIcon name="rotate" size={16} />
               </button>
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </ToolPageLayout>
   );
 }
+
+
