@@ -2,6 +2,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -88,7 +89,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#010102',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -129,8 +130,21 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storedTheme = localStorage.getItem('theme');
+                  var theme = storedTheme || 'light';
+                  document.documentElement.classList.add(theme);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -140,6 +154,7 @@ export default function RootLayout({ children }) {
         <Header />
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

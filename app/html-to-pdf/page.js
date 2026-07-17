@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import HTMLToPDFClient from './HTMLToPDFClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/html-to-pdf" />;
+  return <HTMLToPDFClient />;
 }

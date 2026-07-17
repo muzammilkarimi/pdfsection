@@ -1,5 +1,5 @@
-import FeatureSandbox from '@/components/FeatureSandbox';
+import PDFToMarkdownClient from './PDFToMarkdownClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/pdf-to-markdown" />;
+  return <PDFToMarkdownClient />;
 }

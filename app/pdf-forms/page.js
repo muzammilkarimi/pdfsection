@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import PDFFormsClient from './PDFFormsClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/pdf-forms" />;
+  return <PDFFormsClient />;
 }

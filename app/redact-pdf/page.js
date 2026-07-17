@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import RedactPDFClient from './RedactPDFClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/redact-pdf" />;
+  return <RedactPDFClient />;
 }

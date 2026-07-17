@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import PDFToOfficeClient from '@/components/PDFToOfficeClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/pdf-to-excel" />;
+  return <PDFToOfficeClient toolId="pdf-to-excel" />;
 }

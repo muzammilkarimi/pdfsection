@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import AISummarizerClient from './AISummarizerClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/ai-summarizer" />;
+  return <AISummarizerClient />;
 }

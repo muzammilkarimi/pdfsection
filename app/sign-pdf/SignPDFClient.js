@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
@@ -21,6 +22,8 @@ export default function SignPDFClient() {
   const [typedName, setTypedName] = useState('');
   const [signatureImage, setSignatureImage] = useState(null); // base64 PNG of signature
   const [stampedSignatures, setStampedSignatures] = useState({}); // { pageIndex: [ { x: 0.1, y: 0.2, w: 100, h: 50, imgData: ... } ] }
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragStart, setDragStart] = useState({ offsetX: 0, offsetY: 0 });
 
   const canvasRef = useRef(null);
   const sigCanvasRef = useRef(null);
@@ -145,6 +148,13 @@ export default function SignPDFClient() {
   // Stamp saved signature onto page
   const handlePageClick = (e) => {
     if (!signatureImage || !canvasRef.current) return;
+    if (dragIndex !== null) return;
+    
+    // Only stamp if clicked on the rendering canvas or the overlay container
+    if (e.target !== canvasRef.current && e.target.id !== 'signature-overlay-container') {
+      return;
+    }
+
     const rect = canvasRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
@@ -161,6 +171,68 @@ export default function SignPDFClient() {
       ...prev,
       [currentPageIndex]: [...(prev[currentPageIndex] || []), newSig],
     }));
+  };
+
+  const deleteSignature = (idx) => {
+    setStampedSignatures((prev) => ({
+      ...prev,
+      [currentPageIndex]: (prev[currentPageIndex] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleSignatureStartDrag = (e, idx, sig) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setDragIndex(idx);
+    
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const clickXPercent = (clientX - rect.left) / rect.width;
+    const clickYPercent = (clientY - rect.top) / rect.height;
+    
+    setDragStart({
+      offsetX: clickXPercent - sig.x,
+      offsetY: clickYPercent - sig.y
+    });
+  };
+
+  const handleWorkspaceMouseMove = (e) => {
+    if (dragIndex === null) return;
+    
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    let nextX = (clientX - rect.left) / rect.width - dragStart.offsetX;
+    let nextY = (clientY - rect.top) / rect.height - dragStart.offsetY;
+    
+    // Clamp inside canvas bounds
+    const sigWidthPercent = 120 / rect.width;
+    const sigHeightPercent = 60 / rect.height;
+    
+    nextX = Math.max(0, Math.min(1 - sigWidthPercent, nextX));
+    nextY = Math.max(0, Math.min(1 - sigHeightPercent, nextY));
+    
+    setStampedSignatures((prev) => {
+      const pageSigs = [...(prev[currentPageIndex] || [])];
+      if (pageSigs[dragIndex]) {
+        pageSigs[dragIndex] = {
+          ...pageSigs[dragIndex],
+          x: nextX,
+          y: nextY
+        };
+      }
+      return {
+        ...prev,
+        [currentPageIndex]: pageSigs
+      };
+    });
+  };
+
+  const handleWorkspaceMouseUp = () => {
+    setDragIndex(null);
   };
 
   const clearPageSignatures = () => {
@@ -218,6 +290,8 @@ export default function SignPDFClient() {
       description="Draw, type, or stamp signatures directly onto your PDF pages."
       icon="sign"
       iconColor="var(--tool-security)"
+      showHeader={!file}
+      layoutMode={file ? 'page-preview' : 'page-scroll'}
     >
       {!file ? (
         <FileDropzone
@@ -228,27 +302,21 @@ export default function SignPDFClient() {
           id="sign-dropzone"
         />
       ) : (
-        <div className="tool-workspace">
-          {/* Left panel: Document Signing Workspace */}
-          <div className="tool-main-panel">
-            <div className="file-item">
-              <ToolIcon name="pdf" size={18} className="ink-subtle" />
-              <span className="file-item-name">{file.name}</span>
-              <button
-                className="file-item-remove"
-                onClick={() => {
-                  setFile(null);
-                  setPdfRenderDoc(null);
-                  setDone(false);
-                }}
-              >
-                <ToolIcon name="x" size={14} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+        <PageToolWorkspace
+          title="Sign PDF"
+          description="Draw, type, or stamp signatures directly onto your PDF pages."
+          icon="sign"
+          iconColor="var(--tool-security)"
+          file={file}
+          onReset={() => {
+            setFile(null);
+            setPdfRenderDoc(null);
+            setDone(false);
+          }}
+          preview={
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', width: '100%', alignItems: 'center' }}>
               {/* Pagination and page actions */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-md)', width: '100%', maxWidth: '650px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                   <button
                     className="btn btn-secondary btn-icon"
@@ -272,12 +340,13 @@ export default function SignPDFClient() {
                 </div>
                 
                 <button className="btn btn-tertiary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={clearPageSignatures}>
-                  Clear Page Signatures
+                  Clear Page
                 </button>
               </div>
 
               {/* Rendering canvas */}
               <div
+                id="signature-overlay-container"
                 style={{
                   position: 'relative',
                   border: '1px solid var(--hairline-strong)',
@@ -285,148 +354,102 @@ export default function SignPDFClient() {
                   overflow: 'hidden',
                   backgroundColor: '#ffffff',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                  cursor: signatureImage ? 'cell' : 'default',
+                  cursor: dragIndex !== null ? 'grabbing' : (signatureImage ? 'cell' : 'default'),
                   alignSelf: 'center',
                   width: '100%',
                   maxWidth: '650px',
+                  userSelect: 'none',
                 }}
                 onClick={handlePageClick}
+                onMouseMove={handleWorkspaceMouseMove}
+                onTouchMove={handleWorkspaceMouseMove}
+                onMouseUp={handleWorkspaceMouseUp}
+                onTouchEnd={handleWorkspaceMouseUp}
+                onMouseLeave={handleWorkspaceMouseUp}
               >
                 <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%', height: 'auto', margin: '0 auto' }} />
 
                 {/* Draw placed signatures */}
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                   {(stampedSignatures[currentPageIndex] || []).map((sig, idx) => (
-                    <span key={idx}>
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'absolute',
+                        left: `${sig.x * 100}%`,
+                        top: `${sig.y * 100}%`,
+                        width: `${(sig.w / 600) * 100}%`,
+                        height: 'auto',
+                        border: dragIndex === idx ? '2px solid var(--brand-blue)' : '1.5px dashed var(--brand-blue)',
+                        cursor: 'move',
+                        pointerEvents: 'auto',
+                        touchAction: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxSizing: 'border-box'
+                      }}
+                      onMouseDown={(e) => handleSignatureStartDrag(e, idx, sig)}
+                      onTouchStart={(e) => handleSignatureStartDrag(e, idx, sig)}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element -- Signature stamps are generated as client-side data URLs. */}
                       <img
                         src={sig.imgData}
                         alt="Placed signature"
                         style={{
-                          position: 'absolute',
-                          left: `${sig.x * 100}%`,
-                          top: `${sig.y * 100}%`,
-                          width: `${(sig.w / 600) * 100}%`,
+                          display: 'block',
+                          width: '100%',
                           height: 'auto',
-                          border: '1px dashed var(--primary)',
+                          pointerEvents: 'none',
                         }}
                       />
-                    </span>
+                      {/* Delete button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          deleteSignature(idx);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '-10px',
+                          right: '-10px',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          backgroundColor: '#ff4d4f',
+                          color: '#ffffff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                          pointerEvents: 'auto',
+                        }}
+                        title="Delete Signature"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
 
                 {renderingPage && (
-                  <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
                     <p style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>Loading page view...</p>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Right panel: Signature Creator and Compile Actions sidebar */}
-          <div className="tool-action-sidebar">
-            {/* Signature creation card */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Signature Stamp</p>
-
-              {/* Mode Toggle */}
-              <div style={{ display: 'flex', gap: 'var(--space-xxs)' }}>
-                <button
-                  className={`btn ${sigMode === 'draw' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '11px' }}
-                  onClick={() => { setSigMode('draw'); setSignatureImage(null); }}
-                >
-                  Draw
-                </button>
-                <button
-                  className={`btn ${sigMode === 'type' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '11px' }}
-                  onClick={() => { setSigMode('type'); setSignatureImage(null); }}
-                >
-                  Type
-                </button>
-              </div>
-
-              {/* Signature Input Options */}
-              {sigMode === 'draw' ? (
-                <div>
-                  <canvas
-                    ref={sigCanvasRef}
-                    width={220}
-                    height={90}
-                    style={{
-                      border: '1px solid var(--hairline-strong)',
-                      backgroundColor: '#ffffff',
-                      borderRadius: 'var(--rounded-md)',
-                      cursor: 'crosshair',
-                      display: 'block',
-                      margin: '0 auto var(--space-xs)',
-                    }}
-                    onMouseDown={startSigDrawing}
-                    onMouseMove={drawSig}
-                    onMouseUp={endSigDrawing}
-                    onMouseLeave={endSigDrawing}
-                    onTouchStart={(e) => startSigDrawing(e.touches[0])}
-                    onTouchMove={(e) => drawSig(e.touches[0])}
-                    onTouchEnd={endSigDrawing}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-xs)' }}>
-                    <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={clearSigPad}>
-                      Clear Pad
-                    </button>
-                    <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={saveSignature}>
-                      Save
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
-                  <input
-                    type="text"
-                    className="input"
-                    placeholder="Type your signature..."
-                    value={typedName}
-                    onChange={(e) => setTypedName(e.target.value)}
-                    style={{ fontSize: '13px', padding: '6px 10px' }}
-                  />
-                  <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '11px', alignSelf: 'flex-end' }} onClick={saveSignature}>
-                    Generate
-                  </button>
-                </div>
-              )}
-
-              {/* Saved Signature Stamp Indicator */}
-              {signatureImage && (
-                <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 'var(--space-sm)', textAlign: 'center' }}>
-                  <p className="caption ink-subtle" style={{ marginBottom: 6 }}>Ready to place (click PDF page):</p>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- Signature previews are generated as client-side data URLs. */}
-                  <img
-                    src={signatureImage}
-                    alt="Signature"
-                    style={{
-                      maxHeight: 45,
-                      maxWidth: '100%',
-                      border: '1px dashed var(--primary)',
-                      borderRadius: 'var(--rounded-sm)',
-                      padding: 4,
-                      backgroundColor: '#ffffff',
-                      margin: '0 auto',
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Actions Sidebar card */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Compile Actions</p>
-
-              <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="ink-muted">Placed signatures:</span>
-                  <span style={{ fontWeight: 600 }}>{Object.values(stampedSignatures).flat().length}</span>
-                </div>
+          }
+          footer={
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', width: '100%' }}>
+              <div style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between' }}>
+                <span className="ink-muted">Placed signatures:</span>
+                <span style={{ fontWeight: 600 }}>{Object.values(stampedSignatures).flat().length}</span>
               </div>
 
               {done && (
@@ -449,7 +472,7 @@ export default function SignPDFClient() {
               <button
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleSave}
-                disabled={processing || Object.keys(stampedSignatures).length === 0}
+                disabled={processing || Object.values(stampedSignatures).flat().length === 0}
                 style={{ width: '100%' }}
                 id="save-signed-pdf-button"
               >
@@ -457,8 +480,103 @@ export default function SignPDFClient() {
                 <ToolIcon name="download" size={16} style={{ marginLeft: 6 }} />
               </button>
             </div>
+          }
+        >
+          {/* Signature creator inside aside settings */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <p className="eyebrow" style={{ color: 'var(--ink-subtle)', marginBottom: '4px' }}>Signature Stamp</p>
+
+            {/* Mode Toggle */}
+            <div style={{ display: 'flex', gap: 'var(--space-xxs)' }}>
+              <button
+                className={`btn ${sigMode === 'draw' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
+                onClick={() => { setSigMode('draw'); setSignatureImage(null); }}
+              >
+                Draw
+              </button>
+              <button
+                className={`btn ${sigMode === 'type' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
+                onClick={() => { setSigMode('type'); setSignatureImage(null); }}
+              >
+                Type
+              </button>
+            </div>
+
+            {/* Signature Input Options */}
+            {sigMode === 'draw' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                <canvas
+                  ref={sigCanvasRef}
+                  width={300}
+                  height={120}
+                  style={{
+                    border: '1px solid var(--hairline-strong)',
+                    backgroundColor: '#ffffff',
+                    borderRadius: 'var(--rounded-md)',
+                    cursor: 'crosshair',
+                    display: 'block',
+                    margin: '0 auto',
+                    width: '100%',
+                    maxWidth: '300px',
+                    height: '120px'
+                  }}
+                  onMouseDown={startSigDrawing}
+                  onMouseMove={drawSig}
+                  onMouseUp={endSigDrawing}
+                  onMouseLeave={endSigDrawing}
+                  onTouchStart={(e) => startSigDrawing(e.touches[0])}
+                  onTouchMove={(e) => drawSig(e.touches[0])}
+                  onTouchEnd={endSigDrawing}
+                />
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-xs)' }}>
+                  <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={clearSigPad}>
+                    Clear Pad
+                  </button>
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={saveSignature}>
+                    Save Signature
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Type your signature..."
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  style={{ fontSize: '13px', padding: '10px 14px', height: '40px' }}
+                />
+                <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px', alignSelf: 'flex-end', marginTop: '4px' }} onClick={saveSignature}>
+                  Generate
+                </button>
+              </div>
+            )}
+
+            {/* Saved Signature Stamp Indicator */}
+            {signatureImage && (
+              <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 'var(--space-sm)', textAlign: 'center', marginTop: '8px' }}>
+                <p className="caption ink-subtle" style={{ marginBottom: 8, fontSize: '11px', fontWeight: '500' }}>Active stamp (click PDF page to place):</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- Signature previews are generated as client-side data URLs. */}
+                <img
+                  src={signatureImage}
+                  alt="Signature"
+                  style={{
+                    maxHeight: 50,
+                    maxWidth: '100%',
+                    border: '1.5px dashed var(--brand-blue)',
+                    borderRadius: 'var(--rounded-sm)',
+                    padding: '6px',
+                    backgroundColor: '#ffffff',
+                    margin: '0 auto',
+                  }}
+                />
+              </div>
+            )}
           </div>
-        </div>
+        </PageToolWorkspace>
       )}
     </ToolPageLayout>
   );

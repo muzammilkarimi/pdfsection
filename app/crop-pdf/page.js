@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import CropPDFClient from './CropPDFClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/crop-pdf" />;
+  return <CropPDFClient />;
 }

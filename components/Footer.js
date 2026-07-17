@@ -63,6 +63,30 @@ export default function Footer() {
           <p className="footer-brand-desc">
             Every tool you need to work with PDFs in one place. Completely free, private, and runs entirely in your browser.
           </p>
+          <div className="footer-social" style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: '8px' }}>
+            <a
+              href="https://x.com/pdfsection"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-social-link"
+              aria-label="Follow PDF Section on X"
+              style={{
+                color: '#a5a8b5',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                textDecoration: 'none',
+                transition: 'color var(--duration-fast) var(--ease-default)'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
+                <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+              </svg>
+              Follow on X
+            </a>
+          </div>
         </div>
 
         {footerToolColumns.map((col) => (
@@ -80,7 +104,18 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <span>(c) {currentYear} PDF Section. All rights reserved.</span>
+        <span>
+          (c) {currentYear} PDF Section. All rights reserved. Made with ❤️ by{' '}
+          <a
+            href="https://x.com/muzammilkarimi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-author-link"
+            style={{ color: '#ffffff', textDecoration: 'none', fontWeight: '500' }}
+          >
+            MAK
+          </a>
+        </span>
         <span>All processing happens in your browser. Your files never leave your device.</span>
       </div>
     </footer>

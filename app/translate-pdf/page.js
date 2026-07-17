@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import TranslatePDFClient from './TranslatePDFClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/translate-pdf" />;
+  return <TranslatePDFClient />;
 }

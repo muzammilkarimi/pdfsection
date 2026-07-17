@@ -1,64 +1,123 @@
 /* ============================================
-   PDF Section — Design Tokens (from DESIGN.md)
-   Linear-inspired dark design system
+   PDF Section — Design Tokens (Miro-inspired)
+   Light & Dark Theme Variables
    ============================================ */
 
-:root {
+:root, :root.light {
   /* ── Brand & Accent ── */
-  --primary: #5e6ad2;
+  --primary: #1c1c1e;
   --on-primary: #ffffff;
-  --primary-hover: #828fff;
-  --primary-focus: #5e69d1;
-  --brand-secure: #7a7fad;
+  --primary-hover: #2c2c34;
+  --primary-focus: #1c1c1e;
+  --brand-yellow: #5e6ad2;
+  --brand-yellow-deep: #4b55c4;
+  --brand-blue: #5e6ad2;
+  --brand-blue-hover: #4b55c4;
 
   /* ── Surface Ladder ── */
-  --canvas: #010102;
-  --surface-1: #0f1011;
-  --surface-2: #141516;
-  --surface-3: #18191a;
-  --surface-4: #191a1b;
+  --canvas: #ffffff;
+  --surface-1: #f7f8fa;
+  --surface-2: #f0f1f4;
+  --surface-3: #e7e8ec;
+  --surface-4: #e0e2e8;
+  --surface-pricing-featured: #f5f3ff;
 
   /* ── Hairline Borders ── */
-  --hairline: #23252a;
-  --hairline-strong: #34343a;
-  --hairline-tertiary: #3e3e44;
+  --hairline: #e0e2e8;
+  --hairline-soft: #eef0f3;
+  --hairline-strong: #c7cad5;
 
   /* ── Ink (Text) ── */
-  --ink: #f7f8f8;
-  --ink-muted: #d0d6e0;
-  --ink-subtle: #8a8f98;
-  --ink-tertiary: #62666d;
-
-  /* ── Inverse ── */
-  --inverse-canvas: #ffffff;
-  --inverse-surface-1: #f5f6f6;
-  --inverse-surface-2: #f6f7f7;
-  --inverse-ink: #000000;
+  --ink: #1c1c1e;
+  --ink-muted: #2c2c34;
+  --ink-subtle: #555a6a;
+  --ink-tertiary: #8e91a0;
 
   /* ── Semantic ── */
-  --semantic-success: #27a644;
-  --semantic-error: #e5484d;
-  --semantic-warning: #f5a623;
-  --semantic-overlay: #000000;
+  --semantic-success: #00b473;
+  --semantic-error: #ff9999;
+  --semantic-error-border: #fbd4d4;
+  --semantic-warning: #fcb900;
+  --semantic-overlay: rgba(5, 0, 56, 0.08);
 
   /* ── Tool Category Colors ── */
-  --tool-organize: #e07c5a;
-  --tool-optimize: #d4574e;
-  --tool-convert-to: #4a90d9;
-  --tool-convert-from: #6b5ce7;
-  --tool-edit: #2ea043;
-  --tool-security: #c9822f;
-  --tool-intelligence: #9b59b6;
+  --tool-organize: #ff6b6b;
+  --tool-optimize: #0fbcb0;
+  --tool-convert-to: #4262ff;
+  --tool-convert-from: #d63384;
+  --tool-edit: #00b473;
+  --tool-security: #ff9f43;
+  --tool-intelligence: #6f42c1;
+  
+  /* ── Layout & Core ── */
+  --header-bg: #ffffff;
+  --footer-bg: #1c1c1e;
+  --nav-height: 64px;
+}
 
+:root.dark {
+  /* ── Brand & Accent ── */
+  --primary: #ffffff;
+  --on-primary: #1c1c1e;
+  --primary-hover: #e0e2e8;
+  --primary-focus: #ffffff;
+  --brand-yellow: #5e6ad2;
+  --brand-yellow-deep: #828fff;
+  --brand-blue: #828fff;
+  --brand-blue-hover: #5e6ad2;
+
+  /* ── Surface Ladder ── */
+  --canvas: #0c0c0e;
+  --surface-1: #151518;
+  --surface-2: #1c1d22;
+  --surface-3: #24252a;
+  --surface-4: #2b2d33;
+  --surface-pricing-featured: #1d1b27;
+
+  /* ── Hairline Borders ── */
+  --hairline: #24252a;
+  --hairline-soft: #1c1d22;
+  --hairline-strong: #44464f;
+
+  /* ── Ink (Text) ── */
+  --ink: #f7f8fa;
+  --ink-muted: #e0e2e8;
+  --ink-subtle: #a5a8b5;
+  --ink-tertiary: #6b6f7e;
+
+  /* ── Semantic ── */
+  --semantic-success: #1ad18f;
+  --semantic-error: #ff9999;
+  --semantic-error-border: #442a2a;
+  --semantic-warning: #fcb900;
+  --semantic-overlay: rgba(0, 0, 0, 0.4);
+
+  /* ── Tool Category Colors ── */
+  --tool-organize: #ff8585;
+  --tool-optimize: #12d3c6;
+  --tool-convert-to: #5b76fe;
+  --tool-convert-from: #f269af;
+  --tool-edit: #1ad18f;
+  --tool-security: #ffa048;
+  --tool-intelligence: #8f64e8;
+  
+  /* ── Layout & Core ── */
+  --header-bg: #151518;
+  --footer-bg: #0c0c0e;
+  --nav-height: 64px;
+}
+
+:root {
   /* ── Spacing ── */
   --space-xxs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
   --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-xxl: 48px;
-  --space-section: 96px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-xxxl: 40px;
+  --space-section: 64px;
 
   /* ── Border Radius ── */
   --rounded-xs: 4px;
@@ -66,14 +125,15 @@
   --rounded-md: 8px;
   --rounded-lg: 12px;
   --rounded-xl: 16px;
-  --rounded-xxl: 24px;
+  --rounded-xxl: 20px;
+  --rounded-xxxl: 28px;
   --rounded-pill: 9999px;
   --rounded-full: 9999px;
 
   /* ── Typography ── */
-  --font-display: 'Inter', 'SF Pro Display', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-text: 'Inter', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: 'Roobert PRO', 'Inter', -apple-system, sans-serif;
+  --font-text: 'Roobert PRO', 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* ── Transitions ── */
   --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -83,8 +143,7 @@
   --duration-normal: 200ms;
   --duration-slow: 350ms;
 
-  /* ── Layout ── */
-  --nav-height: 56px;
+  /* ── Layout constraints ── */
   --max-content: 1280px;
   --max-content-narrow: 960px;
 }

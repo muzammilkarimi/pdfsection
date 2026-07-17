@@ -4,8 +4,8 @@ export const metadata = {
     follow: false,
   },
 };
-import FeatureSandbox from '@/components/FeatureSandbox';
+import ComparePDFClient from './ComparePDFClient';
 
 export default function Page() {
-  return <FeatureSandbox route="/compare-pdf" />;
+  return <ComparePDFClient />;
 }
