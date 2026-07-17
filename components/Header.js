@@ -9,6 +9,14 @@ import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (catId) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [catId]: !prev[catId],
+    }));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -163,7 +171,7 @@ export default function Header() {
 
         <hr className="divider" style={{ margin: '12px 0' }} />
 
-        {navLinks.map((link) => (
+        {navLinks.filter(link => link.label !== 'Tools').map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -177,27 +185,84 @@ export default function Header() {
         <hr className="divider" style={{ margin: '12px 0' }} />
 
         {/* Tool categories in mobile menu */}
-        {LIVE_TOOL_CATEGORIES.map((cat) => (
-          <div key={cat.id} style={{ marginBottom: '16px' }}>
-            <div className="eyebrow" style={{ color: cat.color, padding: '8px 16px', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {cat.label}
-            </div>
-            {cat.tools.map((tool) => (
-              <Link
-                key={tool.id}
-                href={tool.route}
-                className="mobile-nav-link"
-                onClick={() => setMobileOpen(false)}
-                style={{ paddingLeft: '24px', fontSize: '14px' }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <ToolIcon name={tool.icon} size={16} style={{ color: cat.color }} />
-                  {tool.name}
-                </span>
-              </Link>
-            ))}
+        <div style={{ padding: '0 16px', marginTop: '12px' }}>
+          <div className="eyebrow" style={{ color: 'var(--ink-tertiary)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
+            PDF Tools By Category
           </div>
-        ))}
+          {LIVE_TOOL_CATEGORIES.map((cat) => {
+            const isExpanded = !!expandedCategories[cat.id];
+            return (
+              <div key={cat.id} style={{ marginBottom: '8px', border: '1px solid var(--hairline)', borderRadius: 'var(--rounded-md)', overflow: 'hidden', backgroundColor: 'var(--surface-1)' }}>
+                <button
+                  onClick={() => toggleCategory(cat.id)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--ink)',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '13.5px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: cat.color }}></span>
+                    {cat.label}
+                  </span>
+                  <svg 
+                    width="12" 
+                    height="12" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{ 
+                      transition: 'transform var(--duration-normal)', 
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      color: 'var(--ink-tertiary)'
+                    }}
+                  >
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                
+                <div className={`mobile-accordion ${isExpanded ? 'open' : ''}`}>
+                  <div className="mobile-accordion-inner" style={{ borderTop: isExpanded ? '1px solid var(--hairline-soft)' : '1px solid transparent', backgroundColor: 'var(--canvas)' }}>
+                    <div style={{ padding: '6px 0' }}>
+                      {cat.tools.map((tool) => (
+                        <Link
+                          key={tool.id}
+                          href={tool.route}
+                          className="mobile-nav-link"
+                          onClick={() => setMobileOpen(false)}
+                          style={{ 
+                            padding: '10px 16px 10px 32px', 
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            textDecoration: 'none',
+                            color: 'var(--ink-muted)'
+                          }}
+                        >
+                          <ToolIcon name={tool.icon} size={15} style={{ color: cat.color }} />
+                          {tool.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </>
   );

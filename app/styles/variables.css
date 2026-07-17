@@ -5,33 +5,33 @@
 
 :root, :root.light {
   /* ── Brand & Accent ── */
-  --primary: #1c1c1e;
+  --primary: #5e6ad2;
   --on-primary: #ffffff;
-  --primary-hover: #2c2c34;
-  --primary-focus: #1c1c1e;
+  --primary-hover: #4b55c4;
+  --primary-focus: #3b44b0;
   --brand-yellow: #5e6ad2;
   --brand-yellow-deep: #4b55c4;
   --brand-blue: #5e6ad2;
   --brand-blue-hover: #4b55c4;
 
   /* ── Surface Ladder ── */
-  --canvas: #ffffff;
-  --surface-1: #f7f8fa;
-  --surface-2: #f0f1f4;
-  --surface-3: #e7e8ec;
-  --surface-4: #e0e2e8;
+  --canvas: #fbfaff;
+  --surface-1: #f6f4fa;
+  --surface-2: #ededf5;
+  --surface-3: #e3e2ed;
+  --surface-4: #d9d8e5;
   --surface-pricing-featured: #f5f3ff;
 
   /* ── Hairline Borders ── */
-  --hairline: #e0e2e8;
-  --hairline-soft: #eef0f3;
-  --hairline-strong: #c7cad5;
+  --hairline: #e4e2ec;
+  --hairline-soft: #f2f0f7;
+  --hairline-strong: #cfcbdd;
 
   /* ── Ink (Text) ── */
-  --ink: #1c1c1e;
-  --ink-muted: #2c2c34;
-  --ink-subtle: #555a6a;
-  --ink-tertiary: #8e91a0;
+  --ink: #141320;
+  --ink-muted: #2c2b3d;
+  --ink-subtle: #5f5b73;
+  --ink-tertiary: #8c889f;
 
   /* ── Semantic ── */
   --semantic-success: #00b473;
@@ -51,39 +51,39 @@
   
   /* ── Layout & Core ── */
   --header-bg: #ffffff;
-  --footer-bg: #1c1c1e;
+  --footer-bg: #12111a;
   --nav-height: 64px;
 }
 
 :root.dark {
   /* ── Brand & Accent ── */
-  --primary: #ffffff;
-  --on-primary: #1c1c1e;
-  --primary-hover: #e0e2e8;
-  --primary-focus: #ffffff;
-  --brand-yellow: #5e6ad2;
-  --brand-yellow-deep: #828fff;
+  --primary: #828fff;
+  --on-primary: #0e0d14;
+  --primary-hover: #9ca6ff;
+  --primary-focus: #828fff;
+  --brand-yellow: #828fff;
+  --brand-yellow-deep: #9ca6ff;
   --brand-blue: #828fff;
   --brand-blue-hover: #5e6ad2;
 
   /* ── Surface Ladder ── */
-  --canvas: #0c0c0e;
-  --surface-1: #151518;
-  --surface-2: #1c1d22;
-  --surface-3: #24252a;
-  --surface-4: #2b2d33;
+  --canvas: #0a0910;
+  --surface-1: #12111a;
+  --surface-2: #1b1926;
+  --surface-3: #242233;
+  --surface-4: #2d2a3f;
   --surface-pricing-featured: #1d1b27;
 
   /* ── Hairline Borders ── */
-  --hairline: #24252a;
-  --hairline-soft: #1c1d22;
-  --hairline-strong: #44464f;
+  --hairline: #242233;
+  --hairline-soft: #1b1926;
+  --hairline-strong: #423e59;
 
   /* ── Ink (Text) ── */
-  --ink: #f7f8fa;
-  --ink-muted: #e0e2e8;
-  --ink-subtle: #a5a8b5;
-  --ink-tertiary: #6b6f7e;
+  --ink: #f4f3f7;
+  --ink-muted: #dad7e5;
+  --ink-subtle: #a7a3bb;
+  --ink-tertiary: #76728a;
 
   /* ── Semantic ── */
   --semantic-success: #1ad18f;
@@ -102,8 +102,8 @@
   --tool-intelligence: #8f64e8;
   
   /* ── Layout & Core ── */
-  --header-bg: #151518;
-  --footer-bg: #0c0c0e;
+  --header-bg: #12111a;
+  --footer-bg: #0a0910;
   --nav-height: 64px;
 }
 
