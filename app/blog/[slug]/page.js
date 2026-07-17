@@ -203,7 +203,7 @@ export default async function BlogArticlePage({ params }) {
       <div className="container" style={{ maxWidth: '700px' }}>
         
         {/* Back Button */}
-        <Link href="/blog" className="btn btn-secondary btn-icon" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px' }}>
+        <Link href="/blog" className="btn btn-secondary" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px', width: 'fit-content' }}>
           ◀ Back to articles
         </Link>
 

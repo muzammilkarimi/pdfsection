@@ -9,7 +9,7 @@ export default function AboutPage() {
       <div className="container" style={{ maxWidth: '900px' }}>
         
         {/* Back Button */}
-        <Link href="/" className="btn btn-secondary btn-icon" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px' }}>
+        <Link href="/" className="btn btn-secondary" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px', width: 'fit-content' }}>
           ◀ Back to workspace
         </Link>
 
