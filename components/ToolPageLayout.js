@@ -68,46 +68,7 @@ export default function ToolPageLayout({
           )}
           <div className="tool-page-body">{children}</div>
 
-          {/* SEO Instructions and FAQs Section */}
-          {layoutMode === 'page-scroll' && (
-            <section className="tool-seo-section" aria-label={`Instructions and FAQs for ${title}`}>
-              <div className="tool-seo-container">
-                <div className="tool-seo-grid">
-                  {/* How-To Column */}
-                  <div className="seo-card seo-how-to-card">
-                    <h2 className="body-lg" style={{ fontWeight: 600, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <ToolIcon name="reorder" size={18} style={{ color: 'var(--primary)' }} />
-                      How to use {title}
-                    </h2>
-                    <ol className="seo-steps-list">
-                      {seoData.steps.map((step, index) => (
-                        <li key={index} className="seo-step-item">
-                          <span className="seo-step-number">{index + 1}</span>
-                          <p className="body-sm ink-muted">{step}</p>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
 
-                  {/* FAQ Accordion Column */}
-                  <div className="seo-card seo-faq-card">
-                    <h2 className="body-lg" style={{ fontWeight: 600, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <ToolIcon name="forms" size={18} style={{ color: 'var(--primary)' }} />
-                      Frequently Asked Questions
-                    </h2>
-                    <div className="seo-faq-list">
-                      {seoData.faqs.map((faq, index) => (
-                        <div key={index} className="seo-faq-item">
-                          <h3 className="body-sm" style={{ fontWeight: 600, color: 'var(--ink)' }}>{faq.q}</h3>
-                          <p className="body-sm ink-muted" style={{ marginTop: 4, lineHeight: 1.5 }}>{faq.a}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
         </div>
       </div>
     </main>
