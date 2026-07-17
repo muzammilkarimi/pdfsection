@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { ToolIcon } from './Icons';
 
 export default function FileDropzone({
@@ -132,6 +133,23 @@ export default function FileDropzone({
             </div>
             <div className="dropzone-subtitle">
               {dropHint}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: 'var(--space-md)', color: 'var(--ink-muted)', fontSize: '11px', fontWeight: '500', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 'var(--rounded-md)', border: '1px solid var(--hairline)' }}>
+              <ToolIcon name="lock" size={12} style={{ color: 'var(--brand-blue)', flexShrink: 0 }} />
+              <span>100% Secure. Files are processed locally inside your browser and never uploaded.</span>
+              <Link 
+                href="/blog/stop-uploading-pdfs-online-privacy-risks" 
+                title="Learn why client-side processing is secure"
+                style={{ 
+                  color: 'var(--primary)', 
+                  textDecoration: 'underline', 
+                  marginLeft: '2px', 
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Learn why
+              </Link>
             </div>
           </div>
           <input

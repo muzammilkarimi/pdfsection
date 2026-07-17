@@ -85,31 +85,58 @@ export default function OfficeToPDFClient({ toolId }) {
           
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(docXmlText, 'application/xml');
-          const paragraphs = xmlDoc.getElementsByTagName('w:p');
+          
+          const getNodesByTagName = (parent, localName) => {
+            let nodes = parent.getElementsByTagName('w:' + localName);
+            if (nodes && nodes.length > 0) return Array.from(nodes);
+            try {
+              nodes = parent.getElementsByTagNameNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', localName);
+              if (nodes && nodes.length > 0) return Array.from(nodes);
+            } catch(e) {}
+            nodes = parent.getElementsByTagName(localName);
+            if (nodes && nodes.length > 0) return Array.from(nodes);
+            
+            const results = [];
+            const walk = (node) => {
+              if (node.nodeType === 1) {
+                const name = node.nodeName;
+                if (name === localName || name === 'w:' + localName || name.endsWith(':' + localName)) {
+                  results.push(node);
+                }
+                for (let i = 0; i < node.childNodes.length; i++) {
+                  walk(node.childNodes[i]);
+                }
+              }
+            };
+            walk(parent);
+            return results;
+          };
+
+          const paragraphs = getNodesByTagName(xmlDoc, 'p');
           
           for (let p = 0; p < paragraphs.length; p++) {
             const pNode = paragraphs[p];
             let isHeading = false;
             
             // Identify heading style
-            const pStyleNode = pNode.getElementsByTagName('w:pStyle')[0];
+            const pStyleNode = getNodesByTagName(pNode, 'pStyle')[0];
             if (pStyleNode) {
-              const val = pStyleNode.getAttribute('w:val');
+              const val = pStyleNode.getAttribute('w:val') || pStyleNode.getAttribute('val');
               if (val && val.toLowerCase().includes('heading')) {
                 isHeading = true;
               }
             }
             
             // Gather run formatting details
-            const runs = pNode.getElementsByTagName('w:r');
+            const runs = getNodesByTagName(pNode, 'r');
             let runsData = [];
             
             for (let r = 0; r < runs.length; r++) {
               const rNode = runs[r];
-              const isBold = rNode.getElementsByTagName('w:b').length > 0;
-              const isItalic = rNode.getElementsByTagName('w:i').length > 0;
+              const isBold = getNodesByTagName(rNode, 'b').length > 0;
+              const isItalic = getNodesByTagName(rNode, 'i').length > 0;
               
-              const tNodes = rNode.getElementsByTagName('w:t');
+              const tNodes = getNodesByTagName(rNode, 't');
               let tText = '';
               for (let t = 0; t < tNodes.length; t++) {
                 tText += tNodes[t].textContent;
@@ -131,6 +158,12 @@ export default function OfficeToPDFClient({ toolId }) {
                 runs: runsData
               });
             }
+          }
+
+          // Fallback to plain regex extraction if DOMParser failed to find any paragraphs
+          if (extractedTexts.length === 0) {
+            const textMatches = docXmlText.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
+            extractedTexts = textMatches.map((tag) => decodeXml(tag.replace(/<[^>]*>/g, '')));
           }
         } else {
           extractedTexts = ['[Blank Document]'];
@@ -171,6 +204,8 @@ export default function OfficeToPDFClient({ toolId }) {
       const pdfDoc = await PDFDocument.create();
       const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const helveticaBoldOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
 
       let page = pdfDoc.addPage([600, 800]);
       let yOffset = 740;
@@ -207,26 +242,74 @@ export default function OfficeToPDFClient({ toolId }) {
           yOffset = 740;
         }
 
-        const isHeader = textSegment.startsWith('[Slide') || textSegment.startsWith('[Blank') || textSegment.startsWith('[Empty');
-        const fontSize = isHeader ? 14 : 11;
-        const font = isHeader ? helveticaBold : helveticaFont;
-        const color = isHeader ? rgb(0.37, 0.42, 0.82) : rgb(0.15, 0.15, 0.15);
-
-        const wrapped = wrapText(sanitizeForWinAnsi(textSegment));
-        wrapped.forEach((line) => {
-          if (yOffset < 60) {
-            page = pdfDoc.addPage([600, 800]);
-            yOffset = 740;
+        if (textSegment && textSegment.type === 'paragraph') {
+          const fontSize = textSegment.isHeading ? 14 : 11;
+          const currentLineHeight = textSegment.isHeading ? 22 : 16;
+          
+          if (textSegment.isHeading) {
+            yOffset -= 8;
           }
-          page.drawText(line, {
-            x: 50,
-            y: yOffset,
-            size: fontSize,
-            font: font,
-            color: color,
+
+          let xOffset = 50;
+
+          for (const run of textSegment.runs) {
+            const font = (run.isBold && run.isItalic)
+              ? helveticaBoldOblique
+              : run.isBold
+              ? helveticaBold
+              : run.isItalic
+              ? helveticaOblique
+              : helveticaFont;
+
+            const color = textSegment.isHeading ? rgb(0.37, 0.42, 0.82) : rgb(0.15, 0.15, 0.15);
+            const words = run.text.split(/(\s+)/);
+
+            for (const word of words) {
+              if (!word) continue;
+              const wordWidth = font.widthOfTextAtSize(sanitizeForWinAnsi(word), fontSize);
+
+              if (xOffset + wordWidth > 550) {
+                xOffset = 50;
+                yOffset -= currentLineHeight;
+                if (yOffset < 60) {
+                  page = pdfDoc.addPage([600, 800]);
+                  yOffset = 740;
+                }
+              }
+
+              page.drawText(sanitizeForWinAnsi(word), {
+                x: xOffset,
+                y: yOffset,
+                size: fontSize,
+                font: font,
+                color: color,
+              });
+              xOffset += wordWidth;
+            }
+          }
+          yOffset -= currentLineHeight;
+        } else if (typeof textSegment === 'string') {
+          const isHeader = textSegment.startsWith('[Slide') || textSegment.startsWith('[Blank') || textSegment.startsWith('[Empty');
+          const fontSize = isHeader ? 14 : 11;
+          const font = isHeader ? helveticaBold : helveticaFont;
+          const color = isHeader ? rgb(0.37, 0.42, 0.82) : rgb(0.15, 0.15, 0.15);
+
+          const wrapped = wrapText(sanitizeForWinAnsi(textSegment));
+          wrapped.forEach((line) => {
+            if (yOffset < 60) {
+              page = pdfDoc.addPage([600, 800]);
+              yOffset = 740;
+            }
+            page.drawText(line, {
+              x: 50,
+              y: yOffset,
+              size: fontSize,
+              font: font,
+              color: color,
+            });
+            yOffset -= isHeader ? 26 : 18;
           });
-          yOffset -= isHeader ? 26 : 18;
-        });
+        }
       }
 
       setProgress(95);

@@ -40,8 +40,7 @@ export default function Header() {
     { label: 'Tools', href: '/#tools' },
     { label: 'Compress', href: '/compress-pdf' },
     { label: 'Merge', href: '/merge-pdf' },
-    { label: 'Split', href: '/split-pdf' },
-    { label: 'Convert', href: '/jpg-to-pdf' },
+    { label: 'Blog', href: '/blog' },
   ];
 
   return (

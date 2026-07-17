@@ -22,7 +22,7 @@ export const metadata = {
     template: '%s | PDF Section',
   },
   description:
-    'Every PDF tool you need in one place. Merge, split, compress, convert, edit, sign, and secure your PDFs. 100% free, private, and runs entirely in your browser.',
+    'Every PDF tool you need in one place. Merge, split, compress, convert, edit, sign, and secure your PDFs without uploading them to a server. 100% free, private, and runs entirely in your browser.',
   keywords: [
     'PDF tools',
     'merge PDF',

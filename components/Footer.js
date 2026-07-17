@@ -31,6 +31,7 @@ export default function Footer() {
         { label: 'PDF to JPG', href: '/pdf-to-jpg' },
         { label: 'JPG to PDF', href: '/jpg-to-pdf' },
         { label: 'PDF to Markdown', href: '/pdf-to-markdown' },
+        { label: 'Blog & Articles', href: '/blog' },
       ],
     },
     {
@@ -63,7 +64,23 @@ export default function Footer() {
           <p className="footer-brand-desc">
             Every tool you need to work with PDFs in one place. Completely free, private, and runs entirely in your browser.
           </p>
-          <div className="footer-social" style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: '8px' }}>
+          <div className="footer-social" style={{ display: 'flex', gap: 'var(--space-md)', marginTop: '8px', flexWrap: 'wrap' }}>
+            <Link
+              href="/about"
+              className="footer-social-link"
+              style={{
+                color: '#a5a8b5',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                textDecoration: 'none',
+                transition: 'color var(--duration-fast) var(--ease-default)'
+              }}
+            >
+              ℹ️ About Us
+            </Link>
+
             <a
               href="https://x.com/pdfsection"
               target="_blank"
@@ -104,18 +121,28 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <span>
-          (c) {currentYear} PDF Section. All rights reserved. Made with ❤️ by{' '}
-          <a
-            href="https://x.com/muzammilkarimi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-author-link"
-            style={{ color: '#ffffff', textDecoration: 'none', fontWeight: '500' }}
-          >
-            MAK
-          </a>
-        </span>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>
+            (c) {currentYear} PDF Section. All rights reserved. Made with ❤️ by{' '}
+            <a
+              href="https://x.com/muzammilkarimi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-author-link"
+              style={{ color: '#ffffff', textDecoration: 'none', fontWeight: '500' }}
+            >
+              MAK
+            </a>
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+          <Link href="/privacy" className="footer-bottom-link" style={{ color: 'inherit', textDecoration: 'none' }}>
+            Privacy Policy
+          </Link>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+          <Link href="/terms" className="footer-bottom-link" style={{ color: 'inherit', textDecoration: 'none' }}>
+            Terms of Service
+          </Link>
+        </div>
         <span>All processing happens in your browser. Your files never leave your device.</span>
       </div>
     </footer>

@@ -59,8 +59,33 @@ export default function HomePage() {
             </span>
             <h1 className="home-title">PDF Section</h1>
             <p className="home-subtitle">
-              Merge, split, compress, convert, edit, and secure PDF files without
-              uploading them to a server.
+              Merge, split, compress, convert, edit, and secure PDF files{' '}
+              <strong style={{ color: 'var(--brand-yellow)', fontWeight: '700' }}>without uploading them to a server</strong>
+              <Link 
+                href="/blog/stop-uploading-pdfs-online-privacy-risks" 
+                title="Why local processing is safer than cloud uploading"
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  width: '16px', 
+                  height: '16px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)', 
+                  color: 'var(--brand-yellow)',
+                  fontSize: '10px', 
+                  fontWeight: '800',
+                  textDecoration: 'none',
+                  marginLeft: '6px',
+                  verticalAlign: 'middle',
+                  transition: 'background-color var(--duration-fast)',
+                  cursor: 'pointer',
+                  border: '1px solid color-mix(in srgb, var(--brand-yellow) 30%, transparent)'
+                }}
+              >
+                ?
+              </Link>
+              .
             </p>
           </div>
 
