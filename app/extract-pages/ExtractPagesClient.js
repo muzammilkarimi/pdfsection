@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, extractPages, downloadPdf } from '@/lib/pdfUtils';
 
@@ -67,8 +68,15 @@ export default function ExtractPagesClient() {
           id="extract-dropzone"
         />
       ) : (
-        <div className="page-editor-workspace">
-          <section className="page-preview-panel" aria-label="PDF page previews">
+        <PageToolWorkspace
+          title="Extract Pages"
+          description="Select pages on the left to export into a new PDF document."
+          icon="extract"
+          iconColor="var(--tool-organize)"
+          file={file}
+          onReset={resetFile}
+          ariaLabel="Extract pages workspace"
+          preview={(
             <PageThumbnails
               file={file}
               selectedPages={selectedPages}
@@ -76,54 +84,11 @@ export default function ExtractPagesClient() {
               maxWidth={150}
               className="page-preview-grid"
             />
-          </section>
-
-          <aside className="page-controls-panel" aria-label="Extract pages settings">
-            <div className="page-controls-header">
-              <div
-                className="tool-page-icon"
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--tool-organize) 14%, var(--surface-2))',
-                  color: 'var(--tool-organize)',
-                }}
-              >
-                <ToolIcon name="extract" size={22} />
-              </div>
-              <div className="tool-page-heading">
-                <h1 className="tool-page-title">Extract Pages</h1>
-                <p className="tool-page-description">Select pages on the left to export into a new PDF.</p>
-              </div>
-            </div>
-
-            <div className="page-controls-body">
-              <div className="page-file-card">
-                <div className="page-file-icon">
-                  <ToolIcon name="pdf" size={18} />
-                </div>
-                <div className="page-file-meta">
-                  <strong>{file.name}</strong>
-                  <span>{(file.size / 1024 / 1024).toFixed(1)} MB</span>
-                </div>
-                <button className="file-item-remove" onClick={resetFile} aria-label={`Remove ${file.name}`}>
-                  <ToolIcon name="x" size={14} />
-                </button>
-              </div>
-
-              <div className="page-control-stat">
-                <span>Pages selected</span>
-                <strong>{selectedPages.length}</strong>
-              </div>
-
-              <div className="page-help-note">
-                <ToolIcon name="check" size={16} />
-                <span>Only page previews are shown on the left. Click thumbnails to choose pages for extraction.</span>
-              </div>
-
-              {done && <div className="merge-success">Extraction successful. Your PDF has been downloaded.</div>}
-            </div>
-
-            <div className="page-controls-footer">
+          )}
+          footer={(
+            <>
               <button
+                type="button"
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleExtract}
                 disabled={selectedPages.length === 0 || processing}
@@ -132,12 +97,30 @@ export default function ExtractPagesClient() {
                 {processing ? 'Extracting...' : 'Extract Pages'}
                 <ToolIcon name="download" size={16} />
               </button>
-            </div>
-          </aside>
-        </div>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={resetFile}
+                disabled={processing}
+              >
+                Start over
+              </button>
+            </>
+          )}
+        >
+          <div className="page-control-stat">
+            <span>Pages selected to extract</span>
+            <strong>{selectedPages.length}</strong>
+          </div>
+
+          <div className="page-help-note">
+            <ToolIcon name="check" size={16} />
+            <span>Click page thumbnails on the left to select which pages will be extracted into your new PDF.</span>
+          </div>
+
+          {done && <div className="merge-success">✓ Extraction successful. Your PDF has been downloaded.</div>}
+        </PageToolWorkspace>
       )}
     </ToolPageLayout>
   );
 }
-
-

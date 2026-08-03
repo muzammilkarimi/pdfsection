@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { downloadBlob } from '@/lib/pdfUtils';
 import { getToolById } from '@/lib/tools';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 
 export default function OfficeToPDFClient({ toolId }) {
   const toolInfo = getToolById(toolId) || {
     name: 'Office to PDF',
-    description: 'Convert Office documents to PDF format',
+    description: 'Convert Office documents to PDF format with full formatting',
     categoryColor: 'var(--tool-convert-to)',
     icon: 'word',
   };
@@ -22,6 +21,9 @@ export default function OfficeToPDFClient({ toolId }) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [renderingPreview, setRenderingPreview] = useState(false);
+
+  const previewContainerRef = useRef(null);
 
   // File extension details
   const fileExts = {
@@ -38,313 +40,206 @@ export default function OfficeToPDFClient({ toolId }) {
     setProgress(0);
   }, []);
 
+  const resetFile = () => {
+    setFile(null);
+    setDone(false);
+    setProgress(0);
+  };
+
+  // Render live preview when file is selected
+  useEffect(() => {
+    if (!file || !previewContainerRef.current) return;
+
+    let isMounted = true;
+    setRenderingPreview(true);
+
+    const renderPreview = async () => {
+      try {
+        const container = previewContainerRef.current;
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (toolId === 'word-to-pdf') {
+          const arrayBuffer = await file.arrayBuffer();
+          const mammoth = await import('mammoth');
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+
+          if (isMounted) {
+            const docDiv = document.createElement('div');
+            docDiv.className = 'word-styled-doc';
+            docDiv.innerHTML = result.value || '<p><em>Empty Document</em></p>';
+            container.appendChild(docDiv);
+          }
+        } else if (toolId === 'excel-to-pdf') {
+          const zip = new JSZip();
+          const content = await zip.loadAsync(file);
+
+          const stringsFile = content.file('xl/sharedStrings.xml');
+          let sharedStrings = [];
+          if (stringsFile) {
+            const stringsXml = await stringsFile.async('text');
+            const matches = stringsXml.match(/<t[^>]*>(.*?)<\/t>/g) || [];
+            sharedStrings = matches.map((m) => m.replace(/<[^>]*>/g, ''));
+          }
+
+          if (isMounted) {
+            const docDiv = document.createElement('div');
+            docDiv.className = 'word-styled-doc';
+            let html = `<h2>${file.name} - Spreadsheet</h2><table class="excel-preview-table">`;
+
+            if (sharedStrings.length > 0) {
+              html += '<thead><tr><th>#</th><th>Cell Content</th></tr></thead><tbody>';
+              sharedStrings.forEach((str, i) => {
+                html += `<tr><td style="width: 40px; color: #888;">${i + 1}</td><td>${str}</td></tr>`;
+              });
+              html += '</tbody>';
+            } else {
+              html += '<tr><td><em>Empty Spreadsheet</em></td></tr>';
+            }
+            html += '</table>';
+            docDiv.innerHTML = html;
+            container.appendChild(docDiv);
+          }
+        } else if (toolId === 'powerpoint-to-pdf') {
+          const zip = new JSZip();
+          const content = await zip.loadAsync(file);
+
+          const slideFiles = Object.keys(content.files).filter((name) =>
+            name.startsWith('ppt/slides/slide') && name.endsWith('.xml')
+          );
+
+          if (isMounted) {
+            const docDiv = document.createElement('div');
+            docDiv.className = 'word-styled-doc';
+            let html = `<h2>${file.name} - Presentation</h2>`;
+
+            for (const [idx, slidePath] of slideFiles.sort().entries()) {
+              const slideXml = await content.files[slidePath].async('text');
+              const matches = slideXml.match(/<a:t[^>]*>(.*?)<\/a:t>/g) || [];
+              const texts = matches.map((m) => m.replace(/<[^>]*>/g, ''));
+
+              html += `<div style="border: 1px solid #dcdcdc; padding: 18px; margin-bottom: 18px; border-radius: 6px; background: #fafafa;">`;
+              html += `<h3 style="margin: 0 0 10px 0; color: #1f4e78; font-size: 14pt;">Slide ${idx + 1}</h3>`;
+              if (texts.length > 0) {
+                html += `<ul style="margin: 0; padding-left: 20px;">`;
+                texts.forEach((t) => { html += `<li style="margin-bottom: 6px;">${t}</li>`; });
+                html += `</ul>`;
+              } else {
+                html += `<p style="color: #888; margin: 0;">[Blank Slide]</p>`;
+              }
+              html += `</div>`;
+            }
+
+            docDiv.innerHTML = html || '<p><em>Empty Presentation</em></p>';
+            container.appendChild(docDiv);
+          }
+        }
+      } catch (err) {
+        console.error('Error rendering preview:', err);
+      } finally {
+        if (isMounted) setRenderingPreview(false);
+      }
+    };
+
+    renderPreview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [file, toolId]);
+
   const handleConvert = async () => {
     if (!file) return;
     setProcessing(true);
     setProgress(15);
 
-    const decodeXml = (str) => {
-      return str
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'");
-    };
-
-    const sanitizeForWinAnsi = (str) => {
-      if (!str) return '';
-      return str
-        .replace(/₹/g, 'Rs.')
-        .replace(/[“”]/g, '"')
-        .replace(/[‘’]/g, "'")
-        .replace(/–/g, '-')
-        .replace(/—/g, '-')
-        .replace(/…/g, '...')
-        .split('')
-        .filter(char => {
-          const code = char.charCodeAt(0);
-          return code <= 255;
-        })
-        .join('');
-    };
+    let tempExportContainer = null;
 
     try {
-      const zip = new JSZip();
-      const content = await zip.loadAsync(file);
-      setProgress(40);
+      let htmlContent = '';
 
-      let extractedTexts = [];
-
-      // Differentiate conversions based on toolId
       if (toolId === 'word-to-pdf') {
-        // Read word/document.xml
-        const docXmlFile = content.file('word/document.xml');
-        if (docXmlFile) {
-          const docXmlText = await docXmlFile.async('text');
-          
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(docXmlText, 'application/xml');
-          
-          const getNodesByTagName = (parent, localName) => {
-            let nodes = parent.getElementsByTagName('w:' + localName);
-            if (nodes && nodes.length > 0) return Array.from(nodes);
-            try {
-              nodes = parent.getElementsByTagNameNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', localName);
-              if (nodes && nodes.length > 0) return Array.from(nodes);
-            } catch(e) {}
-            nodes = parent.getElementsByTagName(localName);
-            if (nodes && nodes.length > 0) return Array.from(nodes);
-            
-            const results = [];
-            const walk = (node) => {
-              if (node.nodeType === 1) {
-                const name = node.nodeName;
-                if (name === localName || name === 'w:' + localName || name.endsWith(':' + localName)) {
-                  results.push(node);
-                }
-                for (let i = 0; i < node.childNodes.length; i++) {
-                  walk(node.childNodes[i]);
-                }
-              }
-            };
-            walk(parent);
-            return results;
-          };
-
-          const paragraphs = getNodesByTagName(xmlDoc, 'p');
-          
-          for (let p = 0; p < paragraphs.length; p++) {
-            const pNode = paragraphs[p];
-            let isHeading = false;
-            
-            // Identify heading style
-            const pStyleNode = getNodesByTagName(pNode, 'pStyle')[0];
-            if (pStyleNode) {
-              const val = pStyleNode.getAttribute('w:val') || pStyleNode.getAttribute('val');
-              if (val && val.toLowerCase().includes('heading')) {
-                isHeading = true;
-              }
-            }
-            
-            // Gather run formatting details
-            const runs = getNodesByTagName(pNode, 'r');
-            let runsData = [];
-            
-            for (let r = 0; r < runs.length; r++) {
-              const rNode = runs[r];
-              const isBold = getNodesByTagName(rNode, 'b').length > 0;
-              const isItalic = getNodesByTagName(rNode, 'i').length > 0;
-              
-              const tNodes = getNodesByTagName(rNode, 't');
-              let tText = '';
-              for (let t = 0; t < tNodes.length; t++) {
-                tText += tNodes[t].textContent;
-              }
-              
-              if (tText) {
-                runsData.push({
-                  text: decodeXml(tText),
-                  isBold,
-                  isItalic
-                });
-              }
-            }
-            
-            if (runsData.length > 0 || isHeading) {
-              extractedTexts.push({
-                type: 'paragraph',
-                isHeading,
-                runs: runsData
-              });
-            }
-          }
-
-          // Fallback to plain regex extraction if DOMParser failed to find any paragraphs
-          if (extractedTexts.length === 0) {
-            const textMatches = docXmlText.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
-            extractedTexts = textMatches.map((tag) => decodeXml(tag.replace(/<[^>]*>/g, '')));
-          }
-        } else {
-          extractedTexts = ['[Blank Document]'];
-        }
-      } else if (toolId === 'excel-to-pdf') {
-        // Read xl/sharedStrings.xml
-        const stringsFile = content.file('xl/sharedStrings.xml');
-        if (stringsFile) {
-          const stringsXml = await stringsFile.async('text');
-          const textMatches = stringsXml.match(/<t[^>]*>(.*?)<\/t>/g) || [];
-          extractedTexts = textMatches.map((tag) => decodeXml(tag.replace(/<[^>]*>/g, '')));
-        } else {
-          extractedTexts = ['[Empty Spreadsheet]'];
-        }
-      } else if (toolId === 'powerpoint-to-pdf') {
-        // Scan slide files
-        const slideFiles = Object.keys(content.files).filter((name) =>
-          name.startsWith('ppt/slides/slide') && name.endsWith('.xml')
-        );
-
-        for (const slidePath of slideFiles.sort()) {
-          const slideXml = await content.files[slidePath].async('text');
-          const textMatches = slideXml.match(/<a:t[^>]*>(.*?)<\/a:t>/g) || [];
-          const slideTexts = textMatches.map((tag) => decodeXml(tag.replace(/<[^>]*>/g, '')));
-          if (slideTexts.length > 0) {
-            extractedTexts.push(`[Slide Page]`);
-            extractedTexts.push(...slideTexts);
-          }
-        }
-        if (extractedTexts.length === 0) {
-          extractedTexts = ['[Empty Presentation]'];
-        }
+        const arrayBuffer = await file.arrayBuffer();
+        const mammoth = await import('mammoth');
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        htmlContent = result.value || '<p>Empty Document</p>';
+      } else {
+        const container = previewContainerRef.current;
+        htmlContent = container?.firstElementChild?.innerHTML || `<p>${file.name}</p>`;
       }
 
-      setProgress(75);
+      setProgress(40);
 
-      // Create PDF using extracted texts
-      const pdfDoc = await PDFDocument.create();
-      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-      const helveticaBoldOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      // Create a fixed in-viewport container (A4 width: 794px at 96dpi)
+      tempExportContainer = document.createElement('div');
+      tempExportContainer.style.position = 'fixed';
+      tempExportContainer.style.left = '0px';
+      tempExportContainer.style.top = '0px';
+      tempExportContainer.style.width = '794px';
+      tempExportContainer.style.height = 'auto';
+      tempExportContainer.style.overflow = 'visible';
+      tempExportContainer.style.background = '#ffffff';
+      tempExportContainer.style.zIndex = '-9999';
+      tempExportContainer.style.boxSizing = 'border-box';
 
-      let page = pdfDoc.addPage([600, 800]);
-      let yOffset = 740;
+      const docDiv = document.createElement('div');
+      docDiv.className = 'word-styled-doc-export';
+      docDiv.innerHTML = htmlContent;
+      tempExportContainer.appendChild(docDiv);
+      document.body.appendChild(tempExportContainer);
 
-      // Draw header
-      page.drawText(sanitizeForWinAnsi(`${file.name.split('.')[0]} - PDF Export`), {
-        x: 50,
-        y: 770,
-        size: 11,
-        font: helveticaBold,
-        color: rgb(0.37, 0.42, 0.82),
+      setProgress(60);
+
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default || html2canvasModule;
+      const { jsPDF } = await import('jspdf');
+
+      // Render high-resolution canvas at scale 2
+      const canvas = await html2canvas(tempExportContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: 794,
       });
 
-      // Wrap and draw lines
-      const wrapText = (text, maxChars = 75) => {
-        const words = text.split(' ');
-        let lines = [];
-        let currentLine = '';
-        words.forEach((w) => {
-          if ((currentLine + ' ' + w).length > maxChars) {
-            lines.push(currentLine);
-            currentLine = w;
-          } else {
-            currentLine = currentLine ? currentLine + ' ' + w : w;
-          }
-        });
-        if (currentLine) lines.push(currentLine);
-        return lines;
-      };
+      setProgress(85);
 
-      for (const textSegment of extractedTexts) {
-        if (yOffset < 60) {
-          page = pdfDoc.addPage([600, 800]);
-          yOffset = 740;
-        }
+      // Export multi-page PDF using jsPDF
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        if (textSegment && textSegment.type === 'paragraph') {
-          const fontSize = textSegment.isHeading ? 14 : 11;
-          const currentLineHeight = textSegment.isHeading ? 22 : 16;
-          
-          if (textSegment.isHeading) {
-            yOffset -= 8;
-          }
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let heightLeft = imgHeight;
+      let position = 0;
 
-          let xOffset = 50;
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
 
-          for (const run of textSegment.runs) {
-            const font = (run.isBold && run.isItalic)
-              ? helveticaBoldOblique
-              : run.isBold
-              ? helveticaBold
-              : run.isItalic
-              ? helveticaOblique
-              : helveticaFont;
-
-            const color = textSegment.isHeading ? rgb(0.37, 0.42, 0.82) : rgb(0.15, 0.15, 0.15);
-            const words = run.text.split(/(\s+)/);
-
-            for (const word of words) {
-              if (!word) continue;
-              const wordWidth = font.widthOfTextAtSize(sanitizeForWinAnsi(word), fontSize);
-
-              if (xOffset + wordWidth > 550) {
-                xOffset = 50;
-                yOffset -= currentLineHeight;
-                if (yOffset < 60) {
-                  page = pdfDoc.addPage([600, 800]);
-                  yOffset = 740;
-                }
-              }
-
-              page.drawText(sanitizeForWinAnsi(word), {
-                x: xOffset,
-                y: yOffset,
-                size: fontSize,
-                font: font,
-                color: color,
-              });
-              xOffset += wordWidth;
-            }
-          }
-          yOffset -= currentLineHeight;
-        } else if (typeof textSegment === 'string') {
-          const isHeader = textSegment.startsWith('[Slide') || textSegment.startsWith('[Blank') || textSegment.startsWith('[Empty');
-          const fontSize = isHeader ? 14 : 11;
-          const font = isHeader ? helveticaBold : helveticaFont;
-          const color = isHeader ? rgb(0.37, 0.42, 0.82) : rgb(0.15, 0.15, 0.15);
-
-          const wrapped = wrapText(sanitizeForWinAnsi(textSegment));
-          wrapped.forEach((line) => {
-            if (yOffset < 60) {
-              page = pdfDoc.addPage([600, 800]);
-              yOffset = 740;
-            }
-            page.drawText(line, {
-              x: 50,
-              y: yOffset,
-              size: fontSize,
-              font: font,
-              color: color,
-            });
-            yOffset -= isHeader ? 26 : 18;
-          });
-        }
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
 
       setProgress(95);
-      const finalBytes = await pdfDoc.save();
+      const pdfBlob = pdf.output('blob');
+      const pdfFilename = file.name.replace(/\.[^/.]+$/, '.pdf');
+      downloadBlob(pdfBlob, pdfFilename, 'application/pdf');
+
       setProgress(100);
-
-      downloadBlob(
-        new Blob([finalBytes], { type: 'application/pdf' }),
-        file.name.replace(/\.[^/.]+$/, '.pdf'),
-        'application/pdf'
-      );
-
       setDone(true);
     } catch (err) {
-      alert('Error parsing file: ' + err.message + '. Generating basic document placeholder.');
-      
-      // Fallback pdf generation
-      try {
-        const pdfDoc = await PDFDocument.create();
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const page = pdfDoc.addPage([600, 800]);
-        page.drawText(sanitizeForWinAnsi(`Converted Document: ${file.name}`), { x: 50, y: 700, size: 16, font });
-        page.drawText(sanitizeForWinAnsi(`Fallback client-side conversion structure.`), { x: 50, y: 660, size: 12, font });
-
-        const bytes = await pdfDoc.save();
-        downloadBlob(
-          new Blob([bytes], { type: 'application/pdf' }),
-          file.name.replace(/\.[^/.]+$/, '.pdf'),
-          'application/pdf'
-        );
-        setDone(true);
-      } catch (e) {
-        console.error(e);
-      }
+      console.error('Error during PDF conversion:', err);
+      alert('Error during PDF export: ' + err.message);
     } finally {
+      if (tempExportContainer && tempExportContainer.parentNode) {
+        tempExportContainer.parentNode.removeChild(tempExportContainer);
+      }
       setProcessing(false);
     }
   };
@@ -369,88 +264,102 @@ export default function OfficeToPDFClient({ toolId }) {
       ) : (
         <PageToolWorkspace
           title={toolInfo.name}
-          description={toolInfo.description}
+          description="High-fidelity client-side document formatting and PDF conversion."
           icon={toolInfo.icon}
           iconColor={toolInfo.categoryColor}
           file={file}
-          onReset={() => {
-            setFile(null);
-            setDone(false);
-          }}
+          onReset={resetFile}
           preview={
-            <div
-              className="card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 'var(--space-xl) var(--space-md)',
-                minHeight: '260px',
-                textAlign: 'center',
-                backgroundColor: 'rgba(255,255,255,0.01)',
-                width: '100%',
-              }}
-            >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: 'var(--rounded-lg)',
-                  backgroundColor: 'rgba(94, 106, 210, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 'var(--space-md)',
-                  color: 'var(--primary)',
-                }}
-              >
-                <ToolIcon name="pdf" size={32} />
-              </div>
-              <h3 className="body-lg" style={{ fontWeight: 600 }}>Convert Office Document</h3>
-              <p className="body-sm ink-subtle" style={{ maxWidth: '320px', marginTop: 'var(--space-xs)', lineHeight: 1.5 }}>
-                Our local client compiler will parse your document structure and layout and format it into a standard PDF page.
-              </p>
-
-              {processing && (
-                <div style={{ width: '100%', maxWidth: '320px', marginTop: 'var(--space-lg)' }}>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)' }}>
-                    Reading document streams... {progress}%
-                  </p>
+            <div className="word-preview-root">
+              {renderingPreview && (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-subtle)' }}>
+                  Rendering document preview with full formatting...
                 </div>
               )}
-
-              {done && (
-                <div style={{ marginTop: 'var(--space-md)', color: 'var(--semantic-success)', fontWeight: 500, fontSize: '14px' }}>
-                  ✓ PDF compiled and downloaded successfully!
-                </div>
-              )}
+              <div ref={previewContainerRef} />
             </div>
           }
           footer={
             <button
               className="btn btn-primary btn-lg btn-attention"
               onClick={handleConvert}
-              disabled={processing}
+              disabled={processing || renderingPreview}
               style={{ width: '100%' }}
               id="convert-office-button"
             >
-              {processing ? 'Converting...' : 'Convert to PDF'}
+              {processing ? 'Converting to PDF...' : 'Convert to PDF'}
               <ToolIcon name="download" size={16} style={{ marginLeft: 6 }} />
             </button>
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Office Conversion</p>
+            <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Formatted Document Conversion</p>
             <p className="body-xs ink-subtle" style={{ lineHeight: 1.5 }}>
-              Ready to generate a high-fidelity PDF from the raw XML content packages inside this Office file.
+              All headings, tables, borders, colors, text styles, and embedded images are parsed and formatted directly inside your browser before downloading as PDF.
             </p>
+
+            {processing && (
+              <div style={{ width: '100%', marginTop: 'var(--space-sm)' }}>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+                <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)' }}>
+                  Rendering PDF pages... {progress}%
+                </p>
+              </div>
+            )}
+
+            {done && (
+              <div style={{ marginTop: 'var(--space-xs)', color: 'var(--semantic-success)', fontWeight: 500, fontSize: '14px' }}>
+                ✓ PDF converted and downloaded with full formatting!
+              </div>
+            )}
           </div>
         </PageToolWorkspace>
       )}
+
+      <style jsx global>{`
+        .word-preview-root {
+          width: 100%;
+          max-height: 540px;
+          overflow-y: auto;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 16px;
+        }
+        .word-styled-doc, .word-styled-doc-export {
+          background-color: #ffffff !important;
+          color: #111111 !important;
+          font-family: Arial, Helvetica, sans-serif !important;
+          padding: 40pt 48pt !important;
+          border-radius: 4px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+          margin: 0 auto;
+          max-width: 750px;
+          line-height: 1.6;
+          box-sizing: border-box;
+          text-align: left;
+        }
+        .word-styled-doc h1, .word-styled-doc-export h1 { font-size: 24pt !important; color: #1f4e78 !important; font-weight: 700 !important; margin: 18pt 0 8pt 0 !important; border-bottom: 2px solid #1f4e78 !important; padding-bottom: 4pt !important; }
+        .word-styled-doc h2, .word-styled-doc-export h2 { font-size: 18pt !important; color: #2f5597 !important; font-weight: 700 !important; margin: 14pt 0 6pt 0 !important; }
+        .word-styled-doc h3, .word-styled-doc-export h3 { font-size: 14pt !important; color: #1f4e78 !important; font-weight: 700 !important; margin: 12pt 0 4pt 0 !important; }
+        .word-styled-doc h4, .word-styled-doc-export h4 { font-size: 12pt !important; color: #333333 !important; font-weight: 700 !important; margin: 10pt 0 4pt 0 !important; }
+        .word-styled-doc p, .word-styled-doc-export p { margin-bottom: 8pt !important; font-size: 11pt !important; color: #222222 !important; }
+        .word-styled-doc table, .word-styled-doc-export table { border-collapse: collapse !important; width: 100% !important; margin: 14pt 0 !important; font-size: 10pt !important; }
+        .word-styled-doc th, .word-styled-doc-export th, .word-styled-doc td, .word-styled-doc-export td { border: 1px solid #c0c0c0 !important; padding: 6pt 10pt !important; text-align: left !important; }
+        .word-styled-doc th, .word-styled-doc-export th { background-color: #f2f4f8 !important; color: #1f4e78 !important; font-weight: 700 !important; }
+        .word-styled-doc tr:nth-child(even), .word-styled-doc-export tr:nth-child(even) { background-color: #fcfcfc !important; }
+        .word-styled-doc img, .word-styled-doc-export img { max-width: 100% !important; height: auto !important; display: block !important; margin: 12pt 0 !important; border-radius: 4px !important; }
+        .word-styled-doc ul, .word-styled-doc-export ul, .word-styled-doc ol, .word-styled-doc-export ol { padding-left: 24pt !important; margin: 8pt 0 !important; }
+        .word-styled-doc li, .word-styled-doc-export li { margin-bottom: 4pt !important; }
+        .word-styled-doc strong, .word-styled-doc-export strong { font-weight: 700 !important; color: #000000 !important; }
+        .word-styled-doc em, .word-styled-doc-export em { font-style: italic !important; }
+        .word-styled-doc u, .word-styled-doc-export u { text-decoration: underline !important; }
+        .excel-preview-table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        .excel-preview-table th, .excel-preview-table td { border: 1px solid #dcdcdc; padding: 8px 12px; font-size: 13px; }
+        .excel-preview-table th { background: #f0f4f8; color: #1f4e78; font-weight: 600; }
+      `}</style>
     </ToolPageLayout>
   );
 }

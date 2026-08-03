@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Analytics } from '@vercel/analytics/next';
+import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -129,6 +130,9 @@ export default function RootLayout({ children }) {
     ],
   };
 
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
@@ -155,7 +159,10 @@ export default function RootLayout({ children }) {
         {children}
         <Footer />
         <Analytics />
+        {gaId && <GoogleAnalytics gaId={gaId} />}
+        {gtmId && <GoogleTagManager gtmId={gtmId} />}
       </body>
     </html>
   );
 }
+

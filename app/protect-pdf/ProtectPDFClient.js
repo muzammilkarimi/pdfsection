@@ -6,7 +6,7 @@ import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
+import { protectPdf, downloadBlob } from '@/lib/pdfUtils';
 
 export default function ProtectPDFClient() {
   const [file, setFile] = useState(null);
@@ -38,26 +38,12 @@ export default function ProtectPDFClient() {
     setProcessing(true);
 
     try {
-      const pdfDoc = await loadPdf(file);
-      const encryptOptions = {
-        userPassword,
-        ownerPassword: ownerPassword || userPassword + '_owner',
-        permissions: {
-          printing: allowPrint ? 'highResolution' : 'lowResolution',
-          copying: allowCopy,
-          modifying: allowModify,
-        },
-      };
+      const pdfBytes = await protectPdf(file, userPassword, ownerPassword, {
+        allowPrint,
+        allowCopy,
+        allowModify,
+      });
 
-      if (typeof pdfDoc.encrypt === 'function') {
-        pdfDoc.encrypt(encryptOptions);
-      } else if (typeof pdfDoc.setProtection === 'function') {
-        pdfDoc.setProtection(encryptOptions);
-      } else {
-        throw new Error('Password encryption is not supported by the current browser PDF engine.');
-      }
-
-      const pdfBytes = await pdfDoc.save();
       downloadBlob(pdfBytes, file.name.replace('.pdf', '-protected.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
@@ -76,7 +62,7 @@ export default function ProtectPDFClient() {
   return (
     <ToolPageLayout
       title="Protect PDF"
-      description="Add password protection when the active browser PDF engine supports encryption."
+      description="Add password protection and set security permissions for your PDF documents."
       icon="lock"
       iconColor="var(--tool-security)"
       showHeader={!file}
@@ -102,7 +88,7 @@ export default function ProtectPDFClient() {
           )}
         >
           <div className="merge-warning">
-            Browser-only password encryption depends on PDF engine support. If unavailable, this tool stops before downloading.
+            Encryption is performed client-side in your browser using secure AES-256 standard. Your file and password never leave your device.
           </div>
 
           <div className="page-field-group">

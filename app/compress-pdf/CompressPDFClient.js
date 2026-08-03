@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
 import { loadPdfForRender } from '@/lib/renderUtils';
@@ -138,49 +139,49 @@ export default function CompressPDFClient() {
     setProgress(0);
 
     try {
-      const selectedLevel = COMPRESSION_LEVELS[level];
-      const originalSize = file.size;
-      const candidateBytes = selectedLevel.mode === 'lossless'
-        ? await compressLossless(file)
-        : await compressRaster(file, selectedLevel, setProgress);
+      const settings = COMPRESSION_LEVELS[level];
+      let bytes;
+      if (settings.mode === 'lossless') {
+        setProgress(50);
+        bytes = await compressLossless(file);
+        setProgress(100);
+      } else {
+        bytes = await compressRaster(file, settings, (p) => setProgress(p));
+      }
 
-      const originalBytes = new Uint8Array(await file.arrayBuffer());
-      const outputBytes = candidateBytes.length < originalSize ? candidateBytes : originalBytes;
-      const compressedSize = outputBytes.length;
-      const savings = Math.max(0, Math.round(((originalSize - compressedSize) / originalSize) * 100));
+      const compressedSize = bytes.byteLength;
+      const originalSize = file.size;
+      const reduction = Math.max(0, Math.round(((originalSize - compressedSize) / originalSize) * 100));
 
       setResult({
+        bytes,
+        filename: file.name.replace('.pdf', '-compressed.pdf'),
         originalSize,
         compressedSize,
-        candidateSize: candidateBytes.length,
-        savings,
-        bytes: outputBytes,
-        level,
-        mode: selectedLevel.mode,
-        usedOriginal: candidateBytes.length >= originalSize,
+        reduction,
       });
-      setProgress(100);
+      downloadBlob(bytes, file.name.replace('.pdf', '-compressed.pdf'), 'application/pdf');
     } catch (err) {
-      alert('Error compressing PDF: ' + err.message);
+      alert('Compression error: ' + err.message);
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleDownload = () => {
-    if (!result) return;
-    const name = file.name.replace(/\.pdf$/i, '-compressed.pdf');
-    downloadBlob(result.bytes, name, 'application/pdf');
-  };
-
-  const levels = Object.entries(COMPRESSION_LEVELS).map(([id, config]) => ({ id, ...config }));
+  const levels = [
+    { id: 'low', ...COMPRESSION_LEVELS.low },
+    { id: 'medium', ...COMPRESSION_LEVELS.medium },
+    { id: 'high', ...COMPRESSION_LEVELS.high },
+  ];
 
   return (
     <ToolPageLayout
       title="Compress PDF"
-      description="Reduce PDF size in your browser. Medium and high compression are best for scanned or image-heavy PDFs."
+      description="Reduce PDF size in your browser. Choose your preferred compression mode."
       icon="compress"
       iconColor="var(--tool-optimize)"
+      showHeader={!file}
+      layoutMode={file ? 'page-preview' : 'page-scroll'}
     >
       {!file ? (
         <FileDropzone
@@ -190,168 +191,121 @@ export default function CompressPDFClient() {
           label="Select PDF file"
           id="compress-dropzone"
         />
-      ) : !result ? (
-        <div className="tool-workspace">
-          <div className="tool-main-panel">
-            <div className="file-item">
-              <ToolIcon name="pdf" size={18} className="ink-subtle" />
-              <span className="file-item-name">{file.name}</span>
-              <span className="file-item-size">{formatSize(file.size)}</span>
-              <button className="file-item-remove" onClick={resetFile} aria-label={`Remove ${file.name}`}>
-                <ToolIcon name="x" size={14} />
-              </button>
-            </div>
-
-            <p className="eyebrow" style={{ marginTop: 'var(--space-md)', marginBottom: 'var(--space-sm)', color: 'var(--ink-subtle)' }}>
-              Compression Level
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
-              {levels.map((item) => (
-                <button
-                  key={item.id}
-                  className="card"
-                  onClick={() => setLevel(item.id)}
-                  disabled={processing}
-                  style={{
-                    padding: 'var(--space-sm) var(--space-md)',
-                    textAlign: 'left',
-                    cursor: processing ? 'not-allowed' : 'pointer',
-                    border: level === item.id ? '1px solid var(--primary)' : '1px solid var(--hairline)',
-                    backgroundColor: level === item.id ? 'var(--surface-2)' : 'var(--surface-1)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                    <span style={{ minWidth: 34, fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>{item.icon}</span>
-                    <div>
-                      <div style={{ fontWeight: 500, fontSize: 13 }}>{item.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-subtle)', marginTop: 2 }}>{item.desc}</div>
+      ) : (
+        <PageToolWorkspace
+          title="Compress PDF"
+          description="Choose a compression level below, then export your optimized PDF."
+          icon="compress"
+          iconColor="var(--tool-optimize)"
+          file={file}
+          onReset={resetFile}
+          ariaLabel="Compress PDF workspace"
+          preview={(
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Select Compression Level</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                {levels.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="card"
+                    onClick={() => setLevel(item.id)}
+                    disabled={processing}
+                    style={{
+                      padding: 'var(--space-md)',
+                      textAlign: 'left',
+                      cursor: processing ? 'not-allowed' : 'pointer',
+                      border: level === item.id ? '2px solid var(--primary)' : '1px solid var(--hairline-strong)',
+                      backgroundColor: level === item.id ? 'rgba(94, 106, 210, 0.05)' : 'var(--surface-1)',
+                      borderRadius: 'var(--rounded-lg)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                      <span style={{ minWidth: 40, fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{item.icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</div>
+                        <div style={{ fontSize: 12, color: 'var(--ink-subtle)', marginTop: 4, lineHeight: 1.4 }}>{item.desc}</div>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Compression Actions</p>
-              <div
-                style={{
-                  padding: 'var(--space-sm)',
-                  backgroundColor: 'rgba(245, 166, 35, 0.08)',
-                  borderRadius: 'var(--rounded-md)',
-                  border: '1px solid rgba(245, 166, 35, 0.2)',
-                  color: 'var(--semantic-warning)',
-                  fontSize: '12px',
-                  lineHeight: 1.5,
-                }}
-              >
-                Medium and high compression flatten pages into images. This gives stronger size reduction for scanned PDFs, but selectable text may be lost.
-              </div>
-
-              <div style={{ fontSize: 13 }}>
-                <span className="ink-muted">Selected Level: </span>
-                <span style={{ fontWeight: 600 }}>{COMPRESSION_LEVELS[level].label}</span>
+                  </button>
+                ))}
               </div>
 
               {processing && (
-                <div>
+                <div style={{ marginTop: 'var(--space-md)' }}>
                   <div className="progress-track">
                     <div className="progress-fill" style={{ width: `${progress}%` }} />
                   </div>
-                  <p className="body-sm ink-subtle" style={{ textAlign: 'center', marginTop: 4 }}>
-                    Compressing... {progress}%
+                  <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)', textAlign: 'center' }}>
+                    Optimizing PDF streams... {progress}%
                   </p>
                 </div>
               )}
-
+            </div>
+          )}
+          footer={(
+            <>
               <button
+                type="button"
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleCompress}
                 disabled={processing}
-                style={{ width: '100%' }}
                 id="compress-button"
               >
-                {processing ? 'Compressing...' : 'Compress PDF'}
+                {processing ? `Compressing (${progress}%)...` : 'Compress PDF'}
                 <ToolIcon name="compress" size={16} />
               </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="tool-workspace">
-          <div className="tool-main-panel">
-            <div
-              className="card"
-              style={{
-                padding: 'var(--space-xl)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 'var(--space-md)',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 40, color: result.savings > 0 ? 'var(--semantic-success)' : 'var(--ink-subtle)' }}>
-                {result.savings > 0 ? 'OK' : '0%'}
-              </div>
-              <p className="headline" style={{ color: result.savings > 0 ? 'var(--semantic-success)' : 'var(--ink)', fontSize: 32 }}>
-                {result.savings > 0 ? `${result.savings}% smaller` : 'Already optimized'}
-              </p>
-              {result.usedOriginal && (
-                <p className="body-sm ink-subtle" style={{ maxWidth: 520 }}>
-                  The compressed version was not smaller than the original, so the download keeps the original bytes instead of making the file larger.
-                </p>
-              )}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 'var(--space-xl)',
-                  width: '100%',
-                  borderTop: '1px solid var(--hairline)',
-                  paddingTop: 'var(--space-md)',
-                }}
-              >
-                <div>
-                  <p className="caption ink-subtle">Original Size</p>
-                  <p className="body" style={{ fontWeight: 500 }}>{formatSize(result.originalSize)}</p>
-                </div>
-                <ToolIcon name="arrowRight" size={20} className="ink-tertiary" />
-                <div>
-                  <p className="caption ink-subtle">Output Size</p>
-                  <p className="body" style={{ fontWeight: 500, color: result.savings > 0 ? 'var(--semantic-success)' : 'var(--ink)' }}>
-                    {formatSize(result.compressedSize)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Compressed File</p>
-
               <button
-                className="btn btn-primary btn-lg btn-attention"
-                onClick={handleDownload}
-                style={{ width: '100%' }}
-              >
-                Download PDF
-                <ToolIcon name="download" size={16} />
-              </button>
-
-              <button
-                className="btn btn-tertiary"
+                type="button"
+                className="btn btn-secondary"
                 onClick={resetFile}
-                style={{ width: '100%', fontSize: 13 }}
+                disabled={processing}
               >
-                Compress another file
+                Start over
               </button>
-            </div>
+            </>
+          )}
+        >
+          <div className="page-control-stat">
+            <span>Original File Size</span>
+            <strong>{formatSize(file.size)}</strong>
           </div>
-        </div>
+
+          <div className="merge-summary-list">
+            <div>
+              <span className="ink-muted">Selected Level</span>
+              <strong>{COMPRESSION_LEVELS[level].label}</strong>
+            </div>
+            <div>
+              <span className="ink-muted">Compression Mode</span>
+              <strong style={{ textTransform: 'capitalize' }}>{COMPRESSION_LEVELS[level].mode}</strong>
+            </div>
+            {result && (
+              <>
+                <div>
+                  <span className="ink-muted">New File Size</span>
+                  <strong style={{ color: 'var(--primary)' }}>{formatSize(result.compressedSize)}</strong>
+                </div>
+                <div>
+                  <span className="ink-muted">Size Reduction</span>
+                  <strong style={{ color: 'var(--semantic-success)' }}>-{result.reduction}%</strong>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="page-help-note">
+            <ToolIcon name="check" size={16} />
+            <span>Files are processed 100% locally in your browser. Your documents never touch external servers.</span>
+          </div>
+
+          {result && (
+            <div className="merge-success">
+              ✓ PDF compressed! Saved {result.reduction}% ({formatSize(result.originalSize)} ➔ {formatSize(result.compressedSize)})
+            </div>
+          )}
+        </PageToolWorkspace>
       )}
     </ToolPageLayout>
   );
