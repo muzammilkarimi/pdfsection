@@ -1,13 +1,15 @@
 import { ImageResponse } from 'next/og';
 
+export const runtime = 'edge';
+
+export const alt = 'PDF Section — Private Local PDF Tools';
 export const size = {
   width: 1200,
   height: 630,
 };
-
 export const contentType = 'image/png';
 
-export default function Image() {
+export default async function Image() {
   return new ImageResponse(
     (
       <div
@@ -16,37 +18,61 @@ export default function Image() {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
           justifyContent: 'center',
-          background: '#010102',
-          color: '#f7f8f8',
-          padding: '72px',
-          fontFamily: 'Arial, sans-serif',
+          background: 'radial-gradient(circle at 10% 20%, #171626, #0e0d15 90%)',
+          color: '#ffffff',
+          fontFamily: 'sans-serif',
+          padding: '60px',
         }}
       >
+        {/* Brand Kicker */}
         <div
           style={{
-            width: 76,
-            height: 76,
-            borderRadius: 16,
-            background: '#5e6ad2',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 34,
-            fontWeight: 700,
-            marginBottom: 40,
+            gap: '8px',
+            backgroundColor: 'rgba(94, 106, 210, 0.15)',
+            border: '1px solid rgba(94, 106, 210, 0.3)',
+            borderRadius: '20px',
+            padding: '6px 16px',
+            fontSize: '14px',
+            color: '#a5b4fc',
+            marginBottom: '20px',
           }}
         >
-          PDF
+          🛡️ 100% PRIVATE CLIENT-SIDE PROCESSING
         </div>
-        <div style={{ fontSize: 76, fontWeight: 700, letterSpacing: -3 }}>
-          PDF Section
+
+        {/* Title */}
+        <div
+          style={{
+            fontSize: '64px',
+            fontWeight: '800',
+            letterSpacing: '-2px',
+            textAlign: 'center',
+            marginBottom: '16px',
+          }}
+        >
+          PDF <span style={{ color: '#fbbf24' }}>Section</span>
         </div>
-        <div style={{ fontSize: 34, color: '#d0d6e0', marginTop: 20, maxWidth: 820 }}>
-          Free browser-based tools to merge, split, edit, convert, and manage PDFs.
+
+        {/* Tagline */}
+        <div
+          style={{
+            fontSize: '24px',
+            color: '#94a3b8',
+            textAlign: 'center',
+            maxWidth: '780px',
+            lineHeight: '1.4',
+          }}
+        >
+          Merge, Split, Compress, Edit, Sign & Convert PDFs without uploading files to remote servers.
         </div>
       </div>
     ),
-    size
+    {
+      ...size,
+    }
   );
 }

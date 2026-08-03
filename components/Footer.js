@@ -26,20 +26,21 @@ export default function Footer() {
       ],
     },
     {
-      title: 'Convert PDF',
+      title: 'Categories & Hubs',
       links: [
-        { label: 'PDF to JPG', href: '/pdf-to-jpg' },
-        { label: 'JPG to PDF', href: '/jpg-to-pdf' },
-        { label: 'PDF to Markdown', href: '/pdf-to-markdown' },
-        { label: 'Blog & Articles', href: '/blog' },
+        { label: 'All PDF Tools', href: '/#tools' },
+        { label: 'Convert PDF Hub', href: '/convert-pdf' },
+        { label: 'Security & Privacy Hub', href: '/security-pdf' },
+        { label: 'Blog & Insights', href: '/blog' },
       ],
     },
     {
-      title: 'Security',
+      title: 'Alternatives',
       links: [
-        { label: 'Protect PDF', href: '/protect-pdf' },
-        { label: 'Unlock PDF', href: '/unlock-pdf' },
-        { label: 'Edit PDF', href: '/edit-pdf' },
+        { label: 'iLovePDF Alternative', href: '/ilovepdf-alternative' },
+        { label: 'Smallpdf Alternative', href: '/smallpdf-alternative' },
+        { label: 'Acrobat Pro Alternative', href: '/adobe-acrobat-alternative' },
+        { label: 'PDF24 Alternative', href: '/pdf24-alternative' },
       ],
     },
   ];

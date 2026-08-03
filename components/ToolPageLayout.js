@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { ToolIcon } from './Icons';
 import ToolGuideSection from './ToolGuideSection';
+import RelatedToolsSection from './RelatedToolsSection';
 import { getToolByRoute } from '@/lib/tools';
 import { SEO_TOOL_CONTENT, DEFAULT_SEO_CONTENT } from '@/lib/seoMetadata';
 
@@ -129,6 +130,9 @@ export default function ToolPageLayout({
           )}
           
           <div className="tool-page-body">{children}</div>
+
+          {/* Related Tools Internal Link Network */}
+          <RelatedToolsSection currentRoute={pathname} />
 
           {/* How to Use / Benefits / FAQ Guide Block */}
           {showGuide && (

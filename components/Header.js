@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ToolIcon } from './Icons';
 import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
+import CommandPalette from './CommandPalette';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -43,6 +44,19 @@ export default function Header() {
     }
   };
 
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setCmdOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const navLinks = [
     { label: 'Tools', href: '/#tools' },
     { label: 'Compress', href: '/compress-pdf' },
@@ -52,6 +66,7 @@ export default function Header() {
 
   return (
     <>
+      <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
       <header className="nav" role="banner">
         <div className="nav-inner">
           {/* Brand */}
@@ -105,6 +120,32 @@ export default function Header() {
 
           {/* Actions */}
           <div className="nav-actions">
+            {/* Quick Search Ctrl+K Button */}
+            <button
+              type="button"
+              onClick={() => setCmdOpen(true)}
+              aria-label="Search tools"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: 'var(--surface-2)',
+                border: '1px solid var(--hairline-strong)',
+                borderRadius: 'var(--rounded-full)',
+                color: 'var(--ink-muted)',
+                fontSize: '12.5px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all var(--duration-fast) var(--ease-default)'
+              }}
+            >
+              <ToolIcon name="search" size={15} />
+              <span className="desktop-only-inline">Search</span>
+              <kbd className="desktop-only-inline" style={{ fontSize: '10px', backgroundColor: 'var(--surface-1)', padding: '1px 5px', borderRadius: '3px', border: '1px solid var(--hairline)', color: 'var(--ink-subtle)' }}>Ctrl K</kbd>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}

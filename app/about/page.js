@@ -58,13 +58,13 @@ export default function AboutPage() {
           {/* Right: Info */}
           <div style={{ flex: 1, minWidth: '320px' }}>
             <span className="eyebrow" style={{ color: 'var(--primary)', fontWeight: '600', letterSpacing: '0.05em' }}>MEET THE FOUNDER</span>
-            <h1 className="display-sm" style={{ fontWeight: '800', marginTop: 'var(--space-xs)', marginBottom: 'var(--space-md)', fontSize: '32px' }}>
-              Muzammil A Karimi
+            <h1 className="display-sm" style={{ fontWeight: '800', marginTop: 'var(--space-xs)', marginBottom: 'var(--space-md)', fontSize: 'clamp(22px, 5.5vw, 32px)', lineHeight: '1.2' }}>
+              Muzammil Ahmad Karimi
             </h1>
-            <p className="body-md ink-muted" style={{ lineHeight: '1.6', fontSize: '16px', marginBottom: 'var(--space-md)' }}>
+            <p className="body-md ink-muted" style={{ lineHeight: '1.65', fontSize: '16px', marginBottom: 'var(--space-md)', textAlign: 'justify', textJustify: 'inter-word' }}>
               As an <strong>IIT Patna alumnus</strong>, I am building <strong>PDF Section</strong> from a simple frustration: handling PDF documents shouldn&apos;t require uploading sensitive files to remote servers, navigating ad-filled platforms, or paying for expensive software.
             </p>
-            <p className="body-md ink-muted" style={{ lineHeight: '1.6', fontSize: '16px' }}>
+            <p className="body-md ink-muted" style={{ lineHeight: '1.65', fontSize: '16px', textAlign: 'justify', textJustify: 'inter-word' }}>
               PDF Section exists so people can manage their documents locally, securely, and completely free—right inside their browser.
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function AboutPage() {
           }}
         >
           <h2 className="body-lg" style={{ fontWeight: '800', marginBottom: 'var(--space-md)', color: 'var(--ink)' }}>Why We Built PDF Section</h2>
-          <div className="body-sm ink-muted" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', lineHeight: '1.6', fontSize: '14.5px' }}>
+          <div className="body-sm ink-muted" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', lineHeight: '1.65', fontSize: '14.5px', textAlign: 'justify', textJustify: 'inter-word' }}>
             <p>
               The modern web is full of friction. When you need to quickly sign a contract, merge invoices, or compress a file, you are forced to upload your sensitive files to remote servers, deal with pop-up ads, or pay for expensive subscription services. For people who handle documents rapidly, this is a bottleneck.
             </p>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog';
+import SocialShare from '@/components/SocialShare';
 
 // Pre-render blog slug routes statically
 export async function generateStaticParams() {
@@ -242,6 +243,11 @@ export default async function BlogArticlePage({ params }) {
           <div className="prose" style={{ fontFamily: 'inherit', color: 'var(--ink-muted)' }}>
             {parseContent(post.content)}
           </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-lg) 0' }} />
+          
+          {/* Social Share Bar */}
+          <SocialShare title={post.title} url={`https://pdfsection.com/blog/${post.slug}`} />
         </article>
 
         {/* CTA box */}

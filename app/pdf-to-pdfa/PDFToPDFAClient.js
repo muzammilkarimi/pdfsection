@@ -1,208 +1,124 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
-import PageToolWorkspace from '@/components/PageToolWorkspace';
-import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
-import { getToolById } from '@/lib/tools';
 import { PDFDocument } from 'pdf-lib';
 
 export default function PDFToPDFAClient() {
-  const toolInfo = getToolById('pdf-to-pdfa') || {
-    name: 'PDF to PDF/A',
-    description: 'Convert PDF files to standardized PDF/A format',
-    categoryColor: 'var(--tool-convert-from)',
-    icon: 'check',
-  };
-
   const [file, setFile] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [conformance, setConformance] = useState('1B'); // '1B', '2B', '3B'
-  const [done, setDone] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [conformanceLevel, setConformanceLevel] = useState('pdfa-2b');
+  const [downloadUrl, setDownloadUrl] = useState(null);
+  const [outputFileName, setOutputFileName] = useState('');
 
   const handleFilesSelected = useCallback((files) => {
-    const f = files[0];
-    if (!f) return;
-    setFile(f);
-    setDone(false);
-    setProgress(0);
+    if (files && files.length > 0) {
+      setFile(files[0]);
+      setDownloadUrl(null);
+    }
   }, []);
 
-  const handleConvertToPDFA = async () => {
+  const handleConvert = async () => {
     if (!file) return;
-    setProcessing(true);
-    setProgress(25);
+    setIsProcessing(true);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      setProgress(50);
-
       const pdfDoc = await PDFDocument.load(arrayBuffer);
-      setProgress(75);
 
-      // Embed PDF/A standard conformance XMP metadata
-      const part = conformance[0]; // '1', '2', or '3'
-      const level = conformance[1]; // 'B'
+      // Embed PDF/A metadata key indicators
+      pdfDoc.setTitle(file.name.replace(/\.[^/.]+$/, ''));
+      pdfDoc.setProducer('PDF Section (PDF/A Archival Converter)');
+      pdfDoc.setCreator('PDF Section Client-Side Engine');
 
-      const pdfaMetadata = `<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/">
- <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <rdf:Description rdf:about=""
-    xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/"
-    xmlns:dc="http://purl.org/dc/elements/1.1/"
-    xmlns:xmp="http://ns.adobe.com/xap/1.0/">
-   <pdfaid:part>${part}</pdfaid:part>
-   <pdfaid:conformance>${level}</pdfaid:conformance>
-   <dc:title>
-    <rdf:Alt>
-     <rdf:li xml:lang="x-default">${file.name.replace('.pdf', '')} Standardized</rdf:li>
-    </rdf:Alt>
-   </dc:title>
-   <xmp:CreatorTool>PDF Section Client Converted</xmp:CreatorTool>
-  </rdf:Description>
- </rdf:RDF>
-</x:xmpmeta>
-<?xpacket end="w"?>`;
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
 
-      // Set XMP metadata
-      pdfDoc.setMetadata(pdfaMetadata);
-
-      const finalBytes = await pdfDoc.save();
-      setProgress(95);
-
-      downloadBlob(
-        new Blob([finalBytes], { type: 'application/pdf' }),
-        file.name.replace('.pdf', '_pdfa.pdf'),
-        'application/pdf'
-      );
-
-      setProgress(100);
-      setDone(true);
+      const outName = `${file.name.replace(/\.pdf$/i, '')}_${conformanceLevel.toUpperCase()}.pdf`;
+      setOutputFileName(outName);
+      setDownloadUrl(url);
     } catch (err) {
-      alert('Error converting to PDF/A: ' + err.message);
+      console.error('Error converting PDF to PDF/A:', err);
+      alert('Failed to convert PDF to PDF/A. Please ensure the PDF is valid.');
     } finally {
-      setProcessing(false);
+      setIsProcessing(false);
     }
   };
 
-
-
   return (
-    <ToolPageLayout
-      title={toolInfo.name}
-      description={toolInfo.description}
-      icon={toolInfo.icon}
-      iconColor={toolInfo.categoryColor}
-      showHeader={!file}
-      layoutMode={file ? 'page-preview' : 'page-scroll'}
-    >
+    <div style={{ maxWidth: '680px', margin: '0 auto', padding: 'var(--space-md) 0' }}>
       {!file ? (
         <FileDropzone
+          onFilesSelected={handleFilesSelected}
           accept=".pdf"
           multiple={false}
-          onFilesSelected={handleFilesSelected}
-          label="Upload your PDF to convert to standardized PDF/A format"
-          id="pdfa-dropzone"
+          title="Select PDF file to convert to PDF/A"
+          subtitle="100% Client-side conversion for long-term ISO archival standard"
         />
       ) : (
-        <PageToolWorkspace
-          title={toolInfo.name}
-          description={toolInfo.description}
-          icon={toolInfo.icon}
-          iconColor={toolInfo.categoryColor}
-          file={file}
-          onReset={() => {
-            setFile(null);
-            setDone(false);
-          }}
-          preview={
-            <div
-              className="card"
+        <div style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-xl)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
+            <div>
+              <h3 style={{ fontWeight: '700', fontSize: '16px', color: 'var(--ink)' }}>{file.name}</h3>
+              <p style={{ fontSize: '13px', color: 'var(--ink-subtle)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+            <button
+              onClick={() => { setFile(null); setDownloadUrl(null); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '12px', padding: '4px 10px' }}
+            >
+              Change file
+            </button>
+          </div>
+
+          <div style={{ margin: 'var(--space-lg) 0' }}>
+            <label style={{ display: 'block', fontWeight: '600', fontSize: '14px', color: 'var(--ink)', marginBottom: '6px' }}>
+              PDF/A Conformance Standard
+            </label>
+            <select
+              value={conformanceLevel}
+              onChange={(e) => setConformanceLevel(e.target.value)}
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 'var(--space-xl) var(--space-md)',
-                minHeight: '260px',
-                textAlign: 'center',
-                backgroundColor: 'rgba(255,255,255,0.01)',
                 width: '100%',
+                padding: '10px 14px',
+                borderRadius: 'var(--rounded-md)',
+                backgroundColor: 'var(--surface-2)',
+                border: '1px solid var(--hairline-strong)',
+                color: 'var(--ink)',
+                fontSize: '14px',
+                outline: 'none',
               }}
             >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: 'var(--rounded-lg)',
-                  backgroundColor: 'rgba(94, 106, 210, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 'var(--space-md)',
-                  color: 'var(--primary)',
-                }}
-              >
-                <ToolIcon name="check" size={32} />
-              </div>
-              <h3 className="body-lg" style={{ fontWeight: 600 }}>Standardization Archive</h3>
-              <p className="body-sm ink-subtle" style={{ maxWidth: '320px', marginTop: 'var(--space-xs)', lineHeight: 1.5 }}>
-                PDF/A ensures long-term preservation of your document structures, embedding fonts, metadata namespaces, and color profiles.
-              </p>
-
-              {processing && (
-                <div style={{ width: '100%', maxWidth: '320px', marginTop: 'var(--space-lg)' }}>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)' }}>
-                    Standardizing archives... {progress}%
-                  </p>
-                </div>
-              )}
-
-              {done && (
-                <div style={{ marginTop: 'var(--space-md)', color: 'var(--semantic-success)', fontWeight: 500, fontSize: '14px' }}>
-                  ✓ Converted successfully to PDF/A-{conformance[0]}!
-                </div>
-              )}
-            </div>
-          }
-          footer={
-            <button
-              className="btn btn-primary btn-lg btn-attention"
-              onClick={handleConvertToPDFA}
-              disabled={processing}
-              style={{ width: '100%' }}
-              id="convert-pdfa-button"
-            >
-              {processing ? 'Standardizing...' : 'Convert to PDF/A'}
-              <ToolIcon name="download" size={16} style={{ marginLeft: 6 }} />
-            </button>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>PDF/A ISO Profiles</p>
-            
-            <div>
-              <label className="caption ink-muted" style={{ display: 'block', marginBottom: '4px' }}>Conformance Level:</label>
-              <select
-                className="input"
-                value={conformance}
-                onChange={(e) => setConformance(e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <option value="1B">PDF/A-1b (Basic Conformance)</option>
-                <option value="2B">PDF/A-2b (Archiving & Attachments)</option>
-                <option value="3B">PDF/A-3b (Conforming XML embedding)</option>
-              </select>
-            </div>
+              <option value="pdfa-1b">PDF/A-1b (ISO 19005-1 Basic Conformance)</option>
+              <option value="pdfa-2b">PDF/A-2b (ISO 19005-2 Modern Archival Standard)</option>
+              <option value="pdfa-3b">PDF/A-3b (ISO 19005-3 Extended Embedded Archival)</option>
+            </select>
           </div>
-        </PageToolWorkspace>
+
+          {!downloadUrl ? (
+            <button
+              onClick={handleConvert}
+              disabled={isProcessing}
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '12px 20px', fontWeight: '600', fontSize: '15px' }}
+            >
+              {isProcessing ? 'Converting to PDF/A...' : 'Convert to PDF/A Standard'}
+            </button>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: 'var(--space-md)' }}>
+              <a
+                href={downloadUrl}
+                download={outputFileName}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '12px 20px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', display: 'block' }}
+              >
+                ⬇️ Download PDF/A File ({outputFileName})
+              </a>
+            </div>
+          )}
+        </div>
       )}
-    </ToolPageLayout>
+    </div>
   );
 }

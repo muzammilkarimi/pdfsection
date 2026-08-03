@@ -89,22 +89,88 @@ export default function HomePage() {
           </div>
 
           <div className="home-search-panel">
-            <label className="home-search-label" htmlFor="tool-search">
-              Find a PDF tool
+            <label className="home-search-label" htmlFor="tool-search" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--ink-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Find a PDF tool</span>
+              <span style={{ fontSize: '11px', color: 'var(--ink-subtle)', fontWeight: '500' }}>38+ local tools</span>
             </label>
-            <div className="search-wrapper home-search-wrapper">
-              <span className="search-icon">
+            <div
+              className="home-search-wrapper-custom"
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--hairline-strong)',
+                borderRadius: 'var(--rounded-lg)',
+                padding: '4px 14px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                transition: 'all var(--duration-fast) var(--ease-default)'
+              }}
+            >
+              <span style={{ color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
                 <ToolIcon name="search" size={18} />
               </span>
               <input
                 type="text"
-                className="search-input"
-                placeholder="Search merge, split, compress..."
+                placeholder="Search merge, split, compress, edit..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 aria-label="Search PDF tools"
                 id="tool-search"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '10px 0',
+                  border: 'none',
+                  outline: 'none',
+                  backgroundColor: 'transparent',
+                  color: 'var(--ink)',
+                  fontSize: '14.5px',
+                  fontWeight: '500',
+                }}
               />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  style={{
+                    border: 'none',
+                    background: 'var(--surface-2)',
+                    color: 'var(--ink-muted)',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    marginLeft: '8px',
+                    flexShrink: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              ) : (
+                <kbd
+                  style={{
+                    padding: '3px 7px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: 'var(--ink-subtle)',
+                    backgroundColor: 'var(--surface-2)',
+                    border: '1px solid var(--hairline-strong)',
+                    borderRadius: '4px',
+                    marginLeft: '8px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  Ctrl K
+                </kbd>
+              )}
             </div>
           </div>
         </div>

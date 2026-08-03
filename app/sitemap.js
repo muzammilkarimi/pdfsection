@@ -30,6 +30,30 @@ export default function sitemap() {
       changeFrequency: 'weekly',
       priority: 0.85,
     },
+    {
+      url: `${baseUrl}/adobe-acrobat-alternative`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/pdf24-alternative`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/convert-pdf`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/security-pdf`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
   ];
 
   // All tool pages

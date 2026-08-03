@@ -1612,3 +1612,9 @@ body:has(.tool-layout-app-fixed) {
   padding-bottom: 0;
   border-bottom: none;
 }
+
+@media (max-width: 768px) {
+  .desktop-only-inline {
+    display: none !important;
+  }
+}
