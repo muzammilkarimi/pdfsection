@@ -169,7 +169,7 @@ export default function AISummarizerClient() {
 
               {!processing && !summary && (
                 <p className="body-sm ink-muted" style={{ fontStyle: 'italic', margin: 'auto', textAlign: 'center' }}>
-                  Click "Generate Summary" in the sidebar to begin processing.
+                  Click &quot;Generate Summary&quot; in the sidebar to begin processing.
                 </p>
               )}
 

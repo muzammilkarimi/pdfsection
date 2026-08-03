@@ -1,14 +1,33 @@
 import SplitPDFClient from './SplitPDFClient';
+import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 
-export const metadata = {
-  title: 'Split PDF',
-  description: 'Separate PDF pages into individual files or extract specific page ranges. Free, private, works in your browser.',
-  openGraph: {
-    title: 'Split PDF — PDF Section',
-    description: 'Split PDF pages into separate files. Free and private.',
-  },
-};
+export const metadata = buildToolMetadata({
+  title: 'Split PDF — Separate PDF Pages Online for Free',
+  description: 'Split PDF files into individual pages or specific page ranges. Fast, free, private, and works directly in your web browser.',
+  route: '/split-pdf',
+  keywords: ['Split PDF', 'separate PDF pages', 'extract PDF pages', 'PDF splitter online', 'free PDF splitter'],
+});
 
-export default function SplitPDFPage() {
-  return <SplitPDFClient />;
+const jsonLd = buildToolJsonLd({
+  name: 'Split PDF Tool',
+  description: 'Separate PDF pages into individual documents or extract custom page ranges.',
+  route: '/split-pdf',
+  faqs: [
+    {
+      question: 'How do I split pages from a PDF?',
+      answer: 'Select your PDF, choose specific pages or page ranges, and click Split PDF to download the separated documents.',
+    },
+  ],
+});
+
+export default function Page() {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <SplitPDFClient />
+    </>
+  );
 }

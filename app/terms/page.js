@@ -26,14 +26,14 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the **PDF Section** web application (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.
+              By accessing or using the **PDF Section** web application (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, please do not use the Service.
             </p>
           </section>
 
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>2. Description of Service</h2>
             <p>
-              PDF Section provides a web-based document editing utility. All processing—including file conversion, split, merge, compress, watermarking, and electronic signature stamp placement—is executed entirely **locally within the user's browser tab** using client-side resources.
+              PDF Section provides a web-based document editing utility. All processing—including file conversion, split, merge, compress, watermarking, and electronic signature stamp placement—is executed entirely **locally within the user&apos;s browser tab** using client-side resources.
             </p>
           </section>
 
@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>5. Disclaimer of Warranties</h2>
             <p>
-              THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, ACCURATE, OR ERROR-FREE. 
+              THE SERVICE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, ACCURATE, OR ERROR-FREE. 
             </p>
             <p style={{ marginTop: 'var(--space-xs)' }}>
               We are not responsible for any file corruptions, loss of data, document errors, or signature rendering issues that occur during client-side execution.

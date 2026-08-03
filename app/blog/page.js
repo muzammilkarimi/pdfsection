@@ -7,7 +7,7 @@ import { BLOG_POSTS } from '@/lib/blog';
 export default function BlogListPage() {
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const categories = ['All', 'Privacy', 'Security', 'Tech Stack'];
+  const categories = ['All', ...Array.from(new Set(BLOG_POSTS.map((post) => post.category)))];
 
   const filteredPosts = activeCategory === 'All' 
     ? BLOG_POSTS 

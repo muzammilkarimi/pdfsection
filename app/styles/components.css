@@ -1561,3 +1561,216 @@
   }
 }
 
+/* ==========================================================================
+   Tool Guide Section (How to Use, Benefits, Use Cases, FAQs)
+   ========================================================================== */
+
+.tool-guide-section {
+  margin-top: var(--space-xxl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.tool-guide-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.tool-guide-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  letter-spacing: -0.02em;
+}
+
+.tool-guide-subtitle {
+  font-size: 14.5px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.tool-guide-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tool-guide-block-title,
+.tool-guide-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tool-guide-block-title svg,
+.tool-guide-card-title svg {
+  color: var(--primary);
+}
+
+/* 3-Step How-To Grid */
+.tool-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+
+.tool-step-card {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  padding: var(--space-md);
+  background-color: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-lg);
+  transition: transform var(--duration-fast) var(--ease-default), border-color var(--duration-fast) var(--ease-default);
+}
+
+.tool-step-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.tool-step-number {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 15%, var(--surface-2));
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-step-content h4 {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.tool-step-content p {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+/* Two Column Layout */
+.tool-guide-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.tool-guide-card {
+  padding: var(--space-lg);
+  background-color: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tool-benefits-list,
+.tool-usecases-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-benefits-list li,
+.tool-usecases-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.benefit-check-icon {
+  color: #10b981;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.usecase-bullet {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: -1px;
+}
+
+/* FAQs Section */
+.tool-faqs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-faq-card {
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.tool-faq-card:hover {
+  border-color: var(--primary);
+}
+
+.tool-faq-card.is-open {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 3%, var(--surface-1));
+}
+
+.tool-faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.tool-faq-question h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.faq-toggle-icon {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.tool-faq-answer {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--hairline);
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+
+

@@ -221,7 +221,7 @@ export default function HomePage() {
                   Search results
                 </span>
                 <h2 className="home-tools-title">
-                  {visibleTools.length} tool{visibleTools.length === 1 ? '' : 's'} matching "{searchQuery}"
+                  {visibleTools.length} tool{visibleTools.length === 1 ? '' : 's'} matching &quot;{searchQuery}&quot;
                 </h2>
               </div>
               <button

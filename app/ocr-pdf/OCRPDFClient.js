@@ -167,7 +167,7 @@ export default function OCRPDFClient() {
 
                   {!processing && !extractedText && (
                     <p className="body-sm ink-subtle" style={{ fontStyle: 'italic', padding: '40px', textAlign: 'center' }}>
-                      Click "Run OCR Page Scanning" in the sidebar to read image characters.
+                      Click &quot;Run OCR Page Scanning&quot; in the sidebar to read image characters.
                     </p>
                   )}
 

@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>4. Local Storage Usage</h2>
             <p>
-              We use the browser's standard Local Storage mechanism to persist only your UI layout preferences (such as light vs. dark theme selection). No personal or document-related data is ever stored in Local Storage.
+              We use the browser&apos;s standard Local Storage mechanism to persist only your UI layout preferences (such as light vs. dark theme selection). No personal or document-related data is ever stored in Local Storage.
             </p>
           </section>
 

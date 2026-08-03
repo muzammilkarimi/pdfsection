@@ -58,6 +58,20 @@ export default function RedactPDFClient() {
   }, []);
 
   // Render current PDF page
+  // Draw black rectangles of the current page on overlay canvas
+  const drawExistingRedactions = useCallback(() => {
+    const canvas = overlayCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const pageReds = redactions[currentPageIndex] || [];
+    pageReds.forEach((r) => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(r.x * canvas.width, r.y * canvas.height, r.w * canvas.width, r.h * canvas.height);
+    });
+  }, [currentPageIndex, redactions]);
+
   const renderCurrentPage = useCallback(async () => {
     if (!pdfRenderDoc || !canvasRef.current) return;
     setRenderingPage(true);
@@ -76,27 +90,7 @@ export default function RedactPDFClient() {
     } finally {
       setRenderingPage(false);
     }
-  }, [pdfRenderDoc, currentPageIndex, redactions]);
-
-  useEffect(() => {
-    if (pdfRenderDoc) {
-      renderCurrentPage();
-    }
-  }, [pdfRenderDoc, currentPageIndex, renderCurrentPage]);
-
-  // Draw black rectangles of the current page on overlay canvas
-  const drawExistingRedactions = () => {
-    const canvas = overlayCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const pageReds = redactions[currentPageIndex] || [];
-    pageReds.forEach((r) => {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(r.x * canvas.width, r.y * canvas.height, r.w * canvas.width, r.h * canvas.height);
-    });
-  };
+  }, [pdfRenderDoc, currentPageIndex, drawExistingRedactions]);
 
   const getCanvasMousePos = (e) => {
     const canvas = overlayCanvasRef.current;

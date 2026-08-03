@@ -169,7 +169,7 @@ export default function TranslatePDFClient() {
 
               {!processing && !translatedText && (
                 <p className="body-sm ink-muted" style={{ fontStyle: 'italic', margin: 'auto', textAlign: 'center' }}>
-                  Click "Translate Document" in the sidebar to begin processing.
+                  Click &quot;Translate Document&quot; in the sidebar to begin processing.
                 </p>
               )}
 

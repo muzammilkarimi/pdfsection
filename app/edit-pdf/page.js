@@ -1,10 +1,33 @@
 import EditPDFClient from './EditPDFClient';
+import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 
-export const metadata = {
-  title: 'Edit PDF',
-  description: 'Add text annotations, draw, and edit pages in your PDF document. Free, private, and works in your browser.',
-};
+export const metadata = buildToolMetadata({
+  title: 'Edit PDF Online — Add Text, Annotations & Shapes',
+  description: 'Edit PDF documents online. Add text, drawings, shapes, and annotations directly to your PDF pages. 100% free and private.',
+  route: '/edit-pdf',
+  keywords: ['Edit PDF', 'PDF editor online', 'add text to PDF', 'annotate PDF', 'free online PDF editor'],
+});
 
-export default function EditPDFPage() {
-  return <EditPDFClient />;
+const jsonLd = buildToolJsonLd({
+  name: 'PDF Editor',
+  description: 'Online PDF editor for adding text, drawings, shapes, and annotations directly to PDF documents.',
+  route: '/edit-pdf',
+  faqs: [
+    {
+      question: 'Can I add text or annotations to my PDF?',
+      answer: 'Yes! PDF Section allows you to click anywhere on a PDF page to type text, draw, or add shapes.',
+    },
+  ],
+});
+
+export default function Page() {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <EditPDFClient />
+    </>
+  );
 }

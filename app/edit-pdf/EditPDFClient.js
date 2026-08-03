@@ -309,24 +309,30 @@ export default function EditPDFClient() {
         [currentPageIndex]: paragraphBlocks,
       }));
 
-      if (drawingCanvasRef.current) {
-        drawingCanvasRef.current.width = viewport.width;
-        drawingCanvasRef.current.height = viewport.height;
-        redrawCurrentPageDrawings();
+        if (drawingCanvasRef.current) {
+          drawingCanvasRef.current.width = viewport.width;
+          drawingCanvasRef.current.height = viewport.height;
+          redrawCurrentPageDrawings();
+        }
+      } catch (err) {
+        if (err?.name !== 'RenderingCancelledException') {
+          console.error('Error rendering page:', err);
+        }
+      } finally {
+        setRenderingPage(false);
       }
-    } catch (err) {
-      if (err?.name !== 'RenderingCancelledException') {
-        console.error('Error rendering page:', err);
-      }
-    } finally {
-      setRenderingPage(false);
-    }
-  }, [pdfRenderDoc, currentPageIndex, pageRotations]);
+    }, [pdfRenderDoc, currentPageIndex, pageRotations, redrawCurrentPageDrawings]);
 
   useEffect(() => {
+    let active = true;
     if (pdfRenderDoc) {
-      renderCurrentPage();
+      Promise.resolve().then(() => {
+        if (active) renderCurrentPage();
+      });
     }
+    return () => {
+      active = false;
+    };
   }, [pdfRenderDoc, renderCurrentPage]);
 
   useEffect(() => {
@@ -337,9 +343,12 @@ export default function EditPDFClient() {
   const handleSelectExtractedText = (block) => {
     saveSnapshot();
 
+    const id1 = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'wo-' + block.id;
+    const id2 = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'tx-' + block.id;
+
     // 1. Whiteout box to cover original PDF paragraph text underneath
     const whiteoutEl = {
-      id: 'el-whiteout-' + Date.now(),
+      id: `el-whiteout-${id1}`,
       type: 'erase',
       x: Math.max(0, block.x - 0.005),
       y: Math.max(0, block.y - 0.005),
@@ -350,7 +359,7 @@ export default function EditPDFClient() {
 
     // 2. Live editable paragraph text element
     const editableTextEl = {
-      id: 'el-text-' + Date.now(),
+      id: `el-text-${id2}`,
       type: 'text',
       x: block.x,
       y: block.y,
@@ -363,19 +372,9 @@ export default function EditPDFClient() {
       isBold,
     };
 
-    setElements((prev) => ({
-      ...prev,
-      [currentPageIndex]: [...(prev[currentPageIndex] || []), whiteoutEl, editableTextEl],
-    }));
-
-    // Remove paragraph from extracted text layer
-    setExtractedTextBlocks((prev) => ({
-      ...prev,
-      [currentPageIndex]: (prev[currentPageIndex] || []).filter((b) => b.id !== block.id),
-    }));
-
+    addElementToPage(whiteoutEl);
+    addElementToPage(editableTextEl);
     setSelectedId(editableTextEl.id);
-    setActiveTool('select');
   };
 
   // Add Element Helper
@@ -394,8 +393,9 @@ export default function EditPDFClient() {
     if (!imgFile) return;
     try {
       const prepared = await prepareImageForPdf(imgFile);
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'img-new';
       const newEl = {
-        id: 'el-' + Date.now(),
+        id: `el-img-${id}`,
         type: 'image',
         x: 0.25,
         y: 0.25,
@@ -415,8 +415,9 @@ export default function EditPDFClient() {
 
   // Insert Preset Stamp
   const insertStamp = (stampObj) => {
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'stamp-new';
     const newEl = {
-      id: 'el-' + Date.now(),
+      id: `el-stamp-${id}`,
       type: 'stamp',
       text: stampObj.label,
       color: stampObj.color,
@@ -429,6 +430,15 @@ export default function EditPDFClient() {
     setActiveTool('select');
   };
 
+  const deleteElement = useCallback((id) => {
+    saveSnapshot();
+    setElements((prev) => ({
+      ...prev,
+      [currentPageIndex]: (prev[currentPageIndex] || []).filter((el) => el.id !== id),
+    }));
+    setSelectedId((prev) => (prev === id ? null : prev));
+  }, [currentPageIndex, saveSnapshot]);
+
   // Canvas Mouse Down
   const handleCanvasMouseDown = (e) => {
     setSelectedId(null);
@@ -438,8 +448,9 @@ export default function EditPDFClient() {
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 
     if (activeTool === 'text') {
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'txt-1';
       const newEl = {
-        id: 'el-' + Date.now(),
+        id: `el-${id}`,
         type: 'text',
         x,
         y,
@@ -548,8 +559,9 @@ export default function EditPDFClient() {
     if (isDrawing && activeTool === 'draw') {
       setIsDrawing(false);
       if (currentStroke.length >= 2) {
+        const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'draw-1';
         const newEl = {
-          id: 'el-' + Date.now(),
+          id: `el-${id}`,
           type: 'draw',
           color: activeColor,
           strokeWidth,
@@ -563,8 +575,9 @@ export default function EditPDFClient() {
 
     if (isCreatingBox && currentBox) {
       setIsCreatingBox(false);
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'box-1';
       const newEl = {
-        id: 'el-' + Date.now(),
+        id: `el-${id}`,
         type: activeTool,
         x: currentBox.x,
         y: currentBox.y,
@@ -586,14 +599,67 @@ export default function EditPDFClient() {
     }
   };
 
-  // Delete Element
-  const deleteElement = (id) => {
+  const generateUniqueId = (prefix) => {
+    const uid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'id-1';
+    return `${prefix}-${uid}`;
+  };
+
+  // Add standard elements (text, image, shape, erase box)
+  const handleAddText = () => {
     saveSnapshot();
-    setElements((prev) => ({
-      ...prev,
-      [currentPageIndex]: (prev[currentPageIndex] || []).filter((el) => el.id !== id),
-    }));
-    if (selectedId === id) setSelectedId(null);
+    const newEl = {
+      id: generateUniqueId('el-text'),
+      type: 'text',
+      x: 0.35,
+      y: 0.4,
+      width: 0.3,
+      height: 0.08,
+      text: 'Double click to edit text',
+      color: activeColor === '#ffffff' ? '#141320' : activeColor,
+      fontSize: activeFontSize,
+      fontFamily: activeFont,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+    };
+    addElementToPage(newEl);
+    setSelectedId(newEl.id);
+  };
+
+  const handleAddImage = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      saveSnapshot();
+      const newEl = {
+        id: generateUniqueId('el-img'),
+        type: 'image',
+        x: 0.3,
+        y: 0.3,
+        width: 0.35,
+        height: 0.25,
+        dataUrl: e.target.result,
+      };
+      addElementToPage(newEl);
+      setSelectedId(newEl.id);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddShape = (shapeType) => {
+    saveSnapshot();
+    const newEl = {
+      id: generateUniqueId(`el-${shapeType}`),
+      type: 'shape',
+      shapeType, // 'rect', 'circle', 'line'
+      x: 0.4,
+      y: 0.4,
+      width: 0.2,
+      height: 0.15,
+      color: activeColor,
+      strokeWidth: 2,
+    };
+    addElementToPage(newEl);
+    setSelectedId(newEl.id);
   };
 
   // Duplicate Element
@@ -603,9 +669,9 @@ export default function EditPDFClient() {
     if (!el) return;
     const copy = {
       ...el,
-      id: 'el-' + Date.now(),
-      x: Math.min(0.8, el.x + 0.04),
-      y: Math.min(0.8, el.y + 0.04),
+      id: generateUniqueId('el-dup'),
+      x: Math.min(0.85, el.x + 0.03),
+      y: Math.min(0.85, el.y + 0.03),
     };
     addElementToPage(copy);
   };
@@ -619,7 +685,7 @@ export default function EditPDFClient() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, currentPageIndex]);
+  }, [selectedId, currentPageIndex, deleteElement]);
 
   const updateElementProps = (id, newProps) => {
     setElements((prev) => ({

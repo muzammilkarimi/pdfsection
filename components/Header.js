@@ -8,7 +8,12 @@ import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    }
+    return 'light';
+  });
   const [expandedCategories, setExpandedCategories] = useState({});
 
   const toggleCategory = (catId) => {
@@ -19,18 +24,12 @@ export default function Header() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme');
-      if (storedTheme) {
-        setTheme(storedTheme);
-        document.documentElement.classList.remove('light', 'dark');
-        document.documentElement.classList.add(storedTheme);
-      } else if (document.documentElement.classList.contains('dark')) {
-        setTheme('dark');
-      } else {
-        setTheme('light');
-        document.documentElement.classList.add('light');
-      }
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme) {
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(storedTheme);
+    } else if (!document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.add('light');
     }
   }, []);
 
