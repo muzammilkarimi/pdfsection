@@ -7,7 +7,7 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { loadPdfForRender } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
 
 export default function GrayscalePDFClient() {
   const [file, setFile] = useState(null);
@@ -15,11 +15,19 @@ export default function GrayscalePDFClient() {
   const [progress, setProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [outputFileName, setOutputFileName] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
 
-  const handleFilesSelected = useCallback((files) => {
+  const handleFilesSelected = useCallback(async (files) => {
     if (files && files.length > 0) {
-      setFile(files[0]);
+      const selectedFile = files[0];
+      setFile(selectedFile);
       setDownloadUrl(null);
+      setIsLocked(false);
+      
+      const locked = await checkPdfEncryption(selectedFile);
+      if (locked) {
+        setIsLocked(true);
+      }
     }
   }, []);
 
@@ -74,7 +82,7 @@ export default function GrayscalePDFClient() {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
 
-      const outName = `${file.name.replace(/\.pdf$/i, '')}_Grayscale.pdf`;
+      const outName = `${file.name.replace(/\.pdf$/i, '')}_pdfsection_grayscale.pdf`;
       setOutputFileName(outName);
       setDownloadUrl(url);
     } catch (err) {
@@ -129,11 +137,23 @@ export default function GrayscalePDFClient() {
                 </div>
               )}
 
-              {!isProcessing && !downloadUrl && (
+               {!isProcessing && !downloadUrl && !isLocked && (
                 <div style={{ fontSize: '13.5px', color: 'var(--ink-muted)', lineHeight: '1.5' }}>
                   <p>Ready to process PDF pages into black and white format.</p>
                   <p style={{ marginTop: '6px', color: 'var(--ink-subtle)' }}>
                     Note: Grayscale images reduce file size and printing ink usage.
+                  </p>
+                </div>
+              )}
+
+              {isLocked && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', backgroundColor: 'rgba(255, 75, 75, 0.06)', border: '1px solid var(--semantic-error)', borderRadius: 'var(--rounded-md)', color: 'var(--ink)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--semantic-error)', fontWeight: '700' }}>
+                    <ToolIcon name="lock" size={20} />
+                    <span>This PDF File is Password-Protected</span>
+                  </div>
+                  <p className="caption" style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-muted)' }}>
+                    This document is encrypted and locked. Please remove its password restrictions using our free <a href="/unlock-pdf" style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: '600' }}>Unlock PDF tool</a> first, then try again.
                   </p>
                 </div>
               )}
@@ -164,7 +184,7 @@ export default function GrayscalePDFClient() {
             ) : (
               <button
                 onClick={handleConvertToGrayscale}
-                disabled={isProcessing}
+                disabled={isProcessing || isLocked}
                 className="btn btn-primary btn-lg btn-attention"
                 style={{ width: '100%' }}
               >

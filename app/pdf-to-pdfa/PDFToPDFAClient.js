@@ -6,7 +6,7 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
 
 export default function PDFToPDFAClient() {
   const [file, setFile] = useState(null);
@@ -14,11 +14,19 @@ export default function PDFToPDFAClient() {
   const [conformanceLevel, setConformanceLevel] = useState('pdfa-2b');
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [outputFileName, setOutputFileName] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
 
-  const handleFilesSelected = useCallback((files) => {
+  const handleFilesSelected = useCallback(async (files) => {
     if (files && files.length > 0) {
-      setFile(files[0]);
+      const selectedFile = files[0];
+      setFile(selectedFile);
       setDownloadUrl(null);
+      setIsLocked(false);
+      
+      const locked = await checkPdfEncryption(selectedFile);
+      if (locked) {
+        setIsLocked(true);
+      }
     }
   }, []);
 
@@ -39,7 +47,7 @@ export default function PDFToPDFAClient() {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
 
-      const outName = `${file.name.replace(/\.pdf$/i, '')}_${conformanceLevel.toUpperCase()}.pdf`;
+      const outName = `${file.name.replace(/\.pdf$/i, '')}_pdfsection_${conformanceLevel.toUpperCase()}.pdf`;
       setOutputFileName(outName);
       setDownloadUrl(url);
     } catch (err) {
@@ -88,13 +96,25 @@ export default function PDFToPDFAClient() {
                 </div>
               )}
 
-              {!isProcessing && !downloadUrl && (
+              {!isProcessing && !downloadUrl && !isLocked && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--ink-muted)' }}>
                   <p style={{ fontSize: '13.5px', lineHeight: '1.5' }}>
                     Standard PDFs can change over time based on external links, system fonts, and software changes.
                   </p>
                   <p style={{ fontSize: '13.5px', lineHeight: '1.5', fontWeight: '600', color: 'var(--ink)' }}>
                     ✅ PDF/A locks all layout elements, embeds necessary fonts, and complies with ISO 19005 standards.
+                  </p>
+                </div>
+              )}
+
+              {isLocked && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', backgroundColor: 'rgba(255, 75, 75, 0.06)', border: '1px solid var(--semantic-error)', borderRadius: 'var(--rounded-md)', color: 'var(--ink)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--semantic-error)', fontWeight: '700' }}>
+                    <ToolIcon name="lock" size={20} />
+                    <span>This PDF File is Password-Protected</span>
+                  </div>
+                  <p className="caption" style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-muted)' }}>
+                    This document is encrypted and locked. Please remove its password restrictions using our free <a href="/unlock-pdf" style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: '600' }}>Unlock PDF tool</a> first, then try again.
                   </p>
                 </div>
               )}
@@ -125,7 +145,7 @@ export default function PDFToPDFAClient() {
             ) : (
               <button
                 onClick={handleConvert}
-                disabled={isProcessing}
+                disabled={isProcessing || isLocked}
                 className="btn btn-primary btn-lg btn-attention"
                 style={{ width: '100%' }}
               >

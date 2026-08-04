@@ -6,7 +6,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
+import { loadPdf, downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
 import { loadPdfForRender } from '@/lib/renderUtils';
 
 const COMPRESSION_LEVELS = {
@@ -120,17 +120,28 @@ export default function CompressPDFClient() {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
+  const [isLocked, setIsLocked] = useState(false);
 
-  const handleFilesSelected = useCallback((files) => {
-    setFile(files[0] || null);
+  const handleFilesSelected = useCallback(async (files) => {
+    const selectedFile = files[0] || null;
+    setFile(selectedFile);
     setResult(null);
     setProgress(0);
+    setIsLocked(false);
+
+    if (selectedFile) {
+      const locked = await checkPdfEncryption(selectedFile);
+      if (locked) {
+        setIsLocked(true);
+      }
+    }
   }, []);
 
   const resetFile = () => {
     setFile(null);
     setResult(null);
     setProgress(0);
+    setIsLocked(false);
   };
 
   const handleCompress = async () => {
@@ -202,35 +213,51 @@ export default function CompressPDFClient() {
           ariaLabel="Compress PDF workspace"
           preview={(
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Select Compression Level</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                {levels.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="card"
-                    onClick={() => setLevel(item.id)}
-                    disabled={processing}
-                    style={{
-                      padding: 'var(--space-md)',
-                      textAlign: 'left',
-                      cursor: processing ? 'not-allowed' : 'pointer',
-                      border: level === item.id ? '2px solid var(--primary)' : '1px solid var(--hairline-strong)',
-                      backgroundColor: level === item.id ? 'rgba(94, 106, 210, 0.05)' : 'var(--surface-1)',
-                      borderRadius: 'var(--rounded-lg)',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                      <span style={{ minWidth: 40, fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{item.icon}</span>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-subtle)', marginTop: 4, lineHeight: 1.4 }}>{item.desc}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {!isLocked && (
+                <>
+                  <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Select Compression Level</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                    {levels.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="card"
+                        onClick={() => setLevel(item.id)}
+                        disabled={processing}
+                        style={{
+                          padding: 'var(--space-md)',
+                          textAlign: 'left',
+                          cursor: processing ? 'not-allowed' : 'pointer',
+                          border: level === item.id ? '2px solid var(--primary)' : '1px solid var(--hairline-strong)',
+                          backgroundColor: level === item.id ? 'rgba(94, 106, 210, 0.05)' : 'var(--surface-1)',
+                          borderRadius: 'var(--rounded-lg)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                          <span style={{ minWidth: 40, fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{item.icon}</span>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</div>
+                            <div style={{ fontSize: 12, color: 'var(--ink-subtle)', marginTop: 4, lineHeight: 1.4 }}>{item.desc}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {isLocked && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', backgroundColor: 'rgba(255, 75, 75, 0.06)', border: '1px solid var(--semantic-error)', borderRadius: 'var(--rounded-md)', color: 'var(--ink)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--semantic-error)', fontWeight: '700' }}>
+                    <ToolIcon name="lock" size={20} />
+                    <span>This PDF File is Password-Protected</span>
+                  </div>
+                  <p className="caption" style={{ margin: 0, fontSize: '13.5px', color: 'var(--ink-muted)' }}>
+                    This document is encrypted and locked. Please remove its password restrictions using our free <a href="/unlock-pdf" style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: '600' }}>Unlock PDF tool</a> first, then try again.
+                  </p>
+                </div>
+              )}
 
               {processing && (
                 <div style={{ marginTop: 'var(--space-md)' }}>
@@ -250,7 +277,7 @@ export default function CompressPDFClient() {
                 type="button"
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleCompress}
-                disabled={processing}
+                disabled={processing || isLocked}
                 id="compress-button"
               >
                 {processing ? `Compressing (${progress}%)...` : 'Compress PDF'}

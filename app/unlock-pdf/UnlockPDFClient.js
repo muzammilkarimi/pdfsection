@@ -8,12 +8,14 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { downloadBlob } from '@/lib/pdfUtils';
+import { loadPdfForRender } from '@/lib/renderUtils';
 
 export default function UnlockPDFClient() {
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState('');
   const [needsPassword, setNeedsPassword] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -51,10 +53,11 @@ export default function UnlockPDFClient() {
     if (!file) return;
     setProcessing(true);
     setErrorMsg('');
+    setProgress(0);
 
     try {
       const buffer = await file.arrayBuffer();
-      let pdfDoc;
+      let pdfBytes;
 
       if (needsPassword) {
         if (!password) {
@@ -62,18 +65,69 @@ export default function UnlockPDFClient() {
           setProcessing(false);
           return;
         }
-        pdfDoc = await PDFDocument.load(buffer, { password });
+
+        try {
+          // Attempt native pdf-lib load (supports RC4 and AES-128)
+          const pdfDoc = await PDFDocument.load(buffer, { password });
+          pdfBytes = await pdfDoc.save();
+        } catch (err) {
+          // Check if error is due to V5 AES-256 encryption being unsupported by pdf-lib
+          const msg = err.message || '';
+          if (
+            msg.includes('encrypted') ||
+            msg.includes('ignoreEncryption') ||
+            err.name === 'PasswordResponseRequiredError' ||
+            msg.includes('password')
+          ) {
+            // Trigger PDF.js High-Compatibility Decryption mode (reconstructs pages safely via rasterization)
+            const renderDoc = await loadPdfForRender(buffer, password);
+            const outPdf = await PDFDocument.create();
+            const numPages = renderDoc.numPages;
+
+            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+              setProgress(Math.round((pageNum / numPages) * 100));
+              const page = await renderDoc.getPage(pageNum);
+              
+              // Render scale 2.0 keeps high visual layout clarity
+              const viewport = page.getViewport({ scale: 2.0 });
+              const canvas = document.createElement('canvas');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              await page.render({ canvasContext: ctx, viewport }).promise;
+
+              const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+              const imageBytes = await imageBlob.arrayBuffer();
+              const image = await outPdf.embedJpg(imageBytes);
+
+              const newPage = outPdf.addPage([viewport.width, viewport.height]);
+              newPage.drawImage(image, {
+                x: 0,
+                y: 0,
+                width: viewport.width,
+                height: viewport.height,
+              });
+            }
+            pdfBytes = await outPdf.save();
+          } else {
+            throw err;
+          }
+        }
       } else {
-        pdfDoc = await PDFDocument.load(buffer);
+        const pdfDoc = await PDFDocument.load(buffer);
+        pdfBytes = await pdfDoc.save();
       }
 
-      const pdfBytes = await pdfDoc.save();
       downloadBlob(pdfBytes, file.name.replace('.pdf', '-unlocked.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
-      setErrorMsg('Incorrect password or decryption error: ' + err.message);
+      setErrorMsg('Incorrect password or decryption error. Please check your credentials and try again.');
     } finally {
       setProcessing(false);
+      setProgress(0);
     }
   };
 
@@ -97,7 +151,7 @@ export default function UnlockPDFClient() {
       layoutMode={file ? 'page-preview' : 'page-scroll'}
     >
       {!file ? (
-        <FileDropzone accept=".pdf" multiple={false} onFilesSelected={handleFilesSelected} label="Select PDF file" id="unlock-dropzone" />
+        <FileDropzone accept=".pdf" multiple={false} onFilesSelected={handleFilesSelected} label="Select PDF file" id="unlock-dropzone" allowLocked={true} />
       ) : (
         <PageToolWorkspace
           title="Unlock PDF"
@@ -109,8 +163,8 @@ export default function UnlockPDFClient() {
           ariaLabel="Unlock PDF settings"
           preview={preview}
           footer={(
-            <button className="btn btn-primary btn-lg btn-attention" onClick={handleUnlock} disabled={processing || (needsPassword && !password)} id="unlock-pdf-button">
-              {processing ? 'Unlocking...' : 'Unlock PDF'}
+            <button className="btn btn-primary btn-lg btn-attention" onClick={handleUnlock} disabled={processing || (needsPassword && !password)} id="unlock-pdf-button" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}>
+              {processing ? (progress > 0 ? `Unlocking (${progress}%)...` : 'Unlocking...') : 'Unlock PDF'}
               <ToolIcon name="unlock" size={16} />
             </button>
           )}

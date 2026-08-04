@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { ToolIcon } from './Icons';
+import { checkPdfEncryption } from '@/lib/pdfUtils';
 
 export default function FileDropzone({
   accept = '.pdf',
@@ -13,26 +14,32 @@ export default function FileDropzone({
   label = 'Drop your files here',
   sublabel,
   id = 'file-dropzone',
+  allowLocked = false,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
   const inputRef = useRef(null);
 
   const acceptTypes = accept.split(',').map((t) => t.trim());
   const acceptLabel = acceptTypes.map((t) => t.replace('.', '').replace('image/', '').toUpperCase()).join(', ');
   const acceptsImages = accept.includes('image');
   const acceptsOnlyPdf = acceptTypes.length === 1 && acceptTypes[0] === '.pdf';
-  const uploadLabel = acceptsImages
-    ? 'Select images'
-    : acceptsOnlyPdf
-      ? multiple ? 'Select PDF files' : 'Select PDF file'
-      : multiple ? 'Select files' : 'Select file';
-  const dropHint = acceptsImages
-    ? `or drag and drop ${acceptLabel} images here`
-    : acceptsOnlyPdf
-      ? `or drag and drop PDF ${multiple ? 'files' : 'file'} here`
-      : `or drag and drop ${acceptLabel} files here`;
+  const uploadLabel = isChecking
+    ? 'Checking file...'
+    : acceptsImages
+      ? 'Select images'
+      : acceptsOnlyPdf
+        ? multiple ? 'Select PDF files' : 'Select PDF file'
+        : multiple ? 'Select files' : 'Select file';
+  const dropHint = isChecking
+    ? 'Please wait while we verify your document...'
+    : acceptsImages
+      ? `or drag and drop ${acceptLabel} images here`
+      : acceptsOnlyPdf
+        ? `or drag and drop PDF ${multiple ? 'files' : 'file'} here`
+        : `or drag and drop ${acceptLabel} files here`;
 
   const validateFile = useCallback(
     (file) => {
@@ -51,7 +58,7 @@ export default function FileDropzone({
   );
 
   const handleFiles = useCallback(
-    (newFiles) => {
+    async (newFiles) => {
       setError('');
       const fileArray = Array.from(newFiles);
 
@@ -64,6 +71,35 @@ export default function FileDropzone({
         }
       }
 
+      // Check encryption if not allowed
+      if (!allowLocked) {
+        setIsChecking(true);
+        try {
+          for (const file of fileArray) {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (ext === '.pdf') {
+              const locked = await checkPdfEncryption(file);
+              if (locked) {
+                setError(
+                  <span>
+                    🔒 <strong>{file.name}</strong> is password-protected. Please unlock it using our free{' '}
+                    <Link href="/unlock-pdf" style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: '600' }}>
+                      Unlock PDF tool
+                    </Link>{' '}
+                    first.
+                  </span>
+                );
+                setIsChecking(false);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          // ignore or handle file reading errors
+        }
+        setIsChecking(false);
+      }
+
       let updated;
       if (multiple) {
         updated = [...files, ...fileArray].slice(0, maxFiles);
@@ -74,7 +110,7 @@ export default function FileDropzone({
       setFiles(updated);
       onFilesSelected?.(updated);
     },
-    [files, multiple, maxFiles, validateFile, onFilesSelected]
+    [files, multiple, maxFiles, validateFile, onFilesSelected, allowLocked]
   );
 
   const handleDragOver = (e) => {
