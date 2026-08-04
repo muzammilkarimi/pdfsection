@@ -35,6 +35,16 @@ export default function Footer() {
       ],
     },
     {
+      title: 'How-To Guides',
+      links: [
+        { label: 'Compress PDF to 100KB', href: '/how-to/compress-pdf-to-100kb' },
+        { label: 'Convert PDF to Grayscale', href: '/how-to/convert-color-pdf-to-black-and-white' },
+        { label: 'Add Bates Numbers to PDF', href: '/how-to/add-bates-numbers-to-court-documents' },
+        { label: 'Unlock PDF Without Software', href: '/how-to/remove-password-from-pdf-without-software' },
+        { label: 'Sign Contract PDF Online', href: '/how-to/sign-contract-pdf-online-free' },
+      ],
+    },
+    {
       title: 'Alternatives',
       links: [
         { label: 'iLovePDF Alternative', href: '/ilovepdf-alternative' },

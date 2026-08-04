@@ -62,7 +62,7 @@ export default function AboutPage() {
               Muzammil Ahmad Karimi
             </h1>
             <p className="body-md ink-muted" style={{ lineHeight: '1.65', fontSize: '16px', marginBottom: 'var(--space-md)', textAlign: 'justify', textJustify: 'inter-word' }}>
-              As an <strong>IIT Patna alumnus</strong>, I am building <strong>PDF Section</strong> from a simple frustration: handling PDF documents shouldn&apos;t require uploading sensitive files to remote servers, navigating ad-filled platforms, or paying for expensive software.
+              As an <strong>IIT Patna alumnus</strong>, I am building <strong>PDF Section </strong> from a simple frustration: handling PDF documents shouldn&apos;t require uploading sensitive files to remote servers, navigating ad-filled platforms, or paying for expensive software.
             </p>
             <p className="body-md ink-muted" style={{ lineHeight: '1.65', fontSize: '16px', textAlign: 'justify', textJustify: 'inter-word' }}>
               PDF Section exists so people can manage their documents locally, securely, and completely free—right inside their browser.

@@ -249,9 +249,10 @@ export default function TranslatePDFClient() {
                       type="button"
                       onClick={handleDownloadTxt}
                       className="btn btn-primary"
-                      style={{ fontSize: '12px', padding: '4px 10px' }}
+                      style={{ fontSize: '12px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      ⬇️ Download .TXT
+                      Download .TXT
+                      <ToolIcon name="download" size={13} />
                     </button>
                   </div>
                 )}
@@ -300,16 +301,28 @@ export default function TranslatePDFClient() {
             </div>
           }
           footer={
-            <button
-              className="btn btn-primary btn-lg btn-attention"
-              onClick={handleTranslate}
-              disabled={processing}
-              style={{ width: '100%', fontWeight: '700' }}
-              id="translate-pdf-button"
-            >
-              {processing ? `Translating (${progress}%)...` : `Translate to ${selectedTargetLangObj?.name || 'Selected Language'}`}
-              <ToolIcon name="translate" size={16} style={{ marginLeft: 6 }} />
-            </button>
+            translatedText ? (
+              <button
+                className="btn btn-primary btn-lg btn-attention"
+                onClick={handleDownloadTxt}
+                style={{ width: '100%', fontWeight: '700', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                id="translate-download-button"
+              >
+                Download Translated Text
+                <ToolIcon name="download" size={16} />
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-lg btn-attention"
+                onClick={handleTranslate}
+                disabled={processing}
+                style={{ width: '100%', fontWeight: '700' }}
+                id="translate-pdf-button"
+              >
+                {processing ? `Translating (${progress}%)...` : `Translate to ${selectedTargetLangObj?.name || 'Selected Language'}`}
+                <ToolIcon name="translate" size={16} style={{ marginLeft: 6 }} />
+              </button>
+            )
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>

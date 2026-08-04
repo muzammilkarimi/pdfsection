@@ -135,7 +135,7 @@ export default function ToolPageLayout({
           <RelatedToolsSection currentRoute={pathname} />
 
           {/* How to Use / Benefits / FAQ Guide Block */}
-          {showGuide && (
+          {(showGuide || layoutMode === 'page-scroll') && (
             <ToolGuideSection title={title} seoData={seoData} />
           )}
         </div>

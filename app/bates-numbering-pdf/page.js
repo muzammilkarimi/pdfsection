@@ -1,5 +1,4 @@
-import ToolPageLayout from '@/components/ToolPageLayout';
-import { buildToolMetadata } from '@/lib/seoUtils';
+import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import BatesNumberingPDFClient from './BatesNumberingPDFClient';
 
 export const metadata = buildToolMetadata({
@@ -9,15 +8,30 @@ export const metadata = buildToolMetadata({
   keywords: ['Bates numbering PDF', 'Bates stamp online free', 'legal document numbering', 'Bates prefix stamp', 'legal discovery PDF'],
 });
 
+const jsonLd = buildToolJsonLd({
+  name: 'Bates Numbering PDF Tool',
+  description: 'Stamp custom sequential Bates numbers onto PDF pages for legal discovery, law firms, and court submissions.',
+  route: '/bates-numbering-pdf',
+  faqs: [
+    {
+      question: 'What is Bates numbering?',
+      answer: 'Bates numbering (or Bates stamping) is a method of indexing and identifying legal and corporate documents by placing sequential identifying numbers, prefixes, or labels on each page.',
+    },
+    {
+      question: 'Is bates stamping secure on PDF Section?',
+      answer: 'Yes, Bates numbering is processed completely locally in your browser memory. Your documents never touch any server, keeping sensitive litigation files fully private.',
+    }
+  ],
+});
+
 export default function BatesNumberingPage() {
   return (
-    <ToolPageLayout
-      title="Bates Numbering PDF"
-      description="Stamp custom sequential Bates numbers onto PDF pages for legal discovery, law firms, and court submissions."
-      icon="hash"
-      iconColor="var(--tool-edit)"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <BatesNumberingPDFClient />
-    </ToolPageLayout>
+    </>
   );
 }

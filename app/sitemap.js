@@ -1,5 +1,6 @@
 import { LIVE_TOOLS } from '@/lib/tools';
 import { BLOG_POSTS } from '@/lib/blog';
+import { PSEO_PAGES } from '@/lib/seoRegistry';
 
 export default function sitemap() {
   const baseUrl = 'https://pdfsection.com';
@@ -62,6 +63,16 @@ export default function sitemap() {
       url: `${baseUrl}${tool.route}`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
+      priority: 0.8,
+    });
+  });
+
+  // All programmatic long-tail landing pages
+  PSEO_PAGES.forEach((page) => {
+    routes.push({
+      url: `${baseUrl}/how-to/${page.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
       priority: 0.8,
     });
   });

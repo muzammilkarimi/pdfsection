@@ -12,13 +12,13 @@ import { loadPdfForRender } from '@/lib/renderUtils';
 const COMPRESSION_LEVELS = {
   low: {
     label: 'Low Compression',
-    desc: 'Lossless PDF cleanup. Keeps text selectable and preserves vectors.',
+    desc: 'Lossless PDF optimization. Keeps text selectable, preserves vectors, and cleans up document headers.',
     icon: 'Low',
     mode: 'lossless',
   },
   medium: {
     label: 'Recommended',
-    desc: 'Smaller file for scanned PDFs. Pages are flattened to images.',
+    desc: 'Balances quality and size. Best for scanned files, targeting sizes under 1MB–2MB.',
     icon: 'Med',
     mode: 'raster',
     dpi: 115,
@@ -27,7 +27,7 @@ const COMPRESSION_LEVELS = {
   },
   high: {
     label: 'Maximum Compression',
-    desc: 'Smallest output. Best for scanned/image PDFs, lower visual quality.',
+    desc: 'Smallest file size. Optimizes image grids to target sizes under 100KB–200KB.',
     icon: 'Max',
     mode: 'raster',
     dpi: 92,

@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
+import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { loadPdfForRender } from '@/lib/renderUtils';
+import { downloadBlob } from '@/lib/pdfUtils';
 
 export default function GrayscalePDFClient() {
   const [file, setFile] = useState(null);
@@ -82,7 +86,14 @@ export default function GrayscalePDFClient() {
   };
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: 'var(--space-md) 0' }}>
+    <ToolPageLayout
+      title="Grayscale PDF Converter"
+      description="Convert full-color PDF files to Black & White / Grayscale format for ink-saving printing."
+      icon="image"
+      iconColor="var(--tool-optimize)"
+      showHeader={!file}
+      layoutMode={file ? 'page-preview' : 'page-scroll'}
+    >
       {!file ? (
         <FileDropzone
           onFilesSelected={handleFilesSelected}
@@ -92,27 +103,24 @@ export default function GrayscalePDFClient() {
           subtitle="Convert full-color documents to Black & White for cheap printing and document submission"
         />
       ) : (
-        <div style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-xl)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
-            <div>
-              <h3 style={{ fontWeight: '700', fontSize: '16px', color: 'var(--ink)' }}>{file.name}</h3>
-              <p style={{ fontSize: '13px', color: 'var(--ink-subtle)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-            </div>
-            <button
-              onClick={() => { setFile(null); setDownloadUrl(null); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '12px', padding: '4px 10px' }}
-            >
-              Change file
-            </button>
-          </div>
-
-          {!downloadUrl ? (
-            <div style={{ marginTop: 'var(--space-lg)' }}>
+        <PageToolWorkspace
+          title="Grayscale PDF Converter"
+          description="Convert color documents to Black & White format."
+          icon="image"
+          iconColor="var(--tool-optimize)"
+          file={file}
+          onReset={() => {
+            setFile(null);
+            setDownloadUrl(null);
+          }}
+          preview={
+            <div style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Grayscale Processing Hub</p>
+              
               {isProcessing && (
-                <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div style={{ padding: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--ink-muted)', marginBottom: '4px' }}>
-                    <span>Processing Grayscale conversion...</span>
+                    <span>Processing page frames...</span>
                     <span>{progress}%</span>
                   </div>
                   <div style={{ height: '6px', backgroundColor: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -120,29 +128,61 @@ export default function GrayscalePDFClient() {
                   </div>
                 </div>
               )}
-              <button
-                onClick={handleConvertToGrayscale}
-                disabled={isProcessing}
-                className="btn btn-primary"
-                style={{ width: '100%', padding: '12px 20px', fontWeight: '600', fontSize: '15px' }}
-              >
-                {isProcessing ? `Converting (${progress}%)...` : 'Convert to Grayscale (B&W)'}
-              </button>
+
+              {!isProcessing && !downloadUrl && (
+                <div style={{ fontSize: '13.5px', color: 'var(--ink-muted)', lineHeight: '1.5' }}>
+                  <p>Ready to process PDF pages into black and white format.</p>
+                  <p style={{ marginTop: '6px', color: 'var(--ink-subtle)' }}>
+                    Note: Grayscale images reduce file size and printing ink usage.
+                  </p>
+                </div>
+              )}
+
+              {downloadUrl && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'center', margin: 'auto' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--semantic-success)' }}>
+                    ✓ Grayscale PDF Generated Successfully
+                  </div>
+                  <p className="caption ink-muted" style={{ fontSize: '13.5px' }}>
+                    Click the download button in the sidebar panel to save your document.
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div style={{ textAlign: 'center', marginTop: 'var(--space-md)' }}>
+          }
+          footer={
+            downloadUrl ? (
               <a
                 href={downloadUrl}
                 download={outputFileName}
-                className="btn btn-primary"
-                style={{ width: '100%', padding: '12px 20px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', display: 'block' }}
+                className="btn btn-primary btn-lg btn-attention"
+                style={{ width: '100%', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                ⬇️ Download Grayscale PDF ({outputFileName})
+                Download Grayscale PDF
+                <ToolIcon name="download" size={16} />
               </a>
+            ) : (
+              <button
+                onClick={handleConvertToGrayscale}
+                disabled={isProcessing}
+                className="btn btn-primary btn-lg btn-attention"
+                style={{ width: '100%' }}
+              >
+                {isProcessing ? `Converting (${progress}%)...` : 'Convert to Grayscale (B&W)'}
+                <ToolIcon name="image" size={16} />
+              </button>
+            )
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <p className="eyebrow" style={{ color: 'var(--primary)', fontWeight: '700' }}>OPTIMIZATION CONFIG</p>
+            <div style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: '1.5' }}>
+              <p>✓ All pages are rasterized to grayscale JPEGs at 150 DPI.</p>
+              <p style={{ marginTop: '8px' }}>✓ Compiles completely in local client memory.</p>
             </div>
-          )}
-        </div>
+          </div>
+        </PageToolWorkspace>
       )}
-    </div>
+    </ToolPageLayout>
   );
 }

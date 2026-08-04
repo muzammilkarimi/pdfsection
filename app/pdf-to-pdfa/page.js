@@ -1,5 +1,4 @@
-import ToolPageLayout from '@/components/ToolPageLayout';
-import { buildToolMetadata } from '@/lib/seoUtils';
+import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import PDFToPDFAClient from './PDFToPDFAClient';
 
 export const metadata = buildToolMetadata({
@@ -9,15 +8,30 @@ export const metadata = buildToolMetadata({
   keywords: ['PDF to PDF/A', 'convert PDF to PDFA', 'ISO 19005 converter', 'court PDF/A compliance', 'free archival PDF converter'],
 });
 
+const jsonLd = buildToolJsonLd({
+  name: 'PDF to PDF/A Converter',
+  description: 'Convert standard PDF documents into ISO 19005 compliant PDF/A archival format for long-term preservation.',
+  route: '/pdf-to-pdfa',
+  faqs: [
+    {
+      question: 'What is PDF/A format?',
+      answer: 'PDF/A is an ISO-standardized version of the Portable Document Format (PDF) specialized for use in the archiving and long-term preservation of electronic documents.',
+    },
+    {
+      question: 'Is conversion to PDF/A done locally?',
+      answer: 'Yes, PDF Section processes everything client-side inside your browser. No files are uploaded to our servers, ensuring absolute privacy.',
+    }
+  ],
+});
+
 export default function PDFToPDFAPage() {
   return (
-    <ToolPageLayout
-      title="Convert PDF to PDF/A"
-      description="Convert standard PDF documents into ISO 19005 compliant PDF/A archival format for long-term preservation."
-      icon="check"
-      iconColor="var(--tool-convert-from)"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PDFToPDFAClient />
-    </ToolPageLayout>
+    </>
   );
 }

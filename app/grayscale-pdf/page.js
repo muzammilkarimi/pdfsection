@@ -1,5 +1,4 @@
-import ToolPageLayout from '@/components/ToolPageLayout';
-import { buildToolMetadata } from '@/lib/seoUtils';
+import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import GrayscalePDFClient from './GrayscalePDFClient';
 
 export const metadata = buildToolMetadata({
@@ -9,15 +8,30 @@ export const metadata = buildToolMetadata({
   keywords: ['grayscale PDF converter', 'PDF to black and white', 'convert PDF color to B&W', 'ink saver PDF converter', 'free grayscale PDF'],
 });
 
+const jsonLd = buildToolJsonLd({
+  name: 'Grayscale PDF Converter',
+  description: 'Convert full-color PDF files to Black & White / Grayscale format for ink-saving printing.',
+  route: '/grayscale-pdf',
+  faqs: [
+    {
+      question: 'How does Grayscale PDF conversion work?',
+      answer: 'The tool reads each page of your PDF, renders them as canvas elements, processes the pixel colors to extract luma values (grayscale), and compiles them into a new Black & White PDF document.',
+    },
+    {
+      question: 'Will converting to grayscale reduce my PDF file size?',
+      answer: 'Yes, converting color images to grayscale can significantly reduce the embedded image stream size, yielding a much smaller output file.',
+    }
+  ],
+});
+
 export default function GrayscalePDFPage() {
   return (
-    <ToolPageLayout
-      title="Grayscale PDF Converter"
-      description="Convert full-color PDF files to Black & White / Grayscale format for ink-saving printing."
-      icon="image"
-      iconColor="var(--tool-optimize)"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <GrayscalePDFClient />
-    </ToolPageLayout>
+    </>
   );
 }
