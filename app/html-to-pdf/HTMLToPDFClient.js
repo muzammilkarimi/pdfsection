@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { downloadBlob } from '@/lib/pdfUtils';
 import { getToolById } from '@/lib/tools';
@@ -201,6 +202,13 @@ export default function HTMLToPDFClient() {
           </div>
         </div>
       </PageToolWorkspace>
+
+      {done && (
+        <ToastNotification
+          message="✓ HTML converted to PDF and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
+      )}
     </ToolPageLayout>
   );
 }

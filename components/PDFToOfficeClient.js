@@ -4,7 +4,10 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import PageThumbnails from '@/components/PageThumbnails';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
+
 import { loadPdfForRender } from '@/lib/renderUtils';
 import { downloadBlob } from '@/lib/pdfUtils';
 import { getToolById } from '@/lib/tools';
@@ -259,69 +262,17 @@ export default function PDFToOfficeClient({ toolId }) {
             setFile(null);
             setDone(false);
           }}
-          preview={
-            <div
-              className="card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 'var(--space-xl) var(--space-md)',
-                minHeight: '260px',
-                textAlign: 'center',
-                backgroundColor: 'rgba(255,255,255,0.01)',
-                width: '100%',
-              }}
-            >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: 'var(--rounded-lg)',
-                  backgroundColor: 'rgba(94, 106, 210, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 'var(--space-md)',
-                  color: 'var(--primary)',
-                }}
-              >
-                <ToolIcon name={toolInfo.icon} size={32} />
-              </div>
-              <h3 className="body-lg" style={{ fontWeight: 600 }}>Convert PDF Document</h3>
-              <p className="body-sm ink-subtle" style={{ maxWidth: '320px', marginTop: 'var(--space-xs)', lineHeight: 1.5 }}>
-                Our local parser will read the text layouts from your PDF pages and compile them into an editable Office structure.
-              </p>
-
-              {processing && (
-                <div style={{ width: '100%', maxWidth: '320px', marginTop: 'var(--space-lg)' }}>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)' }}>
-                    Extracting PDF text structures... {progress}%
-                  </p>
-                </div>
-              )}
-
-              {done && (
-                <div style={{ marginTop: 'var(--space-md)', color: 'var(--semantic-success)', fontWeight: 500, fontSize: '14px' }}>
-                  ✓ Office document compiled and downloaded successfully!
-                </div>
-              )}
-            </div>
-          }
+          preview={<PageThumbnails file={file} selectable={false} maxWidth={150} className="page-preview-grid" />}
           footer={
             <button
-              className="btn btn-primary btn-lg btn-attention"
+              className={`btn btn-lg btn-attention ${done ? 'btn-success-state' : 'btn-primary'}`}
               onClick={handleConvert}
               disabled={processing}
               style={{ width: '100%' }}
               id="convert-pdf-office-button"
             >
-              {processing ? 'Converting...' : `Convert to ${toolInfo.name.split(' ')[2]}`}
-              <ToolIcon name="download" size={16} style={{ marginLeft: 6 }} />
+              {processing ? 'Converting...' : done ? '✓ Downloaded — Convert Again' : `Convert to ${toolInfo.name.split(' ')[2]}`}
+              <ToolIcon name={done ? 'check' : 'download'} size={16} style={{ marginLeft: 6 }} />
             </button>
           }
         >
@@ -330,8 +281,26 @@ export default function PDFToOfficeClient({ toolId }) {
             <p className="body-xs ink-subtle" style={{ lineHeight: 1.5 }}>
               Ready to generate editable office slides, worksheets, or paragraphs from the PDF document content.
             </p>
+
+            {processing && (
+              <div style={{ width: '100%', marginTop: 'var(--space-xs)' }}>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+                <p className="caption ink-muted" style={{ marginTop: 'var(--space-xs)' }}>
+                  Extracting PDF text structures... {progress}%
+                </p>
+              </div>
+            )}
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="Office document compiled & downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

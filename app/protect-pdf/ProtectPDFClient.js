@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { protectPdf, downloadBlob } from '@/lib/pdfUtils';
 
@@ -115,6 +116,13 @@ export default function ProtectPDFClient() {
 
           {done && <div className="merge-success">Encrypted successfully. Your PDF has been downloaded.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ PDF protected with password and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { downloadBlob } from '@/lib/pdfUtils';
 import { getToolById } from '@/lib/tools';
@@ -281,14 +282,14 @@ export default function OfficeToPDFClient({ toolId }) {
           }
           footer={
             <button
-              className="btn btn-primary btn-lg btn-attention"
+              className={`btn btn-lg btn-attention ${done ? 'btn-success-state' : 'btn-primary'}`}
               onClick={handleConvert}
               disabled={processing || renderingPreview}
               style={{ width: '100%' }}
               id="convert-office-button"
             >
-              {processing ? 'Converting to PDF...' : 'Convert to PDF'}
-              <ToolIcon name="download" size={16} style={{ marginLeft: 6 }} />
+              {processing ? 'Converting to PDF...' : done ? '✓ Downloaded — Convert Again' : 'Convert to PDF'}
+              <ToolIcon name={done ? 'check' : 'download'} size={16} style={{ marginLeft: 6 }} />
             </button>
           }
         >
@@ -308,14 +309,15 @@ export default function OfficeToPDFClient({ toolId }) {
                 </p>
               </div>
             )}
-
-            {done && (
-              <div style={{ marginTop: 'var(--space-xs)', color: 'var(--semantic-success)', fontWeight: 500, fontSize: '14px' }}>
-                ✓ PDF converted and downloaded with full formatting!
-              </div>
-            )}
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="PDF converted & downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
 
       <style jsx global>{`

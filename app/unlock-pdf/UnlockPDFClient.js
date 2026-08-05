@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { downloadBlob } from '@/lib/pdfUtils';
@@ -184,6 +185,13 @@ export default function UnlockPDFClient() {
           {errorMsg && <div className="merge-warning">{errorMsg}</div>}
           {done && <div className="merge-success">PDF unlocked successfully. Your PDF has been downloaded.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ PDF unlocked and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

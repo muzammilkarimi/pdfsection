@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { downloadBlob } from '@/lib/pdfUtils';
 import { getToolById } from '@/lib/tools';
@@ -188,6 +189,13 @@ export default function RepairPDFClient() {
             </p>
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ PDF repaired and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

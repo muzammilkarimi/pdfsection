@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
 import { downloadBlob } from '@/lib/pdfUtils';
@@ -244,6 +245,13 @@ export default function OCRPDFClient() {
             </div>
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ OCR text extracted and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

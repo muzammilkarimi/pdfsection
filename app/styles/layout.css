@@ -1143,7 +1143,10 @@ body:has(.tool-page-shell) .footer {
   align-items: start;
 }
 
-.tool-layout-page-preview .page-preview-panel,
+.tool-layout-page-preview .page-preview-panel {
+  height: auto;
+}
+
 .tool-layout-page-preview .page-controls-panel,
 .tool-layout-page-preview .page-controls-body {
   overflow: visible;

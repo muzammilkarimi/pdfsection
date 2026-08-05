@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender } from '@/lib/renderUtils';
 import { downloadBlob } from '@/lib/pdfUtils';
@@ -214,6 +215,13 @@ export default function PDFToMarkdownClient() {
             </div>
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Markdown extracted and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

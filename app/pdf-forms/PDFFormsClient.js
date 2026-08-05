@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
 import { downloadBlob } from '@/lib/pdfUtils';
@@ -301,6 +302,13 @@ export default function PDFFormsClient() {
             )}
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Filled PDF form exported and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

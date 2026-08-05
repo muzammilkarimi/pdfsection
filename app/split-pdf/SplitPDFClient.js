@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, splitPdf, splitPdfIntoPages, savePdf, downloadBlob } from '@/lib/pdfUtils';
 
@@ -135,9 +136,9 @@ export default function SplitPDFClient() {
           ariaLabel="Split PDF settings"
           preview={<PageThumbnails file={file} selectable={false} maxWidth={150} className="page-preview-grid" />}
           footer={(
-            <button className="btn btn-primary btn-lg btn-attention" onClick={handleSplit} disabled={processing || (mode === 'ranges' && !rangeInput.trim())} id="split-button">
-              {processing ? 'Splitting...' : 'Split PDF'}
-              <ToolIcon name="split" size={16} />
+            <button className={`btn btn-lg btn-attention ${done ? 'btn-success-state' : 'btn-primary'}`} onClick={handleSplit} disabled={processing || (mode === 'ranges' && !rangeInput.trim())} id="split-button" style={{ width: '100%' }}>
+              {processing ? 'Splitting...' : done ? '✓ Downloaded — Split Again' : 'Split PDF'}
+              <ToolIcon name={done ? 'check' : 'split'} size={16} style={{ marginLeft: 6 }} />
             </button>
           )}
         >
@@ -180,9 +181,14 @@ export default function SplitPDFClient() {
             <ToolIcon name="check" size={16} />
             <span>{outputText}</span>
           </div>
-
-          {done && <div className="merge-success">Split complete. Check your downloaded file.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="Split complete! Check your downloaded file."
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

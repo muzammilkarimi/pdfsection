@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, addPageNumbers, downloadPdf } from '@/lib/pdfUtils';
 
@@ -116,6 +117,13 @@ export default function AddPageNumbersClient() {
 
           {done && <div className="merge-success">Page numbers added. Your PDF has been downloaded.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Page numbers added and PDF downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

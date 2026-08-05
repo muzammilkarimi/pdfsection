@@ -112,7 +112,27 @@
 .tool-card:nth-child(7) { animation-delay: 180ms; }
 .tool-card:nth-child(8) { animation-delay: 210ms; }
 .tool-card:nth-child(9) { animation-delay: 240ms; }
-.tool-card:nth-child(10) { animation-delay: 270ms; }
+.stagger-grid > *:nth-child(10) { animation-delay: 270ms; }
+
+/* ── Toast Slide In & Success Button State ── */
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.btn-success-state {
+  background-color: #27a644 !important;
+  color: #ffffff !important;
+  border-color: #27a644 !important;
+  box-shadow: 0 4px 14px rgba(39, 166, 68, 0.35) !important;
+}
 
 /* ── Subtle shimmer for hero text ── */
 

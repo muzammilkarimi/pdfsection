@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
 import { renderPageToImage } from '@/lib/renderUtils';
@@ -13,38 +14,44 @@ export default function PDFToJPGClient() {
   const [file, setFile] = useState(null);
   const [format, setFormat] = useState('image/jpeg');
   const [dpi, setDpi] = useState(150);
-  const [quality, setQuality] = useState(0.9);
+  const [quality, setQuality] = useState(0.92);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [exportedData, setExportedData] = useState(null);
 
   const handleFilesSelected = useCallback((files) => {
     setFile(files[0] || null);
     setDone(false);
-    setProgress(0);
+    setExportedData(null);
   }, []);
 
   const resetFile = () => {
     setFile(null);
     setDone(false);
+    setExportedData(null);
     setProgress(0);
   };
 
   const handleConvert = async () => {
     if (!file) return;
     setProcessing(true);
-    setProgress(0);
+    setProgress(5);
 
     try {
       const pdfDoc = await loadPdf(file);
       const pageCount = pdfDoc.getPageCount();
       const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+      let outBlob;
+      let outFilename;
+      let mime;
 
       if (pageCount === 1) {
         setProgress(50);
-        const imageBlob = await renderPageToImage(file, 1, dpi, format, quality);
+        outBlob = await renderPageToImage(file, 1, dpi, format, quality);
+        outFilename = `${file.name.replace('.pdf', '')}.${ext}`;
+        mime = format;
         setProgress(100);
-        downloadBlob(imageBlob, `${file.name.replace('.pdf', '')}.${ext}`, format);
       } else {
         const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
@@ -55,15 +62,24 @@ export default function PDFToJPGClient() {
           setProgress(Math.round((i / pageCount) * 100));
         }
 
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        downloadBlob(zipBlob, `${file.name.replace('.pdf', '')}-images.zip`, 'application/zip');
+        outBlob = await zip.generateAsync({ type: 'blob' });
+        outFilename = `${file.name.replace('.pdf', '')}-images.zip`;
+        mime = 'application/zip';
       }
 
+      setExportedData({ blob: outBlob, filename: outFilename, mime });
+      downloadBlob(outBlob, outFilename, mime);
       setDone(true);
     } catch (err) {
       alert('Error converting PDF to images: ' + err.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleRedownload = () => {
+    if (exportedData) {
+      downloadBlob(exportedData.blob, exportedData.filename, exportedData.mime);
     }
   };
 
@@ -100,10 +116,27 @@ export default function PDFToJPGClient() {
           ariaLabel="PDF to image settings"
           preview={<PageThumbnails file={file} selectable={false} maxWidth={150} className="page-preview-grid" />}
           footer={(
-            <button className="btn btn-primary btn-lg btn-attention" onClick={handleConvert} disabled={processing} id="convert-pdf-to-jpg-button">
-              {processing ? 'Converting...' : 'Convert to Image'}
-              <ToolIcon name="image" size={16} />
-            </button>
+            done ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button
+                  className="btn btn-primary btn-lg btn-attention btn-success-state"
+                  onClick={handleRedownload}
+                  style={{ width: '100%' }}
+                  id="redownload-pdf-to-jpg-button"
+                >
+                  <ToolIcon name="download" size={16} style={{ marginRight: 6 }} />
+                  Download Images Again
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={resetFile} disabled={processing} style={{ width: '100%' }}>
+                  Convert Another PDF
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-primary btn-lg btn-attention" onClick={handleConvert} disabled={processing} id="convert-pdf-to-jpg-button" style={{ width: '100%' }}>
+                {processing ? 'Converting...' : 'Convert to Image'}
+                <ToolIcon name="image" size={16} style={{ marginLeft: 6 }} />
+              </button>
+            )
           )}
         >
           <div className="page-field-group">
@@ -143,12 +176,15 @@ export default function PDFToJPGClient() {
               <p className="body-sm ink-subtle" style={{ textAlign: 'center', marginTop: 4 }}>Processing... {progress}%</p>
             </div>
           )}
-
-          {done && <div className="merge-success">Export successful. Your images have been downloaded.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="Export successful! Your images have been downloaded."
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );
 }
-
-

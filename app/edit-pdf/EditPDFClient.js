@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
 import { loadPdfForRender } from '@/lib/renderUtils';
@@ -1815,6 +1816,13 @@ export default function EditPDFClient() {
 
           {done && <div className="merge-success">✓ PDF exported successfully!</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Edited PDF exported and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

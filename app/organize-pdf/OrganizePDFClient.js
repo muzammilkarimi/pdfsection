@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
 import { generateAllThumbnails } from '@/lib/renderUtils';
@@ -297,7 +298,15 @@ export default function OrganizePDFClient() {
           {done && <div className="merge-success">Save successful. Your organized PDF has been downloaded.</div>}
         </PageToolWorkspace>
       )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Organized PDF exported and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
+      )}
     </ToolPageLayout>
   );
 }
+
 

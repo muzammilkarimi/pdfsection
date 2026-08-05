@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { loadPdfForRender } from '@/lib/renderUtils';
@@ -202,6 +203,13 @@ export default function GrayscalePDFClient() {
             </div>
           </div>
         </PageToolWorkspace>
+      )}
+
+      {downloadUrl && (
+        <ToastNotification
+          message="✓ PDF converted to Grayscale B&W and downloaded successfully!"
+          onClose={() => {}}
+        />
       )}
     </ToolPageLayout>
   );

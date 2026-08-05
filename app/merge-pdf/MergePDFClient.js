@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { mergePdfs, downloadPdf } from '@/lib/pdfUtils';
 import { generateThumbnail } from '@/lib/renderUtils';
@@ -110,6 +111,7 @@ export default function MergePDFClient() {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [mergedDoc, setMergedDoc] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const addInputRef = useRef(null);
@@ -117,6 +119,7 @@ export default function MergePDFClient() {
   const handleFilesSelected = useCallback((newFiles) => {
     setFiles(newFiles.slice(0, MAX_FILES));
     setDone(false);
+    setMergedDoc(null);
   }, []);
 
   const appendFiles = useCallback((newFiles) => {
@@ -125,6 +128,7 @@ export default function MergePDFClient() {
 
     setFiles((prev) => [...prev, ...incoming].slice(0, MAX_FILES));
     setDone(false);
+    setMergedDoc(null);
   }, []);
 
   const moveFile = (fromIndex, toIndex) => {
@@ -134,16 +138,19 @@ export default function MergePDFClient() {
     updated.splice(toIndex, 0, moved);
     setFiles(updated);
     setDone(false);
+    setMergedDoc(null);
   };
 
   const removeFile = (index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setDone(false);
+    setMergedDoc(null);
   };
 
   const clearFiles = () => {
     setFiles([]);
     setDone(false);
+    setMergedDoc(null);
     setProgress(0);
   };
 
@@ -176,15 +183,22 @@ export default function MergePDFClient() {
 
     try {
       setProgress(30);
-      const mergedDoc = await mergePdfs(files);
+      const doc = await mergePdfs(files);
+      setMergedDoc(doc);
       setProgress(80);
-      await downloadPdf(mergedDoc, 'merged.pdf');
+      await downloadPdf(doc, 'merged.pdf');
       setProgress(100);
       setDone(true);
     } catch (err) {
       alert('Error merging PDFs: ' + err.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleRedownload = async () => {
+    if (mergedDoc) {
+      await downloadPdf(mergedDoc, 'merged.pdf');
     }
   };
 
@@ -220,6 +234,8 @@ export default function MergePDFClient() {
           icon="merge"
           iconColor="var(--tool-organize)"
           ariaLabel="Merge PDF settings"
+          files={files}
+          onAddMore={() => addInputRef.current?.click()}
           preview={(
             <div className="merge-preview-grid">
               {files.map((file, index) => (
@@ -244,15 +260,32 @@ export default function MergePDFClient() {
             </div>
           )}
           footer={(
-            <>
-              <button className="btn btn-primary btn-lg btn-attention" onClick={handleMerge} disabled={files.length < 2 || processing} id="merge-button">
-                {processing ? 'Merging...' : 'Merge PDFs'}
-                <ToolIcon name="merge" size={16} />
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={clearFiles} disabled={processing}>
-                Start over
-              </button>
-            </>
+            done ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button
+                  className="btn btn-primary btn-lg btn-attention btn-success-state"
+                  onClick={handleRedownload}
+                  style={{ width: '100%' }}
+                  id="redownload-merge-button"
+                >
+                  <ToolIcon name="download" size={16} style={{ marginRight: 6 }} />
+                  Download Merged PDF Again
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={clearFiles} disabled={processing} style={{ width: '100%' }}>
+                  Merge Other PDFs
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button className="btn btn-primary btn-lg btn-attention" onClick={handleMerge} disabled={files.length < 2 || processing} id="merge-button" style={{ width: '100%' }}>
+                  {processing ? 'Merging...' : 'Merge PDFs'}
+                  <ToolIcon name="merge" size={16} style={{ marginLeft: 6 }} />
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={clearFiles} disabled={processing} style={{ width: '100%' }}>
+                  Start over
+                </button>
+              </div>
+            )
           )}
         >
           <div className="page-control-stat">
@@ -307,9 +340,14 @@ export default function MergePDFClient() {
               <p className="body-sm ink-subtle" style={{ textAlign: 'center', marginTop: 4 }}>Merging... {progress}%</p>
             </div>
           )}
-
-          {done && <div className="merge-success">Merge complete. Check your downloaded file.</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="PDFs merged & downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

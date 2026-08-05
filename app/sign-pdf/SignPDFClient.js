@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
@@ -577,6 +578,13 @@ export default function SignPDFClient() {
             )}
           </div>
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ Signed PDF created and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

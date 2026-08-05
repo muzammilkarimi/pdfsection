@@ -1,13 +1,140 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
+import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 import { downloadBlob } from '@/lib/pdfUtils';
+import { getToolById } from '@/lib/tools';
+
+function ImagePreviewCard({
+  file,
+  index,
+  pageSize,
+  orientation,
+  margin,
+  isDragging,
+  isDropTarget,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  canMoveUp,
+  canMoveDown,
+  formatSize,
+}) {
+  const [thumbnail, setThumbnail] = useState('');
+
+  useEffect(() => {
+    let url = '';
+    try {
+      url = URL.createObjectURL(file);
+      setThumbnail(url);
+    } catch (e) {
+      setThumbnail('');
+    }
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  const isLandscape = pageSize !== 'fit' && orientation === 'landscape';
+  const paperAspectRatio = pageSize === 'fit' ? 'auto' : isLandscape ? '1.414 / 1' : '1 / 1.414';
+  const marginPadding = margin === 'small' ? '12px' : margin === 'big' ? '24px' : '0px';
+
+  return (
+    <article
+      className={`merge-preview-card ${isDragging ? 'is-dragging' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      aria-label={`${file.name}, position ${index + 1}`}
+    >
+      <div className="merge-preview-order">{index + 1}</div>
+      <div className="merge-preview-drag" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+
+      <div
+        className="merge-preview-paper"
+        style={{
+          aspectRatio: paperAspectRatio,
+          height: pageSize !== 'fit' ? 'auto' : '170px',
+          minHeight: '140px',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: '1px solid var(--hairline-strong)',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          padding: marginPadding,
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        {thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnail}
+            alt={`Preview of ${file.name}`}
+            draggable={false}
+            style={{
+              objectFit: 'contain',
+              width: '100%',
+              height: '100%',
+              maxHeight: '100%',
+              maxWidth: '100%',
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
+        ) : (
+          <div className="merge-preview-fallback">
+            <ToolIcon name="image" size={34} />
+            <span>Image preview</span>
+          </div>
+        )}
+      </div>
+
+      <div className="merge-preview-meta">
+        <strong>{file.name}</strong>
+        <span>{formatSize(file.size)}</span>
+      </div>
+
+      <div className="merge-preview-actions">
+        <button type="button" className="merge-icon-button" onClick={onMoveUp} disabled={!canMoveUp} aria-label={`Move ${file.name} up`}>
+          Up
+        </button>
+        <button type="button" className="merge-icon-button" onClick={onMoveDown} disabled={!canMoveDown} aria-label={`Move ${file.name} down`}>
+          Down
+        </button>
+        <button type="button" className="merge-remove-button" onClick={onRemove} aria-label={`Remove ${file.name}`}>
+          Remove
+        </button>
+      </div>
+    </article>
+  );
+}
 
 export default function JPGToPDFClient() {
+  const toolInfo = getToolById('jpg-to-pdf') || {
+    name: 'JPG to PDF',
+    description: 'Convert images to PDF format in seconds. Customize page sizes and margins.',
+    categoryColor: 'var(--tool-convert-to)',
+    icon: 'image',
+  };
+
   const [images, setImages] = useState([]);
   const [pageSize, setPageSize] = useState('fit'); // 'fit', 'a4', 'letter'
   const [orientation, setOrientation] = useState('portrait'); // 'portrait', 'landscape'
@@ -15,9 +142,15 @@ export default function JPGToPDFClient() {
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
 
+  const [convertedPdfBytes, setConvertedPdfBytes] = useState(null);
+
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState(null);
+
   const handleFilesSelected = useCallback((files) => {
     setImages((prev) => [...prev, ...files]);
     setDone(false);
+    setConvertedPdfBytes(null);
   }, []);
 
   const moveImage = (fromIndex, toIndex) => {
@@ -25,13 +158,38 @@ export default function JPGToPDFClient() {
     const [moved] = updated.splice(fromIndex, 1);
     updated.splice(toIndex, 0, moved);
     setImages(updated);
+    setDone(false);
+    setConvertedPdfBytes(null);
   };
 
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
+    setDone(false);
+    setConvertedPdfBytes(null);
   };
 
-  // Helper to read file as Image object
+  const resetImages = () => {
+    setImages([]);
+    setDone(false);
+    setConvertedPdfBytes(null);
+  };
+
+  const handleRedownload = () => {
+    if (convertedPdfBytes) {
+      downloadBlob(convertedPdfBytes, 'images_converted.pdf', 'application/pdf');
+    }
+  };
+
+  const formatSize = (bytes) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const totalSize = images.reduce((sum, img) => sum + (img.size || 0), 0);
+
   const fileToImage = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -45,7 +203,6 @@ export default function JPGToPDFClient() {
     });
   };
 
-  // Helper to draw image to canvas and export as JPEG bytes
   const getJpgBytes = (img) => {
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
@@ -75,7 +232,6 @@ export default function JPGToPDFClient() {
         const jpgBytes = await getJpgBytes(img);
         const embeddedImg = await pdfDoc.embedJpg(jpgBytes);
 
-        // Calculate dimensions
         let pageWidth = img.width;
         let pageHeight = img.height;
 
@@ -90,7 +246,6 @@ export default function JPGToPDFClient() {
         }
 
         if (pageSize !== 'fit' && orientation === 'landscape') {
-          // Swap dimensions
           const temp = pageWidth;
           pageWidth = pageHeight;
           pageHeight = temp;
@@ -98,7 +253,6 @@ export default function JPGToPDFClient() {
 
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
-        // Calculate image placement with margin
         const innerWidth = pageWidth - marginVal * 2;
         const innerHeight = pageHeight - marginVal * 2;
 
@@ -109,10 +263,8 @@ export default function JPGToPDFClient() {
         let drawHeight = innerHeight;
 
         if (imgRatio > pageRatio) {
-          // Constrained by width
           drawHeight = innerWidth / imgRatio;
         } else {
-          // Constrained by height
           drawWidth = innerHeight * imgRatio;
         }
 
@@ -128,6 +280,7 @@ export default function JPGToPDFClient() {
       }
 
       const pdfBytes = await pdfDoc.save();
+      setConvertedPdfBytes(pdfBytes);
       downloadBlob(pdfBytes, 'images_converted.pdf', 'application/pdf');
       setDone(true);
     } catch (err) {
@@ -139,138 +292,201 @@ export default function JPGToPDFClient() {
 
   return (
     <ToolPageLayout
-      title="JPG to PDF"
-      description="Convert images to PDF format in seconds. Customize page sizes and margins."
-      icon="image"
-      iconColor="var(--tool-convert-to)"
+      title={toolInfo.name}
+      description={toolInfo.description}
+      icon={toolInfo.icon}
+      iconColor={toolInfo.categoryColor}
+      showHeader={images.length === 0}
+      layoutMode={images.length > 0 ? 'page-preview' : 'page-scroll'}
     >
-      <FileDropzone
-        accept="image/jpeg,image/png,image/webp"
-        multiple={true}
-        onFilesSelected={handleFilesSelected}
-        label="Drop your images here"
-        sublabel="or click to browse · JPG, PNG, WEBP"
-        id="jpg-to-pdf-dropzone"
-      />
-
-      {images.length > 0 && (
-        <div className="tool-workspace" style={{ marginTop: 'var(--space-lg)' }}>
-          {/* Left panel: Image listing and reorder */}
-          <div className="tool-main-panel">
-            <p className="eyebrow" style={{ marginBottom: 'var(--space-xs)', color: 'var(--ink-subtle)' }}>
-              Arrange Images ({images.length} uploaded)
-            </p>
-            <div className="file-list">
-              {images.map((img, index) => (
-                <div key={`${img.name}-${index}`} className="file-item">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <button
-                      className="file-item-remove"
-                      onClick={() => index > 0 && moveImage(index, index - 1)}
-                      disabled={index === 0}
-                      style={{ opacity: index === 0 ? 0.3 : 1, width: 20, height: 16 }}
-                    >
-                      ▲
-                    </button>
-                    <button
-                      className="file-item-remove"
-                      onClick={() => index < images.length - 1 && moveImage(index, index + 1)}
-                      disabled={index === images.length - 1}
-                      style={{ opacity: index === images.length - 1 ? 0.3 : 1, width: 20, height: 16 }}
-                    >
-                      ▼
-                    </button>
-                  </div>
-                  <span style={{ fontSize: 13, color: 'var(--ink-tertiary)', width: 24, textAlign: 'center' }}>
-                    {index + 1}
-                  </span>
-                  <span className="file-item-name">{img.name}</span>
-                  <button className="file-item-remove" onClick={() => removeImage(index)}>
-                    <ToolIcon name="x" size={14} />
-                  </button>
-                </div>
+      {images.length === 0 ? (
+        <FileDropzone
+          accept="image/jpeg,image/png,image/webp"
+          multiple={true}
+          onFilesSelected={handleFilesSelected}
+          label="Select image files"
+          sublabel="or drop images here · JPG, PNG, WEBP"
+          id="jpg-to-pdf-dropzone"
+        />
+      ) : (
+        <PageToolWorkspace
+          title={toolInfo.name}
+          description="Drag to reorder images and adjust page settings."
+          icon={toolInfo.icon}
+          iconColor={toolInfo.categoryColor}
+          onReset={resetImages}
+          preview={
+            <div className="merge-preview-grid">
+              {images.map((file, index) => (
+                <ImagePreviewCard
+                  key={`${file.name}-${index}`}
+                  file={file}
+                  index={index}
+                  pageSize={pageSize}
+                  orientation={orientation}
+                  margin={margin}
+                  isDragging={draggedIndex === index}
+                  isDropTarget={dropTargetIndex === index}
+                  onDragStart={() => setDraggedIndex(index)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDropTargetIndex(index);
+                  }}
+                  onDrop={() => {
+                    if (draggedIndex !== null && draggedIndex !== index) {
+                      moveImage(draggedIndex, index);
+                    }
+                    setDraggedIndex(null);
+                    setDropTargetIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedIndex(null);
+                    setDropTargetIndex(null);
+                  }}
+                  onMoveUp={() => moveImage(index, index - 1)}
+                  onMoveDown={() => moveImage(index, index + 1)}
+                  onRemove={() => removeImage(index)}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < images.length - 1}
+                  formatSize={formatSize}
+                />
               ))}
-            </div>
 
-            {/* Extra file slot */}
-            <div style={{ marginTop: 'var(--space-md)' }}>
-              <FileDropzone
-                accept="image/jpeg,image/png,image/webp"
-                multiple={true}
-                onFilesSelected={(newFiles) => setImages((prev) => [...prev, ...newFiles])}
-                label="Add more images"
-                sublabel="Drag and drop or click to append"
-                id="jpg-to-pdf-append-dropzone"
-              />
-            </div>
-          </div>
-
-          {/* Right panel: Page settings sidebar */}
-          <div className="tool-action-sidebar">
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Page Settings</p>
-              
-              {/* Page size selection */}
-              <div>
-                <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>Page Size</label>
-                <select className="input" value={pageSize} onChange={(e) => setPageSize(e.target.value)} style={{ width: '100%' }}>
-                  <option value="fit">Fit to Image Size</option>
-                  <option value="a4">A4</option>
-                  <option value="letter">US Letter</option>
-                </select>
-              </div>
-
-              {/* Page orientation */}
-              {pageSize !== 'fit' && (
-                <div>
-                  <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>Orientation</label>
-                  <select className="input" value={orientation} onChange={(e) => setOrientation(e.target.value)} style={{ width: '100%' }}>
-                    <option value="portrait">Portrait</option>
-                    <option value="landscape">Landscape</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Margins */}
-              <div>
-                <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>Margins</label>
-                <select className="input" value={margin} onChange={(e) => setMargin(e.target.value)} style={{ width: '100%' }}>
-                  <option value="none">No Margin</option>
-                  <option value="small">Small Margin</option>
-                  <option value="big">Big Margin</option>
-                </select>
-              </div>
-
-              {done && (
+              <label
+                className="merge-preview-card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '220px',
+                  cursor: 'pointer',
+                  borderStyle: 'dashed',
+                  borderWidth: '2px',
+                  textAlign: 'center',
+                  gap: 'var(--space-xs)',
+                  padding: 'var(--space-md)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleFilesSelected(Array.from(e.target.files));
+                      e.target.value = '';
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                />
                 <div
                   style={{
-                    padding: 'var(--space-sm)',
-                    backgroundColor: 'rgba(39, 166, 68, 0.08)',
-                    borderRadius: 'var(--rounded-md)',
-                    border: '1px solid rgba(39, 166, 68, 0.2)',
-                    textAlign: 'center',
-                    color: 'var(--semantic-success)',
-                    fontSize: '12px',
-                    fontWeight: 500,
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary)',
                   }}
                 >
-                  ✓ Convert successful!
+                  <ToolIcon name="plus" size={22} />
                 </div>
-              )}
-
+                <strong style={{ fontSize: '13px', marginTop: 4 }}>Add more images</strong>
+                <span style={{ fontSize: '11px', color: 'var(--ink-subtle)' }}>JPG, PNG, WEBP</span>
+              </label>
+            </div>
+          }
+          footer={
+            done ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button
+                  className="btn btn-primary btn-lg btn-attention btn-success-state"
+                  onClick={handleRedownload}
+                  style={{ width: '100%' }}
+                  id="redownload-jpg-to-pdf-button"
+                >
+                  <ToolIcon name="download" size={16} style={{ marginRight: 6 }} />
+                  Download PDF Again
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetImages}
+                  style={{ width: '100%' }}
+                  id="reset-jpg-to-pdf-button"
+                >
+                  Convert New Images
+                </button>
+              </div>
+            ) : (
               <button
                 className="btn btn-primary btn-lg btn-attention"
                 onClick={handleConvert}
-                disabled={processing}
-                style={{ width: '100%' }}
+                disabled={processing || images.length === 0}
                 id="convert-jpg-to-pdf-button"
+                style={{ width: '100%' }}
               >
-                {processing ? 'Converting...' : 'Convert to PDF'}
+                {processing ? 'Converting to PDF...' : 'Convert to PDF'}
                 <ToolIcon name="arrowRight" size={16} style={{ marginLeft: 6 }} />
               </button>
+            )
+          }
+        >
+          <div className="page-control-stat">
+            <span>Images selected</span>
+            <strong>{images.length}</strong>
+          </div>
+
+          <div className="merge-summary-list" style={{ marginTop: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+            <div>
+              <span className="ink-muted">Total size</span>
+              <strong>{formatSize(totalSize)}</strong>
+            </div>
+            <div>
+              <span className="ink-muted">Output</span>
+              <strong>images_converted.pdf</strong>
             </div>
           </div>
-        </div>
+
+          <div className="page-field-group">
+            <label className="body-sm ink-muted">Page Size</label>
+            <select className="input" value={pageSize} onChange={(e) => setPageSize(e.target.value)} style={{ width: '100%' }}>
+              <option value="fit">Fit to Image Size</option>
+              <option value="a4">A4 Standard</option>
+              <option value="letter">US Letter</option>
+            </select>
+          </div>
+
+          {pageSize !== 'fit' && (
+            <div className="page-field-group">
+              <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>Orientation</label>
+              <select className="input" value={orientation} onChange={(e) => setOrientation(e.target.value)} style={{ width: '100%' }}>
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            </div>
+          )}
+
+          <div className="page-field-group">
+            <label className="body-sm ink-muted" style={{ display: 'block', marginBottom: 4 }}>Margins</label>
+            <select className="input" value={margin} onChange={(e) => setMargin(e.target.value)} style={{ width: '100%' }}>
+              <option value="none">No Margin</option>
+              <option value="small">Small Margin</option>
+              <option value="big">Big Margin</option>
+            </select>
+          </div>
+        </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="Images converted & PDF downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );

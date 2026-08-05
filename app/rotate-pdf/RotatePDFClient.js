@@ -5,6 +5,7 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
+import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, rotatePages, downloadPdf } from '@/lib/pdfUtils';
 
@@ -14,33 +15,53 @@ export default function RotatePDFClient() {
   const [angle, setAngle] = useState(90);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
+  const [rotatedPdfDoc, setRotatedPdfDoc] = useState(null);
 
-  const handleFilesSelected = useCallback((files) => {
-    setFile(files[0] || null);
-    setSelectedPages([]);
+  const handleFilesSelected = useCallback(async (files) => {
+    const selectedFile = files[0] || null;
+    setFile(selectedFile);
     setDone(false);
+    setRotatedPdfDoc(null);
+
+    if (selectedFile) {
+      try {
+        const pdf = await loadPdf(selectedFile);
+        const count = pdf.getPageCount();
+        setSelectedPages(Array.from({ length: count }, (_, i) => i + 1));
+      } catch {
+        setSelectedPages([]);
+      }
+    } else {
+      setSelectedPages([]);
+    }
   }, []);
+
+  const handlePageToggle = (pageNumber) => {
+    setSelectedPages((prev) =>
+      prev.includes(pageNumber)
+        ? prev.filter((p) => p !== pageNumber)
+        : [...prev, pageNumber].sort((a, b) => a - b)
+    );
+    setDone(false);
+    setRotatedPdfDoc(null);
+  };
+
+  const selectAll = async () => {
+    if (!file) return;
+    try {
+      const pdf = await loadPdf(file);
+      const count = pdf.getPageCount();
+      setSelectedPages(Array.from({ length: count }, (_, i) => i + 1));
+    } catch {
+      // fallback
+    }
+  };
 
   const resetFile = () => {
     setFile(null);
     setSelectedPages([]);
     setDone(false);
-  };
-
-  const handlePageToggle = (pageIndex) => {
-    setDone(false);
-    setSelectedPages((prev) =>
-      prev.includes(pageIndex)
-        ? prev.filter((i) => i !== pageIndex)
-        : [...prev, pageIndex]
-    );
-  };
-
-  const selectAll = async () => {
-    if (!file) return;
-    const doc = await loadPdf(file);
-    setDone(false);
-    setSelectedPages(doc.getPageIndices());
+    setRotatedPdfDoc(null);
   };
 
   const handleRotate = async () => {
@@ -50,12 +71,19 @@ export default function RotatePDFClient() {
     try {
       const srcDoc = await loadPdf(file);
       const rotatedDoc = await rotatePages(srcDoc, selectedPages, angle);
+      setRotatedPdfDoc(rotatedDoc);
       await downloadPdf(rotatedDoc, file.name.replace('.pdf', '-rotated.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error rotating PDF: ' + err.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleRedownload = async () => {
+    if (rotatedPdfDoc && file) {
+      await downloadPdf(rotatedPdfDoc, file.name.replace('.pdf', '-rotated.pdf'));
     }
   };
 
@@ -101,26 +129,45 @@ export default function RotatePDFClient() {
             />
           )}
           footer={(
-            <>
-              <button
-                type="button"
-                className="btn btn-primary btn-lg btn-attention"
-                onClick={handleRotate}
-                disabled={selectedPages.length === 0 || processing}
-                id="rotate-button"
-              >
-                {processing ? 'Rotating...' : 'Rotate PDF'}
-                <ToolIcon name="rotate" size={16} />
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={resetFile}
-                disabled={processing}
-              >
-                Start over
-              </button>
-            </>
+            done ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button
+                  className="btn btn-primary btn-lg btn-attention btn-success-state"
+                  onClick={handleRedownload}
+                  style={{ width: '100%' }}
+                  id="redownload-rotate-button"
+                >
+                  <ToolIcon name="download" size={16} style={{ marginRight: 6 }} />
+                  Download Rotated PDF Again
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={resetFile} disabled={processing} style={{ width: '100%' }}>
+                  Rotate Another PDF
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-lg btn-attention"
+                  onClick={handleRotate}
+                  disabled={selectedPages.length === 0 || processing}
+                  id="rotate-button"
+                  style={{ width: '100%' }}
+                >
+                  {processing ? 'Rotating...' : 'Rotate PDF'}
+                  <ToolIcon name="rotate" size={16} style={{ marginLeft: 6 }} />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetFile}
+                  disabled={processing}
+                  style={{ width: '100%' }}
+                >
+                  Start over
+                </button>
+              </div>
+            )
           )}
         >
           <div className="page-control-stat">
@@ -168,9 +215,14 @@ export default function RotatePDFClient() {
             <ToolIcon name="check" size={16} />
             <span>Click thumbnails to toggle selection. Selected pages will be rotated by {angle}°.</span>
           </div>
-
-          {done && <div className="merge-success">✓ PDF rotated and downloaded successfully!</div>}
         </PageToolWorkspace>
+      )}
+
+      {done && (
+        <ToastNotification
+          message="✓ PDF rotated and downloaded successfully!"
+          onClose={() => setDone(false)}
+        />
       )}
     </ToolPageLayout>
   );
