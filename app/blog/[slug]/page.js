@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog';
+import { buildToolMetadata, buildBlogPostJsonLd } from '@/lib/seoUtils';
 import SocialShare from '@/components/SocialShare';
 
 // Pre-render blog slug routes statically
@@ -16,10 +17,12 @@ export async function generateMetadata({ params }) {
   const post = getPostBySlug(slug);
   if (!post) return {};
 
-  return {
+  return buildToolMetadata({
     title: post.title,
     description: post.description,
-  };
+    route: `/blog/${slug}`,
+    keywords: [post.category, 'PDF security', 'client side processing', 'PDF section blog'],
+  });
 }
 
 export default async function BlogArticlePage({ params }) {
@@ -28,6 +31,13 @@ export default async function BlogArticlePage({ params }) {
   if (!post) {
     notFound();
   }
+
+  const jsonLd = buildBlogPostJsonLd({
+    title: post.title,
+    description: post.description,
+    slug: post.slug,
+    date: post.date,
+  });
 
   // Inline code and bold text renderer
   const renderParagraphText = (str) => {
@@ -200,79 +210,85 @@ export default async function BlogArticlePage({ params }) {
   };
 
   return (
-    <main className="main page-scroll" style={{ minHeight: '100vh', padding: 'calc(var(--nav-height) + var(--space-xl)) 0 var(--space-xxl)', background: 'radial-gradient(circle at top right, rgba(94, 106, 210, 0.02), transparent 45%)' }}>
-      <div className="container" style={{ maxWidth: '700px' }}>
-        
-        {/* Back Button */}
-        <Link href="/blog" className="btn btn-secondary" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px', width: 'fit-content' }}>
-          ◀ Back to articles
-        </Link>
-
-        {/* Article Container */}
-        <article style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-xl)', boxShadow: '0 4px 24px rgba(0,0,0,0.01)' }}>
-          {/* Article Meta */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap', marginBottom: 'var(--space-sm)' }}>
-            <span 
-              style={{ 
-                fontSize: '10px', 
-                fontWeight: '700', 
-                textTransform: 'uppercase', 
-                color: 'var(--primary)',
-                backgroundColor: 'color-mix(in srgb, var(--primary) 12%, var(--surface-2))',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                letterSpacing: '0.5px'
-              }}
-            >
-              {post.category}
-            </span>
-            <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.date}</span>
-            <span style={{ color: 'var(--hairline-strong)' }}>•</span>
-            <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.readTime}</span>
-          </div>
-
-          {/* Title */}
-          <h1 className="display-sm" style={{ fontWeight: '800', marginBottom: 'var(--space-md)', fontSize: '30px', lineHeight: '1.3', letterSpacing: '-0.6px', color: 'var(--ink)' }}>
-            {post.title}
-          </h1>
-
-          {/* Horizontal Divider separating header and content */}
-          <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-md) 0 var(--space-lg)' }} />
-
-          {/* Content body */}
-          <div className="prose" style={{ fontFamily: 'inherit', color: 'var(--ink-muted)' }}>
-            {parseContent(post.content)}
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-lg) 0' }} />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="main page-scroll" style={{ minHeight: '100vh', padding: 'calc(var(--nav-height) + var(--space-xl)) 0 var(--space-xxl)', background: 'radial-gradient(circle at top right, rgba(94, 106, 210, 0.02), transparent 45%)' }}>
+        <div className="container" style={{ maxWidth: '700px' }}>
           
-          {/* Social Share Bar */}
-          <SocialShare title={post.title} url={`https://pdfsection.com/blog/${post.slug}`} />
-        </article>
-
-        {/* CTA box */}
-        <section 
-          className="card" 
-          style={{ 
-            textAlign: 'center', 
-            padding: 'var(--space-xl)', 
-            border: '1px solid var(--primary)', 
-            borderRadius: 'var(--rounded-xl)',
-            backgroundColor: 'color-mix(in srgb, var(--primary) 3%, var(--surface-1))',
-            marginTop: 'var(--space-xxl)',
-            boxShadow: '0 8px 30px rgba(94, 106, 210, 0.03)'
-          }}
-        >
-          <h3 className="body-lg" style={{ fontWeight: '800', color: 'var(--ink)' }}>Need to work with PDF documents?</h3>
-          <p className="body-sm ink-muted" style={{ margin: 'var(--space-xs) 0 var(--space-md)', fontSize: '14px' }}>
-            Experience 100% private local compiling with zero file uploads.
-          </p>
-          <Link href="/" className="btn btn-primary" style={{ display: 'inline-flex', padding: '10px 24px', textDecoration: 'none', fontWeight: '600' }}>
-            Browse tools workspace
+          {/* Back Button */}
+          <Link href="/blog" className="btn btn-secondary" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px', width: 'fit-content' }}>
+            ◀ Back to articles
           </Link>
-        </section>
 
-      </div>
-    </main>
+          {/* Article Container */}
+          <article style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-xl)', boxShadow: '0 4px 24px rgba(0,0,0,0.01)' }}>
+            {/* Article Meta */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap', marginBottom: 'var(--space-sm)' }}>
+              <span 
+                style={{ 
+                  fontSize: '10px', 
+                  fontWeight: '700', 
+                  textTransform: 'uppercase', 
+                  color: 'var(--primary)',
+                  backgroundColor: 'color-mix(in srgb, var(--primary) 12%, var(--surface-2))',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                {post.category}
+              </span>
+              <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.date}</span>
+              <span style={{ color: 'var(--hairline-strong)' }}>•</span>
+              <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.readTime}</span>
+            </div>
+
+            {/* Title */}
+            <h1 className="display-sm" style={{ fontWeight: '800', marginBottom: 'var(--space-md)', fontSize: '30px', lineHeight: '1.3', letterSpacing: '-0.6px', color: 'var(--ink)' }}>
+              {post.title}
+            </h1>
+
+            {/* Horizontal Divider separating header and content */}
+            <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-md) 0 var(--space-lg)' }} />
+
+            {/* Content body */}
+            <div className="prose" style={{ fontFamily: 'inherit', color: 'var(--ink-muted)' }}>
+              {parseContent(post.content)}
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-lg) 0' }} />
+            
+            {/* Social Share Bar */}
+            <SocialShare title={post.title} url={`https://pdfsection.com/blog/${post.slug}`} />
+          </article>
+
+          {/* CTA box */}
+          <section 
+            className="card" 
+            style={{ 
+              textAlign: 'center', 
+              padding: 'var(--space-xl)', 
+              border: '1px solid var(--primary)', 
+              borderRadius: 'var(--rounded-xl)',
+              backgroundColor: 'color-mix(in srgb, var(--primary) 3%, var(--surface-1))',
+              marginTop: 'var(--space-xxl)',
+              boxShadow: '0 8px 30px rgba(94, 106, 210, 0.03)'
+            }}
+          >
+            <h3 className="body-lg" style={{ fontWeight: '800', color: 'var(--ink)' }}>Need to work with PDF documents?</h3>
+            <p className="body-sm ink-muted" style={{ margin: 'var(--space-xs) 0 var(--space-md)', fontSize: '14px' }}>
+              Experience 100% private local compiling with zero file uploads.
+            </p>
+            <Link href="/" className="btn btn-primary" style={{ display: 'inline-flex', padding: '10px 24px', textDecoration: 'none', fontWeight: '600' }}>
+              Browse tools workspace
+            </Link>
+          </section>
+
+        </div>
+      </main>
+    </>
   );
 }

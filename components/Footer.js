@@ -62,7 +62,7 @@ export default function Footer() {
           <div className="footer-brand-name">
             <Image
               src="/logo.png"
-              alt=""
+              alt="PDF Section Logo"
               width={24}
               height={24}
               style={{

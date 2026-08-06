@@ -1,6 +1,12 @@
-'use client';
-
 import Link from 'next/link';
+import { buildToolMetadata } from '@/lib/seoUtils';
+
+export const metadata = buildToolMetadata({
+  title: 'Terms of Service — PDF Section',
+  description: 'Terms of Service for PDF Section free online PDF tools. Guidelines for usage, client-side processing, license, and liability limitations.',
+  route: '/terms',
+  keywords: ['PDF Section terms of service', 'client side PDF usage terms'],
+});
 
 export default function TermsOfServicePage() {
   return (
@@ -26,14 +32,14 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the **PDF Section** web application (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, please do not use the Service.
+              By accessing or using the <strong>PDF Section</strong> web application (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, please do not use the Service.
             </p>
           </section>
 
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>2. Description of Service</h2>
             <p>
-              PDF Section provides a web-based document editing utility. All processing—including file conversion, split, merge, compress, watermarking, and electronic signature stamp placement—is executed entirely **locally within the user&apos;s browser tab** using client-side resources.
+              PDF Section provides a web-based document editing utility. All processing—including file conversion, split, merge, compress, watermarking, and electronic signature stamp placement—is executed entirely <strong>locally within the user&apos;s browser tab</strong> using client-side resources.
             </p>
           </section>
 

@@ -5,7 +5,7 @@ import { PSEO_PAGES } from '@/lib/seoRegistry';
 export default function sitemap() {
   const baseUrl = 'https://pdfsection.com';
 
-  // Homepage
+  // Homepage and static corporate routes
   const routes = [
     {
       url: baseUrl,
@@ -18,6 +18,24 @@ export default function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
     },
     {
       url: `${baseUrl}/ilovepdf-alternative`,

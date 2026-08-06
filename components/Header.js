@@ -73,7 +73,7 @@ export default function Header() {
           <Link href="/" className="nav-brand" aria-label="PDF Section Home" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', textDecoration: 'none' }}>
             <Image
               src="/logo.png"
-              alt=""
+              alt="PDF Section Logo"
               width={32}
               height={32}
               priority

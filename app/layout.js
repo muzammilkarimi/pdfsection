@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Analytics } from '@vercel/analytics/next';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seoUtils';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -19,11 +20,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata = {
   title: {
-    default: 'PDF Section — Free Online PDF Tools',
+    default: 'PDF Section — Free Online PDF Tools (100% Private)',
     template: '%s | PDF Section',
   },
   description:
-    'Every PDF tool you need in one place. Merge, split, compress, convert, edit, sign, and secure your PDFs without uploading them to a server. 100% free, private, and runs entirely in your browser.',
+    'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser with zero file uploads. Private & instant.',
   keywords: [
     'PDF tools',
     'merge PDF',
@@ -52,28 +53,31 @@ export const metadata = {
     telephone: false,
   },
   metadataBase: new URL('https://pdfsection.com'),
+  alternates: {
+    canonical: 'https://pdfsection.com',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://pdfsection.com',
     siteName: 'PDF Section',
-    title: 'PDF Section — Free Online PDF Tools',
+    title: 'PDF Section — Free Online PDF Tools (100% Private)',
     description:
-      'Every PDF tool you need in one place. Merge, split, compress, convert, edit, and secure PDFs for free.',
+      'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser with zero file uploads. Private & instant.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'PDF Section — Free Online PDF Tools',
+        alt: 'PDF Section — Free Online PDF Tools (100% Private)',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PDF Section — Free Online PDF Tools',
+    title: 'PDF Section — Free Online PDF Tools (100% Private)',
     description:
-      'Every PDF tool you need in one place. 100% free and private.',
+      'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser.',
     images: ['/opengraph-image'],
   },
   robots: {
@@ -97,38 +101,42 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'PDF Section',
-    url: 'https://pdfsection.com',
-    description:
-      'Every PDF tool you need in one place. Merge, split, compress, convert, edit, and secure PDFs for free.',
-    applicationCategory: 'Utility',
-    operatingSystem: 'Web',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
+  const jsonLdSchemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'PDF Section',
+      url: 'https://pdfsection.com',
+      description:
+        'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser with zero file uploads.',
+      applicationCategory: 'UtilityApplication',
+      operatingSystem: 'Web',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+      featureList: [
+        'Merge PDF',
+        'Split PDF',
+        'Compress PDF',
+        'PDF to Word',
+        'Word to PDF',
+        'PDF to JPG',
+        'JPG to PDF',
+        'Edit PDF',
+        'Sign PDF',
+        'Protect PDF',
+        'Unlock PDF',
+        'Rotate PDF',
+        'Add Watermark',
+        'Add Page Numbers',
+        'Crop PDF',
+      ],
     },
-    featureList: [
-      'Merge PDF',
-      'Split PDF',
-      'Compress PDF',
-      'PDF to Word',
-      'Word to PDF',
-      'PDF to JPG',
-      'JPG to PDF',
-      'Edit PDF',
-      'Sign PDF',
-      'Protect PDF',
-      'Unlock PDF',
-      'Rotate PDF',
-      'Add Watermark',
-      'Add Page Numbers',
-      'Crop PDF',
-    ],
-  };
+    buildWebSiteJsonLd(),
+    buildOrganizationJsonLd(),
+  ];
 
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
@@ -136,6 +144,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -151,7 +161,7 @@ export default function RootLayout({ children }) {
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchemas) }}
         />
       </head>
       <body>
@@ -165,4 +175,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-

@@ -1,6 +1,12 @@
-'use client';
-
 import Link from 'next/link';
+import { buildToolMetadata } from '@/lib/seoUtils';
+
+export const metadata = buildToolMetadata({
+  title: 'Privacy Policy — 100% Client-Side PDF Processing',
+  description: 'PDF Section guarantees complete document privacy. All PDF operations run locally in your browser with zero file uploads or server storage.',
+  route: '/privacy',
+  keywords: ['PDF Section privacy policy', 'client side PDF security', 'private PDF editor policy'],
+});
 
 export default function PrivacyPolicyPage() {
   return (
@@ -26,7 +32,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>1. Our Commitment to Your Privacy</h2>
             <p>
-              At **PDF Section**, we prioritize document privacy above everything else. Unlike traditional online PDF tools that require uploading your private files to remote cloud servers, PDF Section utilizes a **100% client-side architecture**. This means your files never leave your device.
+              At <strong>PDF Section</strong>, we prioritize document privacy above everything else. Unlike traditional online PDF tools that require uploading your private files to remote cloud servers, PDF Section utilizes a <strong>100% client-side architecture</strong>. This means your files never leave your device.
             </p>
           </section>
 
@@ -36,9 +42,9 @@ export default function PrivacyPolicyPage() {
               All document operations—including merging, splitting, compressing, organizing, signing, and converting—are computed locally inside your web browser using HTML5, WebAssembly, and local JavaScript libraries (such as pdf-lib and PDF.js). 
             </p>
             <ul style={{ margin: 'var(--space-xs) 0 0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <li>❌ **No Uploads**: Your documents are never transmitted over the internet to our servers.</li>
-              <li>❌ **No Logs**: We do not capture, cache, inspect, or save any text content, passwords, metadata, or images from your files.</li>
-              <li>❌ **No Storage**: File buffers exist only temporarily within your local browser memory tab and are wiped instantly when the tab is closed.</li>
+              <li>❌ <strong>No Uploads</strong>: Your documents are never transmitted over the internet to our servers.</li>
+              <li>❌ <strong>No Logs</strong>: We do not capture, cache, inspect, or save any text content, passwords, metadata, or images from your files.</li>
+              <li>❌ <strong>No Storage</strong>: File buffers exist only temporarily within your local browser memory tab and are wiped instantly when the tab is closed.</li>
             </ul>
           </section>
 

@@ -159,14 +159,30 @@ export default function CompressPDFClient() {
       if (settings.mode === 'lossless') {
         setProgress(50);
         bytes = await compressLossless(file);
+        if (bytes.byteLength >= file.size) {
+          bytes = new Uint8Array(await file.arrayBuffer());
+        }
         setProgress(100);
       } else {
         bytes = await compressRaster(file, settings, (p) => setProgress(p));
+        // Smart Fallback Protection:
+        // If raster mode inflates file size (common on small vector/text PDFs),
+        // try lossless optimization or fall back to original file bytes.
+        if (bytes.byteLength >= file.size) {
+          const losslessBytes = await compressLossless(file);
+          if (losslessBytes.byteLength < file.size) {
+            bytes = losslessBytes;
+          } else {
+            bytes = new Uint8Array(await file.arrayBuffer());
+          }
+        }
       }
 
       const compressedSize = bytes.byteLength;
       const originalSize = file.size;
-      const reduction = Math.max(0, Math.round(((originalSize - compressedSize) / originalSize) * 100));
+      const rawReduction = Math.round(((originalSize - compressedSize) / originalSize) * 100);
+      const reduction = Math.max(0, rawReduction);
+      const isAlreadyOptimized = compressedSize >= originalSize;
 
       setResult({
         bytes,
@@ -174,6 +190,7 @@ export default function CompressPDFClient() {
         originalSize,
         compressedSize,
         reduction,
+        isAlreadyOptimized,
       });
       downloadBlob(bytes, file.name.replace('.pdf', '-compressed.pdf'), 'application/pdf');
       setShowToast(true);
@@ -228,8 +245,8 @@ export default function CompressPDFClient() {
                     justifyContent: 'center',
                     padding: 'var(--space-xl) var(--space-lg)',
                     borderRadius: 'var(--rounded-xl)',
-                    backgroundColor: 'rgba(39, 166, 68, 0.04)',
-                    border: '1px solid rgba(39, 166, 68, 0.25)',
+                    backgroundColor: result.isAlreadyOptimized ? 'rgba(94, 106, 210, 0.04)' : 'rgba(39, 166, 68, 0.04)',
+                    border: result.isAlreadyOptimized ? '1px solid rgba(94, 106, 210, 0.25)' : '1px solid rgba(39, 166, 68, 0.25)',
                     textAlign: 'center',
                     gap: 'var(--space-md)',
                     boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',
@@ -241,22 +258,26 @@ export default function CompressPDFClient() {
                       width: 60,
                       height: 60,
                       borderRadius: '50%',
-                      backgroundColor: 'rgba(39, 166, 68, 0.14)',
-                      color: 'var(--semantic-success)',
+                      backgroundColor: result.isAlreadyOptimized ? 'rgba(94, 106, 210, 0.14)' : 'rgba(39, 166, 68, 0.14)',
+                      color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--semantic-success)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <ToolIcon name="check" size={32} />
+                    <ToolIcon name={result.isAlreadyOptimized ? 'info' : 'check'} size={32} />
                   </div>
 
                   <div>
                     <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--ink-base)' }}>
-                      PDF Compressed Successfully!
+                      {result.isAlreadyOptimized ? 'PDF Already Fully Optimized!' : 'PDF Compressed Successfully!'}
                     </h3>
                     <p style={{ fontSize: '14px', color: 'var(--ink-subtle)', margin: 0 }}>
-                      Your document is now <strong style={{ color: 'var(--semantic-success)', fontWeight: 700 }}>{result.reduction}% smaller</strong>.
+                      {result.isAlreadyOptimized ? (
+                        <>Your file is already at minimal size (<strong style={{ color: 'var(--primary)', fontWeight: 700 }}>{formatSize(result.originalSize)}</strong>). Retained original file for optimal quality.</>
+                      ) : (
+                        <>Your document is now <strong style={{ color: 'var(--semantic-success)', fontWeight: 700 }}>{result.reduction}% smaller</strong>.</>
+                      )}
                     </p>
                   </div>
 
@@ -277,13 +298,13 @@ export default function CompressPDFClient() {
                   >
                     <div>
                       <div style={{ fontSize: '11px', color: 'var(--ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Original Size</div>
-                      <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-subtle)', textDecoration: 'line-through', marginTop: 4 }}>
+                      <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink-subtle)', textDecoration: result.isAlreadyOptimized ? 'none' : 'line-through', marginTop: 4 }}>
                         {formatSize(result.originalSize)}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '11px', color: 'var(--ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Compressed Size</div>
-                      <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--semantic-success)', marginTop: 4 }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Optimized Size</div>
+                      <div style={{ fontSize: '18px', fontWeight: 700, color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--semantic-success)', marginTop: 4 }}>
                         {formatSize(result.compressedSize)}
                       </div>
                     </div>
@@ -418,11 +439,13 @@ export default function CompressPDFClient() {
               <>
                 <div>
                   <span className="ink-muted">New File Size</span>
-                  <strong style={{ color: 'var(--primary)' }}>{formatSize(result.compressedSize)}</strong>
+                  <strong style={{ color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--primary)' }}>{formatSize(result.compressedSize)}</strong>
                 </div>
                 <div>
                   <span className="ink-muted">Size Reduction</span>
-                  <strong style={{ color: 'var(--semantic-success)' }}>-{result.reduction}%</strong>
+                  <strong style={{ color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--semantic-success)' }}>
+                    {result.isAlreadyOptimized ? '0% (Already Optimal)' : `-${result.reduction}%`}
+                  </strong>
                 </div>
               </>
             )}
@@ -437,7 +460,11 @@ export default function CompressPDFClient() {
 
       {result && showToast && (
         <ToastNotification
-          message={`✓ PDF compressed! Saved ${result.reduction}% (${formatSize(result.originalSize)} ➔ ${formatSize(result.compressedSize)})`}
+          message={
+            result.isAlreadyOptimized
+              ? `✓ PDF is already fully optimized at ${formatSize(result.originalSize)}!`
+              : `✓ PDF compressed! Saved ${result.reduction}% (${formatSize(result.originalSize)} ➔ ${formatSize(result.compressedSize)})`
+          }
           onClose={() => setShowToast(false)}
         />
       )}
