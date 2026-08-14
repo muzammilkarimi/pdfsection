@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ToolIcon } from './Icons';
 import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
 import CommandPalette from './CommandPalette';
+import IndependenceBanner from './IndependenceBanner';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -67,7 +68,9 @@ export default function Header() {
   return (
     <>
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
-      <header className="nav" role="banner">
+      <div className="nav-fixed-holder">
+        <IndependenceBanner />
+        <header className="nav" role="banner">
         <div className="nav-inner">
           {/* Brand */}
           <Link href="/" className="nav-brand" aria-label="PDF Section Home" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', textDecoration: 'none' }}>
@@ -184,6 +187,7 @@ export default function Header() {
           </div>
         </div>
       </header>
+      </div>
 
       {/* Mobile Navigation */}
       <div className={`mobile-nav ${mobileOpen ? 'open' : ''}`} role="navigation" aria-label="Mobile navigation">

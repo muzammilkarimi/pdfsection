@@ -16,14 +16,15 @@
   max-width: var(--max-content-narrow);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Main Content Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Main Content ── */
 
 .main {
-  min-height: calc(100vh - var(--nav-height));
-  padding-top: var(--nav-height);
+  min-height: calc(100vh - var(--nav-height) - var(--banner-height, 0px));
+  padding-top: calc(var(--nav-height) + var(--banner-height, 0px));
+  transition: padding-top var(--duration-normal) var(--ease-default);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Section Spacing Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Section Spacing ── */
 
 .section {
   padding: var(--space-section) 0;
@@ -33,17 +34,22 @@
   padding-top: 0;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Header / Nav Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Header / Nav ── */
 
-.nav {
+.nav-fixed-holder {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 1000;
+}
+
+.nav {
+  position: relative;
+  width: 100%;
   height: var(--nav-height);
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--hairline);
-  z-index: 1000;
   display: flex;
   align-items: center;
 }
@@ -208,7 +214,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   position: fixed;
-  top: var(--nav-height);
+  top: calc(var(--nav-height) + var(--banner-height, 0px));
   left: 0;
   right: 0;
   bottom: 0;
@@ -224,7 +230,8 @@
   transition: 
     opacity var(--duration-normal) var(--ease-default),
     transform var(--duration-normal) var(--ease-default),
-    visibility var(--duration-normal);
+    visibility var(--duration-normal),
+    top var(--duration-normal) var(--ease-default);
 }
 
 .mobile-nav.open {

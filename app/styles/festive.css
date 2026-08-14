@@ -1,0 +1,479 @@
+/* ============================================
+   PDF Section — Indian Independence Day Festive Theme
+   Saffron, White, Green Tricolor & Ashoka Chakra
+   ============================================ */
+
+/* ── Ashoka Chakra 24-Spoke Spin Keyframes ── */
+@keyframes ashokaSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ashoka-spin {
+  animation: ashokaSpin 20s linear infinite;
+  transform-origin: center center;
+}
+
+/* ── Fixed Navigation Holder ── */
+.nav-fixed-holder {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Tricolor Announcement Banner ── */
+.independence-banner {
+  position: relative;
+  width: 100%;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  font-family: var(--font-text);
+  overflow: hidden;
+  z-index: 1001;
+  transition: all var(--duration-normal) var(--ease-default);
+}
+
+/* Tricolor top border accent stripe */
+.independence-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(
+    90deg,
+    #FF671F 0%,
+    #FF9933 35%,
+    #FFFFFF 50%,
+    #138808 65%,
+    #046A38 100%
+  );
+  z-index: 2;
+}
+
+.independence-banner-inner {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: 6px var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  font-size: 13px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.independence-banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* Flag & Date Pill Tag */
+.independence-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, #FF9933 14%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, #FF671F 32%, transparent);
+  border-radius: var(--rounded-pill);
+  padding: 2.5px 9px 2.5px 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.independence-flag-emoji {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.independence-tag-text {
+  letter-spacing: 0.2px;
+}
+
+.independence-banner-msg {
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.independence-banner-strong {
+  color: var(--ink);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.independence-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Celebrate Action Button */
+.independence-celebrate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #FF671F 0%, #FF9933 45%, #138808 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--rounded-pill);
+  padding: 3.5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px color-mix(in srgb, #FF671F 40%, transparent);
+  transition: transform var(--duration-fast) var(--ease-default), box-shadow var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.independence-celebrate-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 4px 14px color-mix(in srgb, #FF671F 60%, transparent);
+}
+
+.independence-celebrate-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.sparkle-icon {
+  font-size: 11px;
+}
+
+/* Close/Dismiss Button */
+.independence-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  border-radius: var(--rounded-sm);
+  color: var(--ink-tertiary);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--duration-fast), background-color var(--duration-fast);
+}
+
+.independence-close-btn:hover {
+  color: var(--ink);
+  background-color: var(--surface-3);
+}
+
+/* ============================================
+   ── Hero Banner Redesign (Desktop & Mobile) ──
+   ============================================ */
+
+/* Kicker row aligning badges cleanly */
+.home-kicker-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: var(--space-sm);
+  z-index: 1;
+  position: relative;
+}
+
+.home-kicker-row .home-kicker {
+  margin-bottom: 0;
+}
+
+/* Festive Hero Panel Background (Desktop) */
+.home-hero-panel.home-hero-panel-festive {
+  position: relative;
+  overflow: hidden;
+  background:
+    /* Saffron top-left radiant ambient glow */
+    radial-gradient(ellipse 700px 380px at -5% -15%, rgba(255, 103, 31, 0.16), transparent 70%),
+    /* India Green bottom-right radiant ambient glow */
+    radial-gradient(ellipse 700px 380px at 105% 115%, rgba(4, 106, 56, 0.13), transparent 70%),
+    /* Soft warm central luminosity */
+    radial-gradient(circle 500px at 50% 40%, rgba(255, 255, 255, 0.65), transparent 80%),
+    /* Base surface background */
+    var(--surface-1);
+  border: 1px solid color-mix(in srgb, #FF671F 24%, var(--hairline));
+  box-shadow: 
+    0 10px 32px -12px color-mix(in srgb, #FF671F 15%, transparent),
+    0 24px 48px -18px color-mix(in srgb, #046A38 12%, transparent);
+  transition: border-color var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+/* Top tricolor ribbon on the hero panel */
+.home-hero-panel.home-hero-panel-festive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #FF671F 0%,
+    #FFA86B 30%,
+    #FFFFFF 50%,
+    #48BB78 70%,
+    #046A38 100%
+  );
+  z-index: 2;
+}
+
+/* Rotating decorative Ashoka Chakra watermark in background */
+.home-hero-panel.home-hero-panel-festive::after {
+  content: '';
+  position: absolute;
+  right: -50px;
+  top: -50px;
+  width: 260px;
+  height: 260px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000080' stroke-width='0.6'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='2.2' fill='%23000080'/%3E%3Cg stroke='%23000080' stroke-width='0.4'%3E%3Cline x1='12' y1='12' x2='12' y2='2'/%3E%3Cline x1='12' y1='12' x2='12' y2='22'/%3E%3Cline x1='12' y1='12' x2='2' y2='12'/%3E%3Cline x1='12' y1='12' x2='22' y2='12'/%3E%3Cline x1='12' y1='12' x2='4.93' y2='4.93'/%3E%3Cline x1='12' y1='12' x2='19.07' y2='19.07'/%3E%3Cline x1='12' y1='12' x2='4.93' y2='19.07'/%3E%3Cline x1='12' y1='12' x2='19.07' y2='4.93'/%3E%3Cline x1='12' y1='12' x2='8.54' y2='2.62'/%3E%3Cline x1='12' y1='12' x2='15.46' y2='21.38'/%3E%3Cline x1='12' y1='12' x2='15.46' y2='2.62'/%3E%3Cline x1='12' y1='12' x2='8.54' y2='21.38'/%3E%3Cline x1='12' y1='12' x2='2.62' y2='8.54'/%3E%3Cline x1='12' y1='12' x2='21.38' y2='15.46'/%3E%3Cline x1='12' y1='12' x2='2.62' y2='15.46'/%3E%3Cline x1='12' y1='12' x2='21.38' y2='8.54'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  animation: ashokaSpin 60s linear infinite;
+}
+
+/* ── Hero Section Celebratory Badge ── */
+.independence-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4.5px 13px 4.5px 8px;
+  border-radius: var(--rounded-pill);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #FF671F 14%, var(--surface-1)) 0%,
+    color-mix(in srgb, #FFFFFF 90%, var(--surface-1)) 50%,
+    color-mix(in srgb, #046A38 12%, var(--surface-1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, #FF671F 36%, var(--hairline-strong));
+  box-shadow: 0 2px 10px -2px color-mix(in srgb, #FF671F 22%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-text);
+  cursor: pointer;
+  text-align: left;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  transition: all var(--duration-normal) var(--ease-default);
+}
+
+.independence-hero-badge:hover {
+  transform: translateY(-1.5px);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #FF671F 20%, var(--surface-1)) 0%,
+    color-mix(in srgb, #FFFFFF 95%, var(--surface-1)) 50%,
+    color-mix(in srgb, #046A38 18%, var(--surface-1)) 100%
+  );
+  border-color: color-mix(in srgb, #FF671F 55%, var(--hairline-strong));
+  box-shadow: 0 4px 20px -2px color-mix(in srgb, #FF671F 35%, transparent);
+}
+
+.independence-hero-badge:active {
+  transform: translateY(0);
+}
+
+.independence-hero-badge-sparkle {
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
+/* ── Dark Mode Enhancements ── */
+:root.dark .independence-banner {
+  background: rgba(18, 17, 26, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+:root.dark .ashoka-chakra-svg {
+  color: #828fff !important;
+}
+
+:root.dark .independence-tag {
+  background: rgba(255, 153, 51, 0.16);
+  border-color: rgba(255, 103, 31, 0.38);
+}
+
+:root.dark .home-hero-panel.home-hero-panel-festive {
+  background:
+    radial-gradient(ellipse 700px 380px at -5% -15%, rgba(255, 103, 31, 0.22), transparent 70%),
+    radial-gradient(ellipse 700px 380px at 105% 115%, rgba(26, 209, 143, 0.16), transparent 70%),
+    radial-gradient(circle 500px at 50% 40%, rgba(255, 255, 255, 0.03), transparent 80%),
+    var(--surface-1);
+  border-color: color-mix(in srgb, #FF671F 30%, var(--hairline));
+  box-shadow: 
+    0 12px 36px -10px rgba(255, 103, 31, 0.2),
+    0 25px 50px -15px rgba(0, 0, 0, 0.6);
+}
+
+:root.dark .home-hero-panel.home-hero-panel-festive::after {
+  filter: invert(1) brightness(1.5);
+  opacity: 0.05;
+}
+
+:root.dark .independence-hero-badge {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 103, 31, 0.18) 0%,
+    rgba(30, 27, 45, 0.85) 50%,
+    rgba(26, 209, 143, 0.15) 100%
+  );
+  border-color: rgba(255, 103, 31, 0.38);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+:root.dark .independence-hero-badge:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 103, 31, 0.26) 0%,
+    rgba(35, 32, 52, 0.95) 50%,
+    rgba(26, 209, 143, 0.22) 100%
+  );
+  border-color: rgba(255, 103, 31, 0.55);
+}
+
+/* ============================================
+   ── Responsive Adjustments (Tablet & Mobile) ──
+   ============================================ */
+@media (max-width: 768px) {
+  .independence-banner-msg-sub {
+    display: none;
+  }
+
+  .independence-banner-inner {
+    padding: 5px var(--space-md);
+    gap: 8px;
+  }
+
+  .independence-hero-badge {
+    font-size: 11.5px;
+    padding: 4px 10px 4px 7px;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-hero-panel.home-hero-panel-festive {
+    background:
+      /* Centered top Saffron glow on mobile */
+      radial-gradient(circle 320px at 50% -10%, rgba(255, 103, 31, 0.18), transparent 75%),
+      /* Centered bottom Green glow on mobile */
+      radial-gradient(circle 320px at 50% 110%, rgba(4, 106, 56, 0.15), transparent 75%),
+      /* Base surface */
+      var(--surface-1);
+    padding: var(--space-lg) var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  :root.dark .home-hero-panel.home-hero-panel-festive {
+    background:
+      radial-gradient(circle 320px at 50% -10%, rgba(255, 103, 31, 0.24), transparent 75%),
+      radial-gradient(circle 320px at 50% 110%, rgba(26, 209, 143, 0.18), transparent 75%),
+      var(--surface-1);
+  }
+
+  .home-search-label {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .home-kicker-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: var(--space-sm);
+    width: 100%;
+  }
+
+  .home-kicker-row .home-kicker,
+  .home-kicker-row .independence-hero-badge {
+    margin-bottom: 0;
+  }
+
+  .home-hero-panel.home-hero-panel-festive::after {
+    display: none; /* Hide background watermark on small mobile for clean clarity */
+  }
+}
+
+@media (max-width: 580px) {
+  .independence-banner-inner {
+    padding: 4px 10px;
+    gap: 6px;
+  }
+
+  .independence-tag-text {
+    display: none; /* Hide '15th August' text, keep clean Indian Flag icon */
+  }
+
+  .independence-tag {
+    padding: 2px 5px;
+    gap: 0;
+  }
+
+  .independence-banner-msg {
+    font-size: 11.5px;
+  }
+
+  .independence-banner-strong {
+    font-size: 11.5px;
+    margin-right: 0;
+  }
+
+  .independence-celebrate-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .independence-close-btn {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero-panel.home-hero-panel-festive {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .independence-hero-badge {
+    font-size: 11px;
+    padding: 3.5px 8px 3.5px 6px;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 380px) {
+  .independence-celebrate-text {
+    display: none; /* Show only ✨ on super narrow mobile screens */
+  }
+
+  .independence-celebrate-btn {
+    padding: 3px 6px;
+  }
+}

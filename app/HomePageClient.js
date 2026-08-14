@@ -5,6 +5,8 @@ import Link from 'next/link';
 import ToolCard from '@/components/ToolCard';
 import { ToolIcon } from '@/components/Icons';
 import { LIVE_TOOL_CATEGORIES, searchLiveTools, LIVE_TOOLS } from '@/lib/tools';
+import { isIndependenceDayActive, FESTIVE_CONFIG } from '@/lib/festiveConfig';
+import { IndianFlagIcon, triggerIndependenceConfetti } from '@/components/IndependenceConfetti';
 
 const POPULAR_TOOLS = [
   { id: 'merge', name: 'Merge PDF', description: 'Combine multiple PDFs', route: '/merge-pdf', icon: 'merge', categoryColor: 'var(--tool-organize)' },
@@ -18,6 +20,7 @@ const ALL_CATEGORY = 'all';
 export default function HomePageClient() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY);
+  const isIndependenceActive = useMemo(() => isIndependenceDayActive(), []);
 
   const selectedCategoryData = LIVE_TOOL_CATEGORIES.find(
     (category) => category.id === selectedCategory
@@ -51,12 +54,26 @@ export default function HomePageClient() {
   return (
     <main className="main home-main">
       <section className="home-dashboard container" aria-label="PDF tools dashboard">
-        <div className="home-hero-panel">
+        <div className={`home-hero-panel ${isIndependenceActive ? 'home-hero-panel-festive' : ''}`}>
           <div className="home-hero-copy">
-            <span className="home-kicker">
-              <ToolIcon name="lock" size={14} />
-              Private browser PDF tools
-            </span>
+            <div className="home-kicker-row">
+              {isIndependenceActive && (
+                <button
+                  type="button"
+                  className="independence-hero-badge"
+                  onClick={triggerIndependenceConfetti}
+                  title="Celebrate Indian Independence Day! Click for festive confetti ✨"
+                >
+                  <IndianFlagIcon width={19} height={12.5} />
+                  <span className="independence-hero-badge-text">{FESTIVE_CONFIG.HERO_BADGE_TEXT}</span>
+                  <span className="independence-hero-badge-sparkle" aria-hidden="true">✨</span>
+                </button>
+              )}
+              <span className="home-kicker">
+                <ToolIcon name="lock" size={14} />
+                Private browser PDF tools
+              </span>
+            </div>
             <h1 className="home-title">PDF Section</h1>
             <p className="home-subtitle">
               Merge, split, compress, convert, edit, and secure PDF files{' '}

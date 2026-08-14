@@ -53,6 +53,15 @@
   --header-bg: #ffffff;
   --footer-bg: #12111a;
   --nav-height: 64px;
+  --banner-height: 0px;
+
+  /* ── Indian National Flag Tricolor Tokens ── */
+  --flag-saffron: #FF671F;
+  --flag-saffron-light: #FF9933;
+  --flag-white: #FFFFFF;
+  --flag-green: #046A38;
+  --flag-green-light: #138808;
+  --flag-navy: #000080;
 }
 
 :root.dark {
@@ -105,6 +114,15 @@
   --header-bg: #12111a;
   --footer-bg: #0a0910;
   --nav-height: 64px;
+  --banner-height: 0px;
+
+  /* ── Indian National Flag Tricolor Tokens ── */
+  --flag-saffron: #FF671F;
+  --flag-saffron-light: #FF9933;
+  --flag-white: #FFFFFF;
+  --flag-green: #046A38;
+  --flag-green-light: #138808;
+  --flag-navy: #828fff;
 }
 
 :root {

@@ -40,6 +40,7 @@ export default async function HowToSlugPage({ params }) {
     description: pageData.toolDescription || pageData.description,
     route: `/how-to/${slug}`,
     faqs: pageData.faqs,
+    steps: pageData.steps,
   });
 
   return (
