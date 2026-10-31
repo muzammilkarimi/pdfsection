@@ -3,7 +3,7 @@ import { BLOG_POSTS } from '@/lib/blog';
 import { PSEO_PAGES } from '@/lib/seoRegistry';
 
 export default function sitemap() {
-  const baseUrl = 'https://pdfsection.com';
+  const baseUrl = 'https://www.pdfsection.com';
 
   // Homepage and static corporate routes
   const routes = [

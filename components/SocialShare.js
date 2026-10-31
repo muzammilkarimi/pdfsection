@@ -6,7 +6,7 @@ import { ToolIcon } from './Icons';
 export default function SocialShare({ title, url }) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = url || 'https://pdfsection.com';
+  const shareUrl = url || 'https://www.pdfsection.com';
   const shareTitle = title || 'PDF Section — Private Local PDF Tools';
 
   const encodedUrl = encodeURIComponent(shareUrl);

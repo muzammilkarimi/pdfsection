@@ -7,6 +7,6 @@ export default function robots() {
         disallow: '/download/',
       },
     ],
-    sitemap: 'https://pdfsection.com/sitemap.xml',
+    sitemap: 'https://www.pdfsection.com/sitemap.xml',
   };
 }

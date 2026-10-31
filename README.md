@@ -7,14 +7,14 @@
 
   [![Next.js](https://img.shields.io/badge/Next.js-16.2.10-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
-  [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Client--Side-10B981?style=for-the-badge&logo=shield)](https://pdfsection.com/privacy)
+  [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Client--Side-10B981?style=for-the-badge&logo=shield)](https://www.pdfsection.com/privacy)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
   <p align="center">
     Every tool you need to work with PDFs in one place. Merge, split, compress, convert, edit, sign, and secure documents without uploading them to remote servers. 100% free, private, and runs entirely in your browser tab.
   </p>
 
-  [**Explore Live Workspace →**](https://pdfsection.com)
+  [**Explore Live Workspace →**](https://www.pdfsection.com)
 
 </div>
 

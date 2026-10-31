@@ -52,14 +52,14 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://pdfsection.com'),
+  metadataBase: new URL('https://www.pdfsection.com'),
   alternates: {
-    canonical: 'https://pdfsection.com',
+    canonical: 'https://www.pdfsection.com',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://pdfsection.com',
+    url: 'https://www.pdfsection.com',
     siteName: 'PDF Section',
     title: 'PDF Section — Free Online PDF Tools (100% Private)',
     description:
@@ -106,7 +106,7 @@ export default function RootLayout({ children }) {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
       name: 'PDF Section',
-      url: 'https://pdfsection.com',
+      url: 'https://www.pdfsection.com',
       description:
         'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser with zero file uploads.',
       applicationCategory: 'UtilityApplication',

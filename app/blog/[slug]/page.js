@@ -269,7 +269,7 @@ export default async function BlogArticlePage({ params }) {
             <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-lg) 0' }} />
             
             {/* Social Share Bar */}
-            <SocialShare title={post.title} url={`https://pdfsection.com/blog/${post.slug}`} />
+            <SocialShare title={post.title} url={`https://www.pdfsection.com/blog/${post.slug}`} />
           </article>
 
           {/* CTA box */}

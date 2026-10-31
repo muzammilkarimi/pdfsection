@@ -3,16 +3,16 @@
 > Free, private online PDF tools. Every file is processed locally in the browser; nothing is uploaded to a server.
 
 ## Tools
-- [Merge PDF](https://pdfsection.com/merge-pdf): Combine multiple PDFs into one
-- [Split PDF](https://pdfsection.com/split-pdf): Split a PDF into separate files
-- [Compress PDF](https://pdfsection.com/compress-pdf): Reduce PDF file size
-- [Convert PDF](https://pdfsection.com/convert-pdf): PDF to Word, Excel, JPG, PowerPoint and back
-- [Edit PDF](https://pdfsection.com/edit-pdf): Edit text and images in a PDF
-- [Sign PDF](https://pdfsection.com/sign-pdf): Add signatures to a PDF
-- [Protect PDF](https://pdfsection.com/protect-pdf): Password-protect a PDF
+- [Merge PDF](https://www.pdfsection.com/merge-pdf): Combine multiple PDFs into one
+- [Split PDF](https://www.pdfsection.com/split-pdf): Split a PDF into separate files
+- [Compress PDF](https://www.pdfsection.com/compress-pdf): Reduce PDF file size
+- [Convert PDF](https://www.pdfsection.com/convert-pdf): PDF to Word, Excel, JPG, PowerPoint and back
+- [Edit PDF](https://www.pdfsection.com/edit-pdf): Edit text and images in a PDF
+- [Sign PDF](https://www.pdfsection.com/sign-pdf): Add signatures to a PDF
+- [Protect PDF](https://www.pdfsection.com/protect-pdf): Password-protect a PDF
 
 ## Information
-- [About](https://pdfsection.com/about): Who builds PDF Section and why
-- [Privacy](https://pdfsection.com/privacy): 100% client-side processing, no file logging
-- [Blog](https://pdfsection.com/blog): PDF security and privacy guides
-- [Sitemap](https://pdfsection.com/sitemap.xml)
+- [About](https://www.pdfsection.com/about): Who builds PDF Section and why
+- [Privacy](https://www.pdfsection.com/privacy): 100% client-side processing, no file logging
+- [Blog](https://www.pdfsection.com/blog): PDF security and privacy guides
+- [Sitemap](https://www.pdfsection.com/sitemap.xml)
