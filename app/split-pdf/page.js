@@ -1,5 +1,6 @@
 import SplitPDFClient from './SplitPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Split PDF — Separate PDF Pages Online for Free',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SplitPDFClient />
+      <RelatedGuides route="/split-pdf" />
     </>
   );
 }

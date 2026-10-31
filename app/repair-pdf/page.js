@@ -1,5 +1,6 @@
 import RepairPDFClient from './RepairPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Repair PDF Online — Fix Corrupted & Damaged PDF Files',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <RepairPDFClient />
+      <RelatedGuides route="/repair-pdf" />
     </>
   );
 }

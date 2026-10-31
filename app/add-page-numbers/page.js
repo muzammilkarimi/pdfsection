@@ -1,5 +1,6 @@
 import AddPageNumbersClient from './AddPageNumbersClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Add Page Numbers to PDF — Number PDF Pages Online',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <AddPageNumbersClient />
+      <RelatedGuides route="/add-page-numbers" />
     </>
   );
 }

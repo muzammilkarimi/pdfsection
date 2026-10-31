@@ -1,5 +1,6 @@
 import PDFToOfficeClient from '@/components/PDFToOfficeClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'PDF to Excel Converter — Extract Data to XLSX',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <PDFToOfficeClient toolId="pdf-to-excel" />
+      <RelatedGuides route="/pdf-to-excel" />
     </>
   );
 }

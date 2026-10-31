@@ -1,5 +1,6 @@
 import HTMLToPDFClient from './HTMLToPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'HTML to PDF Converter — Convert Code or Webpages to PDF',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HTMLToPDFClient />
+      <RelatedGuides route="/html-to-pdf" />
     </>
   );
 }

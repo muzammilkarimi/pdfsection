@@ -42,6 +42,7 @@ export default function Footer() {
         { label: 'Add Bates Numbers to PDF', href: '/how-to/add-bates-numbers-to-court-documents' },
         { label: 'Unlock PDF Without Software', href: '/how-to/remove-password-from-pdf-without-software' },
         { label: 'Sign Contract PDF Online', href: '/how-to/sign-contract-pdf-online-free' },
+        { label: 'All How-To Guides', href: '/how-to' },
       ],
     },
     {

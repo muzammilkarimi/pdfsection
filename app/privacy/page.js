@@ -32,7 +32,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>1. Our Commitment to Your Privacy</h2>
             <p>
-              At <strong>PDF Section</strong>, we prioritize document privacy above everything else. Unlike traditional online PDF tools that require uploading your private files to remote cloud servers, PDF Section utilizes a <strong>100% client-side architecture</strong>. This means your files never leave your device.
+              At <strong>PDF Section</strong>, we prioritize document privacy above everything else. Unlike traditional online PDF tools that require uploading your private files to remote cloud servers, PDF Section utilizes a <strong>100% client-side architecture</strong>. This means your files never leave your device, with one exception: the <strong>Translate PDF</strong> tool (see below).
             </p>
           </section>
 
@@ -46,6 +46,9 @@ export default function PrivacyPolicyPage() {
               <li>❌ <strong>No Logs</strong>: We do not capture, cache, inspect, or save any text content, passwords, metadata, or images from your files.</li>
               <li>❌ <strong>No Storage</strong>: File buffers exist only temporarily within your local browser memory tab and are wiped instantly when the tab is closed.</li>
             </ul>
+            <p style={{ marginTop: 'var(--space-xs)' }}>
+              <strong>Exception — Translate PDF:</strong> this tool extracts text from your PDF in your browser and sends that text, in short chunks, to the third-party MyMemory translation API (api.mymemory.translated.net) to obtain the translation. The PDF file itself is not uploaded, but its text is. Do not use this tool for confidential documents. All other tools stay fully local.
+            </p>
           </section>
 
           <section>
@@ -54,7 +57,7 @@ export default function PrivacyPolicyPage() {
               We do not collect personal information. We do not require account registration, email addresses, or phone numbers to use PDF Section.
             </p>
             <p style={{ marginTop: 'var(--space-xs)' }}>
-              To monitor application reliability and design quality, we use standard, anonymous analytics providers (such as Vercel Analytics). These platforms only track non-personally identifiable information, such as page views, button clicks, performance speed, and browser user-agents.
+              To monitor application reliability and design quality, we use standard, anonymous analytics providers (such as Vercel Analytics, and Google Analytics / Google Tag Manager when enabled). These platforms only track non-personally identifiable information, such as page views, button clicks, performance speed, and browser user-agents.
             </p>
           </section>
 

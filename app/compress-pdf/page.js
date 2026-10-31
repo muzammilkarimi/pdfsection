@@ -1,11 +1,12 @@
 import CompressPDFClient from './CompressPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
-  title: 'Compress PDF — Reduce PDF File Size Online',
-  description: 'Reduce PDF file size while maintaining document quality. Choose from multiple compression levels. 100% free and private.',
+  title: 'Compress PDF Online Free — Reduce PDF File Size',
+  description: 'Compress PDF online for free and reduce file size to fit email limits. Pick a compression level and keep text sharp. No upload, no sign-up, 100% private.',
   route: '/compress-pdf',
-  keywords: ['Compress PDF', 'reduce PDF size', 'shrink PDF', 'PDF compressor online', 'free PDF size reducer'],
+  keywords: ['compress PDF online', 'compress PDF free', 'reduce PDF size', 'reduce PDF file size', 'shrink PDF', 'PDF compressor'],
 });
 
 const jsonLd = buildToolJsonLd({
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <CompressPDFClient />
+      <RelatedGuides route="/compress-pdf" />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import JPGToPDFClient from './JPGToPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'JPG to PDF Converter — Convert Images to PDF',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <JPGToPDFClient />
+      <RelatedGuides route="/jpg-to-pdf" />
     </>
   );
 }

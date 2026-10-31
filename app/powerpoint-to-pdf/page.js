@@ -1,5 +1,6 @@
 import OfficeToPDFClient from '@/components/OfficeToPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'PowerPoint to PDF Converter — Convert PPTX to PDF',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <OfficeToPDFClient toolId="powerpoint-to-pdf" />
+      <RelatedGuides route="/powerpoint-to-pdf" />
     </>
   );
 }

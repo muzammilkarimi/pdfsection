@@ -1,11 +1,12 @@
 import MergePDFClient from './MergePDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
-  title: 'Merge PDF — Combine PDF Files Online for Free',
-  description: 'Combine multiple PDF files into a single document in seconds. Drag and drop to reorder pages. 100% free, private, and runs in your browser.',
+  title: 'Merge PDF Files Online Free — Combine PDFs',
+  description: 'Merge PDF files online: combine and join multiple PDFs into one document. Drag to reorder, then download. Free, no sign-up, files never leave your browser.',
   route: '/merge-pdf',
-  keywords: ['Merge PDF', 'combine PDF files', 'join PDFs', 'PDF merger online', 'free PDF joiner'],
+  keywords: ['merge PDF files', 'combine PDF files', 'combine PDF', 'join PDF', 'merge PDF online free', 'PDF merger'],
 });
 
 const jsonLd = buildToolJsonLd({
@@ -19,7 +20,7 @@ const jsonLd = buildToolJsonLd({
     },
     {
       question: 'Is there a limit on how many PDFs I can merge?',
-      answer: 'No! PDF Section allows unlimited file merging completely free.',
+      answer: 'You can combine up to 20 PDF files at once, and merging is completely free. Run it again to combine more.',
     },
   ],
 });
@@ -32,6 +33,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MergePDFClient />
+      <RelatedGuides route="/merge-pdf" />
     </>
   );
 }

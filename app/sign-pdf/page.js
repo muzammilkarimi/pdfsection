@@ -1,5 +1,6 @@
 import SignPDFClient from './SignPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Sign PDF Online — Draw & Place Electronic Signatures',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SignPDFClient />
+      <RelatedGuides route="/sign-pdf" />
     </>
   );
 }

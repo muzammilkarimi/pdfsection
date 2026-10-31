@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog';
-import { buildToolMetadata, buildBlogPostJsonLd } from '@/lib/seoUtils';
+import { buildToolMetadata, buildBlogPostJsonLd, buildBreadcrumbJsonLd } from '@/lib/seoUtils';
 import SocialShare from '@/components/SocialShare';
 
 // Pre-render blog slug routes statically
@@ -21,6 +21,7 @@ export async function generateMetadata({ params }) {
     title: post.title,
     description: post.description,
     route: `/blog/${slug}`,
+    ogType: 'article',
     keywords: [post.category, 'PDF security', 'client side processing', 'PDF section blog'],
   });
 }
@@ -37,6 +38,12 @@ export default async function BlogArticlePage({ params }) {
     description: post.description,
     slug: post.slug,
     date: post.date,
+  });
+
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd({
+    name: post.title,
+    route: `/blog/${post.slug}`,
+    parent: { name: 'Blog', route: '/blog' },
   });
 
   // Inline code and bold text renderer
@@ -213,7 +220,7 @@ export default async function BlogArticlePage({ params }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumbJsonLd]) }}
       />
       <main className="main page-scroll" style={{ minHeight: '100vh', padding: 'calc(var(--nav-height) + var(--space-xl)) 0 var(--space-xxl)', background: 'radial-gradient(circle at top right, rgba(94, 106, 210, 0.02), transparent 45%)' }}>
         <div className="container" style={{ maxWidth: '700px' }}>

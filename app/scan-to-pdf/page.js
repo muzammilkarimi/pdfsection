@@ -1,5 +1,6 @@
 import ScanPDFClient from './ScanPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Scan to PDF — Convert Camera & Scanned Images to PDF',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ScanPDFClient />
+      <RelatedGuides route="/scan-to-pdf" />
     </>
   );
 }

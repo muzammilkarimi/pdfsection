@@ -1,5 +1,6 @@
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import GrayscalePDFClient from './GrayscalePDFClient';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Grayscale PDF Converter — Convert PDF to Black & White Free',
@@ -32,6 +33,7 @@ export default function GrayscalePDFPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <GrayscalePDFClient />
+      <RelatedGuides route="/grayscale-pdf" />
     </>
   );
 }

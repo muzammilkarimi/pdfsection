@@ -1,5 +1,6 @@
 import ExtractPagesClient from './ExtractPagesClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Extract Pages from PDF — Save Specific PDF Pages',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ExtractPagesClient />
+      <RelatedGuides route="/extract-pages" />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import ProtectPDFClient from './ProtectPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Protect PDF — Add Password & AES-256 Encryption',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ProtectPDFClient />
+      <RelatedGuides route="/protect-pdf" />
     </>
   );
 }

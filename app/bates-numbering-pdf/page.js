@@ -1,5 +1,6 @@
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import BatesNumberingPDFClient from './BatesNumberingPDFClient';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Bates Numbering PDF — Free Legal Discovery Stamping Tool',
@@ -32,6 +33,7 @@ export default function BatesNumberingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BatesNumberingPDFClient />
+      <RelatedGuides route="/bates-numbering-pdf" />
     </>
   );
 }

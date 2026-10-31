@@ -5,11 +5,12 @@ import { ToolIcon } from './Icons';
 import ToolGuideSection from './ToolGuideSection';
 import RelatedToolsSection from './RelatedToolsSection';
 import { getToolByRoute } from '@/lib/tools';
+import { useSeoOverride } from './SeoOverrideContext';
 import { SEO_TOOL_CONTENT, DEFAULT_SEO_CONTENT } from '@/lib/seoMetadata';
 
 export default function ToolPageLayout({
-  title,
-  description,
+  title: titleProp,
+  description: descriptionProp,
   icon,
   iconColor,
   children,
@@ -20,72 +21,21 @@ export default function ToolPageLayout({
   const pathname = usePathname();
   const tool = getToolByRoute(pathname);
   const toolId = tool ? tool.id : null;
-  const seoData = (toolId && SEO_TOOL_CONTENT[toolId]) || DEFAULT_SEO_CONTENT;
+  const override = useSeoOverride();
+  const title = override?.title || titleProp;
+  const description = override?.description || descriptionProp;
+  // Content is keyed by tool id or, for tools whose id differs from their route, by route slug.
+  const baseSeoData =
+    (toolId && SEO_TOOL_CONTENT[toolId]) ||
+    SEO_TOOL_CONTENT[pathname.replace(/^\//, '')] ||
+    DEFAULT_SEO_CONTENT;
+  const seoData = override
+    ? { ...baseSeoData, steps: override.steps || baseSeoData.steps, faqs: override.faqs || baseSeoData.faqs }
+    : baseSeoData;
 
-  const appSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    'name': `${title} - PDF Section`,
-    'description': description,
-    'url': `https://pdfsection.com${pathname}`,
-    'applicationCategory': 'BusinessApplication',
-    'operatingSystem': 'All',
-    'browserRequirements': 'Requires JavaScript. Requires HTML5.',
-    'offers': {
-      '@type': 'Offer',
-      'price': '0.00',
-      'priceCurrency': 'USD'
-    },
-    'step': (seoData.steps || []).map((step, idx) => ({
-      '@type': 'HowToStep',
-      'position': idx + 1,
-      'text': step
-    }))
-  };
-
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    'name': `${title} - PDF Section`,
-    'operatingSystem': 'All',
-    'applicationCategory': 'BusinessApplication',
-    'url': `https://pdfsection.com${pathname}`,
-    'description': description,
-    'aggregateRating': {
-      '@type': 'AggregateRating',
-      'ratingValue': '4.9',
-      'ratingCount': '1280',
-      'reviewCount': '1280',
-      'bestRating': '5',
-      'worstRating': '1',
-    },
-    'offers': {
-      '@type': 'Offer',
-      'price': '0.00',
-      'priceCurrency': 'USD',
-    },
-  };
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    'itemListElement': [
-      {
-        '@type': 'ListItem',
-        'position': 1,
-        'name': 'Home',
-        'item': 'https://pdfsection.com',
-      },
-      {
-        '@type': 'ListItem',
-        'position': 2,
-        'name': title.split('—')[0].trim(),
-        'item': `https://pdfsection.com${pathname}`,
-      },
-    ],
-  };
-
-  const schemas = [appSchema, softwareSchema, breadcrumbSchema];
+  // WebApplication, breadcrumb and HowTo schema come from each page's buildToolJsonLd();
+  // this layout only emits the FAQPage so it always matches the FAQs shown on the page.
+  const schemas = [];
 
   if (seoData.faqs && seoData.faqs.length > 0) {
     schemas.push({
@@ -104,11 +54,13 @@ export default function ToolPageLayout({
 
   return (
     <main className={`main tool-page-shell tool-layout-${layoutMode}`}>
-      {/* JSON-LD Structured Schema Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
-      />
+      {/* FAQ structured data, matching the visible FAQ section */}
+      {schemas.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+        />
+      )}
       <div className="container">
         <div className="tool-page page-enter">
           {showHeader && (

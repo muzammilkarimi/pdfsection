@@ -1,5 +1,6 @@
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import PDFToPDFAClient from './PDFToPDFAClient';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'PDF to PDF/A Converter — Free ISO Archival Standard Online',
@@ -32,6 +33,7 @@ export default function PDFToPDFAPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <PDFToPDFAClient />
+      <RelatedGuides route="/pdf-to-pdfa" />
     </>
   );
 }

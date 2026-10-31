@@ -1,5 +1,6 @@
 import ComparePDFClient from './ComparePDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Compare PDF Files — Visual & Text Diff Tool',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ComparePDFClient />
+      <RelatedGuides route="/compare-pdf" />
     </>
   );
 }

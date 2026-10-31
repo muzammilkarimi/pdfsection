@@ -1,5 +1,6 @@
 import PDFFormsClient from './PDFFormsClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Fillable PDF Form Editor — Fill & Save PDF Forms Online',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <PDFFormsClient />
+      <RelatedGuides route="/pdf-forms" />
     </>
   );
 }

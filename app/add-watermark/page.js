@@ -1,5 +1,6 @@
 import WatermarkPDFClient from './WatermarkPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Add Watermark to PDF — Text & Stamp Watermarking',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <WatermarkPDFClient />
+      <RelatedGuides route="/add-watermark" />
     </>
   );
 }

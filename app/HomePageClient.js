@@ -74,7 +74,12 @@ export default function HomePageClient() {
                 Private browser PDF tools
               </span>
             </div>
-            <h1 className="home-title">PDF Section</h1>
+            <h1 className="home-title">
+              PDF Section
+              <span style={{ display: 'block', fontSize: '0.4em', fontWeight: 600, letterSpacing: '0.01em', marginTop: '0.35em' }}>
+                Free Online PDF Tools
+              </span>
+            </h1>
             <p className="home-subtitle">
               Merge, split, compress, convert, edit, and secure PDF files{' '}
               <strong style={{ color: 'var(--brand-yellow)', fontWeight: '700' }}>without uploading them to a server</strong>

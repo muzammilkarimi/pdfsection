@@ -1,5 +1,6 @@
 import AISummarizerClient from './AISummarizerClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'AI PDF Summarizer — Extract Key Insights & Summaries',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <AISummarizerClient />
+      <RelatedGuides route="/ai-summarizer" />
     </>
   );
 }

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { PSEO_PAGES } from '@/lib/seoRegistry';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import HowToClientDispatcher from './HowToClientDispatcher';
+import { SeoOverrideProvider } from '@/components/SeoOverrideContext';
 
 export async function generateStaticParams() {
   return PSEO_PAGES.map((page) => ({
@@ -49,7 +50,16 @@ export default async function HowToSlugPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <HowToClientDispatcher toolId={pageData.toolId} />
+      <SeoOverrideProvider
+        value={{
+          title: pageData.toolTitle,
+          description: pageData.toolDescription || pageData.description,
+          steps: pageData.steps,
+          faqs: (pageData.faqs || []).map((faq) => ({ q: faq.question, a: faq.answer })),
+        }}
+      >
+        <HowToClientDispatcher toolId={pageData.toolId} />
+      </SeoOverrideProvider>
     </>
   );
 }

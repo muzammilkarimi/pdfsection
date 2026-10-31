@@ -1,5 +1,6 @@
 import OfficeToPDFClient from '@/components/OfficeToPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Word to PDF Converter — Free Online & Private',
@@ -32,6 +33,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <OfficeToPDFClient toolId="word-to-pdf" />
+      <RelatedGuides route="/word-to-pdf" />
     </>
   );
 }

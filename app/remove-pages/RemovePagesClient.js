@@ -65,8 +65,8 @@ export default function RemovePagesClient() {
 
   return (
     <ToolPageLayout
-      title="Remove Pages"
-      description="Select and delete unwanted pages from your PDF"
+      title="Remove Pages from PDF"
+      description="A free PDF page remover. Delete one or more pages from a PDF online: click the pages to remove, then download the new file. Private, with no upload."
       icon="trash"
       iconColor="var(--tool-organize)"
       showHeader={!file}

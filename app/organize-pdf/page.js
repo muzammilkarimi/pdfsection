@@ -1,5 +1,6 @@
 import OrganizePDFClient from './OrganizePDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Organize PDF Pages — Drag & Drop Page Reordering',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <OrganizePDFClient />
+      <RelatedGuides route="/organize-pdf" />
     </>
   );
 }

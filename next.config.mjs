@@ -4,6 +4,17 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  async redirects() {
+    // One canonical host: send www to the bare domain so link signals are not split.
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.pdfsection.com' }],
+        destination: 'https://pdfsection.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
@@ -23,7 +34,7 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(self), microphone=(), geolocation=()',
           },
           {
             key: 'X-XSS-Protection',

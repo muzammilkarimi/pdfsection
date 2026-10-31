@@ -2,31 +2,31 @@
 
 import dynamic from 'next/dynamic';
 
-// Dynamically import all client tool components for performance optimization
-const MergePDFClient = dynamic(() => import('@/app/merge-pdf/MergePDFClient'), { ssr: false });
-const SplitPDFClient = dynamic(() => import('@/app/split-pdf/SplitPDFClient'), { ssr: false });
-const CompressPDFClient = dynamic(() => import('@/app/compress-pdf/CompressPDFClient'), { ssr: false });
-const PDFToJPGClient = dynamic(() => import('@/app/pdf-to-jpg/PDFToJPGClient'), { ssr: false });
-const JPGToPDFClient = dynamic(() => import('@/app/jpg-to-pdf/JPGToPDFClient'), { ssr: false });
-const RotatePDFClient = dynamic(() => import('@/app/rotate-pdf/RotatePDFClient'), { ssr: false });
-const AddPageNumbersClient = dynamic(() => import('@/app/add-page-numbers/AddPageNumbersClient'), { ssr: false });
-const WatermarkPDFClient = dynamic(() => import('@/app/add-watermark/WatermarkPDFClient'), { ssr: false });
-const CropPDFClient = dynamic(() => import('@/app/crop-pdf/CropPDFClient'), { ssr: false });
-const EditPDFClient = dynamic(() => import('@/app/edit-pdf/EditPDFClient'), { ssr: false });
-const UnlockPDFClient = dynamic(() => import('@/app/unlock-pdf/UnlockPDFClient'), { ssr: false });
-const ProtectPDFClient = dynamic(() => import('@/app/protect-pdf/ProtectPDFClient'), { ssr: false });
-const SignPDFClient = dynamic(() => import('@/app/sign-pdf/SignPDFClient'), { ssr: false });
-const RedactPDFClient = dynamic(() => import('@/app/redact-pdf/RedactPDFClient'), { ssr: false });
-const ComparePDFClient = dynamic(() => import('@/app/compare-pdf/ComparePDFClient'), { ssr: false });
-const AISummarizerClient = dynamic(() => import('@/app/ai-summarizer/AISummarizerClient'), { ssr: false });
-const TranslatePDFClient = dynamic(() => import('@/app/translate-pdf/TranslatePDFClient'), { ssr: false });
-const BatesNumberingPDFClient = dynamic(() => import('@/app/bates-numbering-pdf/BatesNumberingPDFClient'), { ssr: false });
-const GrayscalePDFClient = dynamic(() => import('@/app/grayscale-pdf/GrayscalePDFClient'), { ssr: false });
-const PDFToPDFAClient = dynamic(() => import('@/app/pdf-to-pdfa/PDFToPDFAClient'), { ssr: false });
+// Code-split each tool, but keep server rendering on so the H1, steps and FAQ are in the HTML crawlers receive
+const MergePDFClient = dynamic(() => import('@/app/merge-pdf/MergePDFClient'));
+const SplitPDFClient = dynamic(() => import('@/app/split-pdf/SplitPDFClient'));
+const CompressPDFClient = dynamic(() => import('@/app/compress-pdf/CompressPDFClient'));
+const PDFToJPGClient = dynamic(() => import('@/app/pdf-to-jpg/PDFToJPGClient'));
+const JPGToPDFClient = dynamic(() => import('@/app/jpg-to-pdf/JPGToPDFClient'));
+const RotatePDFClient = dynamic(() => import('@/app/rotate-pdf/RotatePDFClient'));
+const AddPageNumbersClient = dynamic(() => import('@/app/add-page-numbers/AddPageNumbersClient'));
+const WatermarkPDFClient = dynamic(() => import('@/app/add-watermark/WatermarkPDFClient'));
+const CropPDFClient = dynamic(() => import('@/app/crop-pdf/CropPDFClient'));
+const EditPDFClient = dynamic(() => import('@/app/edit-pdf/EditPDFClient'));
+const UnlockPDFClient = dynamic(() => import('@/app/unlock-pdf/UnlockPDFClient'));
+const ProtectPDFClient = dynamic(() => import('@/app/protect-pdf/ProtectPDFClient'));
+const SignPDFClient = dynamic(() => import('@/app/sign-pdf/SignPDFClient'));
+const RedactPDFClient = dynamic(() => import('@/app/redact-pdf/RedactPDFClient'));
+const ComparePDFClient = dynamic(() => import('@/app/compare-pdf/ComparePDFClient'));
+const AISummarizerClient = dynamic(() => import('@/app/ai-summarizer/AISummarizerClient'));
+const TranslatePDFClient = dynamic(() => import('@/app/translate-pdf/TranslatePDFClient'));
+const BatesNumberingPDFClient = dynamic(() => import('@/app/bates-numbering-pdf/BatesNumberingPDFClient'));
+const GrayscalePDFClient = dynamic(() => import('@/app/grayscale-pdf/GrayscalePDFClient'));
+const PDFToPDFAClient = dynamic(() => import('@/app/pdf-to-pdfa/PDFToPDFAClient'));
 
 // Helper wrappers
-const OfficeToPDFClient = dynamic(() => import('@/components/OfficeToPDFClient'), { ssr: false });
-const PDFToOfficeClient = dynamic(() => import('@/components/PDFToOfficeClient'), { ssr: false });
+const OfficeToPDFClient = dynamic(() => import('@/components/OfficeToPDFClient'));
+const PDFToOfficeClient = dynamic(() => import('@/components/PDFToOfficeClient'));
 
 export default function HowToClientDispatcher({ toolId }) {
   switch (toolId) {

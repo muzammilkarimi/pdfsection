@@ -1,5 +1,6 @@
 import RotatePDFClient from './RotatePDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Rotate PDF — Rotate PDF Pages Online for Free',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <RotatePDFClient />
+      <RelatedGuides route="/rotate-pdf" />
     </>
   );
 }

@@ -26,7 +26,7 @@ export default function ToolGuideSection({ title, seoData }) {
           How to Use {title.split('—')[0]}
         </h2>
         <p className="tool-guide-subtitle">
-          Everything you need to know about processing your PDF files quickly, privately, and 100% locally in your browser.
+          {seoData?.subtitle || 'Everything you need to know about processing your PDF files quickly, privately, and 100% locally in your browser.'}
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 import UnlockPDFClient from './UnlockPDFClient';
 import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
+import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Unlock PDF — Remove PDF Passwords & Security Restrictions',
@@ -28,6 +29,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <UnlockPDFClient />
+      <RelatedGuides route="/unlock-pdf" />
     </>
   );
 }
