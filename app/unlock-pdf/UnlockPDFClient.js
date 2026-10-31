@@ -8,10 +8,11 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender } from '@/lib/renderUtils';
 
 export default function UnlockPDFClient() {
+  const deliver = useResultHandoff('unlock-pdf');
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState('');
   const [needsPassword, setNeedsPassword] = useState(false);
@@ -122,7 +123,7 @@ export default function UnlockPDFClient() {
         pdfBytes = await pdfDoc.save();
       }
 
-      downloadBlob(pdfBytes, file.name.replace('.pdf', '-unlocked.pdf'), 'application/pdf');
+      await deliver(pdfBytes, file.name.replace('.pdf', '-unlocked.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
       setErrorMsg('Incorrect password or decryption error. Please check your credentials and try again.');

@@ -8,9 +8,11 @@ import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { loadPdfForRender } from '@/lib/renderUtils';
-import { downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
+import { checkPdfEncryption } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function GrayscalePDFClient() {
+  const deliver = useResultHandoff('grayscale-pdf');
   const [file, setFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -81,11 +83,9 @@ export default function GrayscalePDFClient() {
 
       const pdfBytes = await outPdf.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
       const outName = `${file.name.replace(/\.pdf$/i, '')}_pdfsection_grayscale.pdf`;
       setOutputFileName(outName);
-      setDownloadUrl(url);
+      await deliver(blob, outName, 'application/pdf');
     } catch (err) {
       console.error('Error converting PDF to Grayscale:', err);
       alert('Failed to convert PDF to Grayscale.');

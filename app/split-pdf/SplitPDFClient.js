@@ -7,9 +7,11 @@ import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, splitPdf, splitPdfIntoPages, savePdf, downloadBlob } from '@/lib/pdfUtils';
+import { loadPdf, splitPdf, splitPdfIntoPages, savePdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function SplitPDFClient() {
+  const deliver = useResultHandoff('split-pdf');
   const [file, setFile] = useState(null);
   const [pageCount, setPageCount] = useState(0);
   const [mode, setMode] = useState('all');
@@ -79,7 +81,7 @@ export default function SplitPDFClient() {
 
       if (results.length === 1) {
         const bytes = await savePdf(results[0]);
-        downloadBlob(bytes, 'split-page.pdf', 'application/pdf');
+        await deliver(bytes, 'split-page.pdf', 'application/pdf');
       } else {
         const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
@@ -90,7 +92,7 @@ export default function SplitPDFClient() {
         }
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        downloadBlob(zipBlob, 'split-pages.zip', 'application/zip');
+        await deliver(zipBlob, 'split-pages.zip', 'application/zip');
       }
 
       setDone(true);

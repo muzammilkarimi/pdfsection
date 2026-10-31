@@ -7,9 +7,11 @@ import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { protectPdf, downloadBlob } from '@/lib/pdfUtils';
+import { protectPdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function ProtectPDFClient() {
+  const deliver = useResultHandoff('protect-pdf');
   const [file, setFile] = useState(null);
   const [userPassword, setUserPassword] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
@@ -45,7 +47,7 @@ export default function ProtectPDFClient() {
         allowModify,
       });
 
-      downloadBlob(pdfBytes, file.name.replace('.pdf', '-protected.pdf'), 'application/pdf');
+      await deliver(pdfBytes, file.name.replace('.pdf', '-protected.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
       alert('Error protecting PDF: ' + err.message);

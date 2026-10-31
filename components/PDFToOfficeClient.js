@@ -9,11 +9,12 @@ import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 
 import { loadPdfForRender } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import JSZip from 'jszip';
 
 export default function PDFToOfficeClient({ toolId }) {
+  const deliver = useResultHandoff(toolId);
   const toolInfo = getToolById(toolId) || {
     name: 'PDF to Office',
     description: 'Convert PDF files to editable Office documents',
@@ -102,7 +103,7 @@ export default function PDFToOfficeClient({ toolId }) {
 
         const docxBlob = await zip.generateAsync({ type: 'blob' });
         setProgress(95);
-        downloadBlob(docxBlob, file.name.replace('.pdf', '.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        await deliver(docxBlob, file.name.replace('.pdf', '.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
       } else if (toolId === 'pdf-to-excel') {
         // Generate a spreadsheet CSV (comma separated values)
@@ -120,7 +121,7 @@ export default function PDFToOfficeClient({ toolId }) {
 
         const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
         setProgress(95);
-        downloadBlob(csvBlob, file.name.replace('.pdf', '.csv'), 'text/csv');
+        await deliver(csvBlob, file.name.replace('.pdf', '.csv'), 'text/csv');
 
       } else if (toolId === 'pdf-to-powerpoint') {
         // Generate a valid PPTX structure using JSZip
@@ -213,7 +214,7 @@ export default function PDFToOfficeClient({ toolId }) {
 
         const pptxBlob = await zip.generateAsync({ type: 'blob' });
         setProgress(95);
-        downloadBlob(pptxBlob, file.name.replace('.pdf', '.pptx'), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        await deliver(pptxBlob, file.name.replace('.pdf', '.pptx'), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
       }
 
       setProgress(100);
@@ -224,7 +225,7 @@ export default function PDFToOfficeClient({ toolId }) {
       // Fallback plain text extract
       try {
         const textBlob = new Blob([file.name], { type: 'text/plain;charset=utf-8' });
-        downloadBlob(textBlob, file.name.replace('.pdf', '_text.txt'), 'text/plain');
+        await deliver(textBlob, file.name.replace('.pdf', '_text.txt'), 'text/plain');
         setDone(true);
       } catch (e) {
         console.error(e);

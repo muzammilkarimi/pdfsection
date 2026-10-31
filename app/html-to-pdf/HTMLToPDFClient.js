@@ -5,11 +5,12 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export default function HTMLToPDFClient() {
+  const deliver = useResultHandoff('html-to-pdf');
   const toolInfo = getToolById('html-to-pdf') || {
     name: 'HTML to PDF',
     description: 'Convert web pages into PDF documents',
@@ -82,7 +83,7 @@ export default function HTMLToPDFClient() {
       const finalBytes = await pdfDoc.save();
       setProgress(100);
 
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         inputType === 'code' ? 'html_export.pdf' : 'website_export.pdf',
         'application/pdf'

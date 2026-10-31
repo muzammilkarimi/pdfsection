@@ -6,9 +6,11 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
-import { downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
+import { checkPdfEncryption } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function PDFToPDFAClient() {
+  const deliver = useResultHandoff('pdf-to-pdfa');
   const [file, setFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [conformanceLevel, setConformanceLevel] = useState('pdfa-2b');
@@ -45,11 +47,9 @@ export default function PDFToPDFAClient() {
 
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
       const outName = `${file.name.replace(/\.pdf$/i, '')}_pdfsection_${conformanceLevel.toUpperCase()}.pdf`;
       setOutputFileName(outName);
-      setDownloadUrl(url);
+      await deliver(blob, outName, 'application/pdf');
     } catch (err) {
       console.error('Error converting PDF to PDF/A:', err);
       alert('Failed to convert PDF to PDF/A. Please ensure the PDF is valid.');

@@ -6,11 +6,13 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
+import { loadPdf, savePdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { generateAllThumbnails } from '@/lib/renderUtils';
 import { PDFDocument, degrees } from 'pdf-lib';
 
 export default function OrganizePDFClient() {
+  const deliver = useResultHandoff('organize-pdf');
   const [files, setFiles] = useState([]);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -157,7 +159,7 @@ export default function OrganizePDFClient() {
       }
 
       const compiledBytes = await savePdf(compiledDoc);
-      downloadBlob(compiledBytes, 'organized.pdf', 'application/pdf');
+      await deliver(compiledBytes, 'organized.pdf', 'application/pdf');
       setDone(true);
     } catch (err) {
       alert('Error building organized PDF: ' + err.message);

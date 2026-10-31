@@ -6,11 +6,12 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument } from 'pdf-lib';
 
 export default function RepairPDFClient() {
+  const deliver = useResultHandoff('repair-pdf');
   const toolInfo = getToolById('repair-pdf') || {
     name: 'Repair PDF',
     description: 'Fix corrupted PDF files and rebuild structure',
@@ -57,7 +58,7 @@ export default function RepairPDFClient() {
       const finalBytes = await pdfDoc.save();
       setProgress(95);
 
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         file.name.replace('.pdf', '_repaired.pdf'),
         'application/pdf'

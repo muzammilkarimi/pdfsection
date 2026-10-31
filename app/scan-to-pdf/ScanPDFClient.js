@@ -5,11 +5,12 @@ import ToolPageLayout from '@/components/ToolPageLayout';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument } from 'pdf-lib';
 
 export default function ScanPDFClient() {
+  const deliver = useResultHandoff('scan-to-pdf');
   const toolInfo = getToolById('scan-to-pdf') || {
     name: 'Scan to PDF',
     description: 'Convert camera scans or images to PDF',
@@ -111,7 +112,7 @@ export default function ScanPDFClient() {
       }
 
       const finalBytes = await pdfDoc.save();
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         'scanned_document.pdf',
         'application/pdf'

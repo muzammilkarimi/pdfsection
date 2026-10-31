@@ -8,8 +8,10 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, removePages, downloadPdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function RemovePagesClient() {
+  const deliver = useResultHandoff('remove-pages');
   const [file, setFile] = useState(null);
   const [selectedPages, setSelectedPages] = useState([]);
   const [processing, setProcessing] = useState(false);
@@ -48,7 +50,7 @@ export default function RemovePagesClient() {
       const srcDoc = await loadPdf(file);
       const res = await removePages(srcDoc, selectedPages);
       setOutputPdfDoc(res);
-      await downloadPdf(res, file.name.replace('.pdf', '-removed.pdf'));
+      await deliver(res, file.name.replace('.pdf', '-removed.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error: ' + err.message);

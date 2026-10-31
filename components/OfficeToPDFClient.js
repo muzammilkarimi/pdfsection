@@ -6,11 +6,19 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import JSZip from 'jszip';
 
+const escapeHtml = (s) =>
+  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+// Strip tags, then neutralise any '<' or '>' left behind by nested markup like "<<b>img onerror=..>".
+// Existing XML entities (&amp; &lt; ...) are kept so they render as the intended text.
+const xmlTextToSafeHtml = (s) => s.replace(/<[^>]*>/g, '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 export default function OfficeToPDFClient({ toolId }) {
+  const deliver = useResultHandoff(toolId);
   const toolInfo = getToolById(toolId) || {
     name: 'Office to PDF',
     description: 'Convert Office documents to PDF format with full formatting',
@@ -80,13 +88,13 @@ export default function OfficeToPDFClient({ toolId }) {
           if (stringsFile) {
             const stringsXml = await stringsFile.async('text');
             const matches = stringsXml.match(/<t[^>]*>(.*?)<\/t>/g) || [];
-            sharedStrings = matches.map((m) => m.replace(/<[^>]*>/g, ''));
+            sharedStrings = matches.map(xmlTextToSafeHtml);
           }
 
           if (isMounted) {
             const docDiv = document.createElement('div');
             docDiv.className = 'word-styled-doc';
-            let html = `<h2>${file.name} - Spreadsheet</h2><table class="excel-preview-table">`;
+            let html = `<h2>${escapeHtml(file.name)} - Spreadsheet</h2><table class="excel-preview-table">`;
 
             if (sharedStrings.length > 0) {
               html += '<thead><tr><th>#</th><th>Cell Content</th></tr></thead><tbody>';
@@ -112,12 +120,12 @@ export default function OfficeToPDFClient({ toolId }) {
           if (isMounted) {
             const docDiv = document.createElement('div');
             docDiv.className = 'word-styled-doc';
-            let html = `<h2>${file.name} - Presentation</h2>`;
+            let html = `<h2>${escapeHtml(file.name)} - Presentation</h2>`;
 
             for (const [idx, slidePath] of slideFiles.sort().entries()) {
               const slideXml = await content.files[slidePath].async('text');
               const matches = slideXml.match(/<a:t[^>]*>(.*?)<\/a:t>/g) || [];
-              const texts = matches.map((m) => m.replace(/<[^>]*>/g, ''));
+              const texts = matches.map(xmlTextToSafeHtml);
 
               html += `<div style="border: 1px solid #dcdcdc; padding: 18px; margin-bottom: 18px; border-radius: 6px; background: #fafafa;">`;
               html += `<h3 style="margin: 0 0 10px 0; color: #1f4e78; font-size: 14pt;">Slide ${idx + 1}</h3>`;
@@ -166,7 +174,7 @@ export default function OfficeToPDFClient({ toolId }) {
         htmlContent = result.value || '<p>Empty Document</p>';
       } else {
         const container = previewContainerRef.current;
-        htmlContent = container?.firstElementChild?.innerHTML || `<p>${file.name}</p>`;
+        htmlContent = container?.firstElementChild?.innerHTML || `<p>${escapeHtml(file.name)}</p>`;
       }
 
       setProgress(40);
@@ -230,7 +238,7 @@ export default function OfficeToPDFClient({ toolId }) {
       setProgress(95);
       const pdfBlob = pdf.output('blob');
       const pdfFilename = file.name.replace(/\.[^/.]+$/, '.pdf');
-      downloadBlob(pdfBlob, pdfFilename, 'application/pdf');
+      await deliver(pdfBlob, pdfFilename, 'application/pdf');
 
       setProgress(100);
       setDone(true);

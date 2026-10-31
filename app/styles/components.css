@@ -2088,3 +2088,36 @@
 }
 
 
+
+/* Download page */
+.download-page { display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+body:has(.download-page) .footer { display: none; }
+.dl-hero { width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; gap: var(--space-md); padding: 0 var(--space-md); text-align: center; }
+.dl-center { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); }
+.dl-title { font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.15; letter-spacing: -0.02em; margin: var(--space-sm) 0 0; animation: dl-rise 0.5s 0.55s both; }
+.dl-sub { color: var(--ink-subtle); font-size: 1.05rem; margin: 0; overflow-wrap: anywhere; animation: dl-rise 0.5s 0.62s both; }
+.dl-sub strong { color: var(--ink); }
+
+/* Success badge */
+.dl-badge { position: relative; width: 88px; height: 88px; margin-bottom: var(--space-xs); animation: dl-pop 0.6s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.dl-check { position: relative; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 8px 16px rgba(0, 180, 115, 0.35)); }
+.dl-check-circle { fill: var(--semantic-success); stroke: var(--semantic-success); stroke-width: 2; }
+.dl-check-mark { fill: none; stroke: #fff; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: dl-draw 0.45s 0.55s ease-out forwards; }
+
+/* Actions */
+.dl-btn { width: 100%; justify-content: center; gap: var(--space-xs); }
+.dl-download { margin-top: var(--space-md); min-height: 64px; font-size: 1.15rem; animation: dl-rise 0.5s 0.75s both, attention-glow-pulse 2.4s 1.6s ease-in-out infinite; }
+.dl-download.is-done { background: var(--semantic-success); border-color: var(--semantic-success); animation: dl-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.dl-link { font-size: 0.95rem; font-weight: 500; color: var(--primary); text-decoration: none; animation: dl-rise 0.5s 0.85s both; }
+.dl-link:hover { text-decoration: underline; }
+.dl-spinner { width: 36px; height: 36px; border: 3px solid var(--surface-3); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+@keyframes dl-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes dl-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dl-pop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes dl-draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-title, .dl-sub, .dl-download, .dl-link, .dl-badge { animation: none; }
+  .dl-check-mark { animation: none; stroke-dashoffset: 0; }
+}

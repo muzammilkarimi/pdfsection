@@ -7,10 +7,11 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 
 export default function PDFToMarkdownClient() {
+  const deliver = useResultHandoff('pdf-to-markdown');
   const toolInfo = getToolById('pdf-to-markdown') || {
     name: 'PDF to Markdown',
     description: 'Convert PDFs to Markdown for docs and LLMs',
@@ -73,7 +74,7 @@ export default function PDFToMarkdownClient() {
       }
 
       setProgress(95);
-      downloadBlob(
+      await deliver(
         new Blob([markdown], { type: 'text/markdown;charset=utf-8' }),
         file.name.replace('.pdf', '.md'),
         'text/markdown'

@@ -8,6 +8,7 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender } from '@/lib/renderUtils';
 
 const COMPRESSION_LEVELS = {
@@ -116,6 +117,7 @@ async function compressRaster(file, settings, onProgress) {
 }
 
 export default function CompressPDFClient() {
+  const deliver = useResultHandoff('compress-pdf');
   const [file, setFile] = useState(null);
   const [level, setLevel] = useState('medium');
   const [processing, setProcessing] = useState(false);
@@ -192,7 +194,9 @@ export default function CompressPDFClient() {
         reduction,
         isAlreadyOptimized,
       });
-      downloadBlob(bytes, file.name.replace('.pdf', '-compressed.pdf'), 'application/pdf');
+      await deliver(bytes, file.name.replace('.pdf', '-compressed.pdf'), 'application/pdf', {
+        summary: isAlreadyOptimized ? 'Already optimized' : `${reduction}% smaller (was ${(originalSize / 1024 / 1024).toFixed(1)} MB)`,
+      });
       setShowToast(true);
     } catch (err) {
       alert('Compression error: ' + err.message);

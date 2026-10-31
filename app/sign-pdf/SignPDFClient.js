@@ -6,10 +6,12 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
+import { loadPdf, savePdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
 
 export default function SignPDFClient() {
+  const deliver = useResultHandoff('sign-pdf');
   const [file, setFile] = useState(null);
   const [pdfRenderDoc, setPdfRenderDoc] = useState(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -276,7 +278,7 @@ export default function SignPDFClient() {
       }
 
       const signedBytes = await savePdf(pdfDoc);
-      downloadBlob(signedBytes, file.name.replace('.pdf', '-signed.pdf'), 'application/pdf');
+      await deliver(signedBytes, file.name.replace('.pdf', '-signed.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
       alert('Error signing PDF: ' + err.message);

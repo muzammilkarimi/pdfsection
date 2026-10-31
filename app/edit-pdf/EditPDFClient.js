@@ -6,7 +6,8 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, savePdf, downloadBlob } from '@/lib/pdfUtils';
+import { loadPdf, savePdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender } from '@/lib/renderUtils';
 import { rgb, degrees, StandardFonts } from 'pdf-lib';
 
@@ -74,6 +75,7 @@ const groupTextItemsIntoParagraphs = (items) => {
 };
 
 export default function EditPDFClient() {
+  const deliver = useResultHandoff('edit-pdf');
   const [file, setFile] = useState(null);
   const [pdfRenderDoc, setPdfRenderDoc] = useState(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -947,7 +949,7 @@ export default function EditPDFClient() {
       }
 
       const updatedBytes = await savePdf(pdfDoc);
-      downloadBlob(updatedBytes, file.name.replace('.pdf', '-edited.pdf'), 'application/pdf');
+      await deliver(updatedBytes, file.name.replace('.pdf', '-edited.pdf'), 'application/pdf');
       setDone(true);
     } catch (err) {
       alert('Error exporting PDF: ' + err.message);

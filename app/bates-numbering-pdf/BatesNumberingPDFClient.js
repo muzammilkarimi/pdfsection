@@ -6,9 +6,11 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
+import { checkPdfEncryption } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function BatesNumberingPDFClient() {
+  const deliver = useResultHandoff('bates-numbering-pdf');
   const [file, setFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [prefix, setPrefix] = useState('CONFIDENTIAL-');
@@ -80,11 +82,9 @@ export default function BatesNumberingPDFClient() {
 
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
       const outName = `${file.name.replace(/\.pdf$/i, '')}_pdfsection_bates.pdf`;
       setOutputFileName(outName);
-      setDownloadUrl(url);
+      await deliver(blob, outName, 'application/pdf');
     } catch (err) {
       console.error('Error applying Bates numbering:', err);
       alert('Failed to stamp Bates numbers onto PDF.');

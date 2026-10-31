@@ -7,9 +7,11 @@ import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, addTextWatermark, downloadPdf } from '@/lib/pdfUtils';
+import { loadPdf, addTextWatermark } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function WatermarkPDFClient() {
+  const deliver = useResultHandoff('add-watermark');
   const [file, setFile] = useState(null);
   const [text, setText] = useState('CONFIDENTIAL');
   const [fontSize, setFontSize] = useState(48);
@@ -52,7 +54,7 @@ export default function WatermarkPDFClient() {
         color: hexToRgb(color),
       });
 
-      await downloadPdf(watermarkedDoc, file.name.replace('.pdf', '-watermarked.pdf'));
+      await deliver(watermarkedDoc, file.name.replace('.pdf', '-watermarked.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error adding watermark: ' + err.message);

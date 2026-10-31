@@ -6,7 +6,8 @@ import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { mergePdfs, downloadPdf } from '@/lib/pdfUtils';
+import { mergePdfs } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { generateThumbnail } from '@/lib/renderUtils';
 
 const MAX_FILES = 20;
@@ -115,6 +116,7 @@ export default function MergePDFClient() {
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const addInputRef = useRef(null);
+  const deliver = useResultHandoff('merge-pdf');
 
   const handleFilesSelected = useCallback((newFiles) => {
     setFiles(newFiles.slice(0, MAX_FILES));
@@ -186,7 +188,7 @@ export default function MergePDFClient() {
       const doc = await mergePdfs(files);
       setMergedDoc(doc);
       setProgress(80);
-      await downloadPdf(doc, 'merged.pdf');
+      await deliver(doc, 'merged.pdf', 'application/pdf', { summary: `${files.length} files merged` });
       setProgress(100);
       setDone(true);
     } catch (err) {

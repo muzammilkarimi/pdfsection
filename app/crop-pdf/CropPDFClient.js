@@ -7,11 +7,12 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument } from 'pdf-lib';
 
 export default function CropPDFClient() {
+  const deliver = useResultHandoff('crop-pdf');
   const toolInfo = getToolById('crop') || {
     name: 'Crop PDF',
     description: 'Adjust visible area and crop margins',
@@ -101,7 +102,7 @@ export default function CropPDFClient() {
       }
 
       const finalBytes = await pdfDoc.save();
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         file.name.replace('.pdf', '_cropped.pdf'),
         'application/pdf'

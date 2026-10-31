@@ -7,9 +7,11 @@ import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, extractPages, downloadPdf } from '@/lib/pdfUtils';
+import { loadPdf, extractPages } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function ExtractPagesClient() {
+  const deliver = useResultHandoff('extract-pages');
   const [file, setFile] = useState(null);
   const [selectedPages, setSelectedPages] = useState([]);
   const [processing, setProcessing] = useState(false);
@@ -42,7 +44,7 @@ export default function ExtractPagesClient() {
     try {
       const srcDoc = await loadPdf(file);
       const result = await extractPages(srcDoc, selectedPages);
-      await downloadPdf(result, file.name.replace('.pdf', '-extracted.pdf'));
+      await deliver(result, file.name.replace('.pdf', '-extracted.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error: ' + err.message);

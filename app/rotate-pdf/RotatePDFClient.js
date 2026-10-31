@@ -8,8 +8,10 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, rotatePages, downloadPdf } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function RotatePDFClient() {
+  const deliver = useResultHandoff('rotate-pdf');
   const [file, setFile] = useState(null);
   const [selectedPages, setSelectedPages] = useState([]);
   const [angle, setAngle] = useState(90);
@@ -72,7 +74,7 @@ export default function RotatePDFClient() {
       const srcDoc = await loadPdf(file);
       const rotatedDoc = await rotatePages(srcDoc, selectedPages, angle);
       setRotatedPdfDoc(rotatedDoc);
-      await downloadPdf(rotatedDoc, file.name.replace('.pdf', '-rotated.pdf'));
+      await deliver(rotatedDoc, file.name.replace('.pdf', '-rotated.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error rotating PDF: ' + err.message);

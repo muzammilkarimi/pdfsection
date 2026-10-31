@@ -8,6 +8,7 @@ import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 
 function ImagePreviewCard({
@@ -128,6 +129,7 @@ function ImagePreviewCard({
 }
 
 export default function JPGToPDFClient() {
+  const deliver = useResultHandoff('jpg-to-pdf');
   const toolInfo = getToolById('jpg-to-pdf') || {
     name: 'JPG to PDF',
     description: 'Convert images to PDF format in seconds. Customize page sizes and margins.',
@@ -281,7 +283,7 @@ export default function JPGToPDFClient() {
 
       const pdfBytes = await pdfDoc.save();
       setConvertedPdfBytes(pdfBytes);
-      downloadBlob(pdfBytes, 'images_converted.pdf', 'application/pdf');
+      await deliver(pdfBytes, 'images_converted.pdf', 'application/pdf');
       setDone(true);
     } catch (err) {
       alert('Error converting images to PDF: ' + err.message);

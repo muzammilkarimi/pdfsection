@@ -7,11 +7,12 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument } from 'pdf-lib';
 
 export default function PDFFormsClient() {
+  const deliver = useResultHandoff('pdf-forms');
   const toolInfo = getToolById('pdf-forms') || {
     name: 'PDF Forms',
     description: 'Fill out and create interactive PDF forms',
@@ -134,7 +135,7 @@ export default function PDFFormsClient() {
 
       // Compile and download
       const finalBytes = await pdfDoc.save();
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         file.name.replace('.pdf', '_filled.pdf'),
         'application/pdf'

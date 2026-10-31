@@ -7,9 +7,11 @@ import PageThumbnails from '@/components/PageThumbnails';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
-import { loadPdf, addPageNumbers, downloadPdf } from '@/lib/pdfUtils';
+import { loadPdf, addPageNumbers } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 
 export default function AddPageNumbersClient() {
+  const deliver = useResultHandoff('add-page-numbers');
   const [file, setFile] = useState(null);
   const [position, setPosition] = useState('bottom-center');
   const [startNumber, setStartNumber] = useState(1);
@@ -34,7 +36,7 @@ export default function AddPageNumbersClient() {
     try {
       const srcDoc = await loadPdf(file);
       const result = await addPageNumbers(srcDoc, { position, startNumber, fontSize, format });
-      await downloadPdf(result, file.name.replace('.pdf', '-numbered.pdf'));
+      await deliver(result, file.name.replace('.pdf', '-numbered.pdf'));
       setDone(true);
     } catch (err) {
       alert('Error: ' + err.message);

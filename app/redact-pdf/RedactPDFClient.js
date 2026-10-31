@@ -7,11 +7,12 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender, renderPageToCanvas } from '@/lib/renderUtils';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
 import { PDFDocument, rgb } from 'pdf-lib';
 
 export default function RedactPDFClient() {
+  const deliver = useResultHandoff('redact-pdf');
   const toolInfo = getToolById('redact') || {
     name: 'Redact PDF',
     description: 'Permanently black out sensitive information',
@@ -208,7 +209,7 @@ export default function RedactPDFClient() {
       });
 
       const finalBytes = await pdfDoc.save();
-      downloadBlob(
+      await deliver(
         new Blob([finalBytes], { type: 'application/pdf' }),
         file.name.replace('.pdf', '_redacted.pdf'),
         'application/pdf'

@@ -8,9 +8,11 @@ import PageToolWorkspace from '@/components/PageToolWorkspace';
 import ToastNotification from '@/components/ToastNotification';
 import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob } from '@/lib/pdfUtils';
+import { useResultHandoff } from '@/lib/useResultHandoff';
 import { renderPageToImage } from '@/lib/renderUtils';
 
 export default function PDFToJPGClient() {
+  const deliver = useResultHandoff('pdf-to-jpg');
   const [file, setFile] = useState(null);
   const [format, setFormat] = useState('image/jpeg');
   const [dpi, setDpi] = useState(150);
@@ -68,7 +70,7 @@ export default function PDFToJPGClient() {
       }
 
       setExportedData({ blob: outBlob, filename: outFilename, mime });
-      downloadBlob(outBlob, outFilename, mime);
+      await deliver(outBlob, outFilename, mime);
       setDone(true);
     } catch (err) {
       alert('Error converting PDF to images: ' + err.message);

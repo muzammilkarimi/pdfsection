@@ -4,6 +4,7 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
+        disallow: '/download/',
       },
     ],
     sitemap: 'https://pdfsection.com/sitemap.xml',
