@@ -46,10 +46,10 @@ export default async function BlogArticlePage({ params }) {
     parent: { name: 'Blog', route: '/blog' },
   });
 
-  // Inline code and bold text renderer
+  // Inline bold, code and [text](url) link renderer
   const renderParagraphText = (str) => {
     let parts = [];
-    let regex = /(\*\*.*?\*\*|`.*?`)/g;
+    let regex = /(\*\*.*?\*\*|`.*?`|\[[^\]]+\]\([^)\s]+\))/g;
     let lastIndex = 0;
     let match;
 
@@ -61,6 +61,18 @@ export default async function BlogArticlePage({ params }) {
       const segment = match[0];
       if (segment.startsWith('**') && segment.endsWith('**')) {
         parts.push(<strong key={match.index} style={{ color: 'var(--ink)', fontWeight: '600' }}>{segment.slice(2, -2)}</strong>);
+      } else if (segment.startsWith('[')) {
+        const linkMatch = segment.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
+        const label = linkMatch[1];
+        const href = linkMatch[2];
+        const linkStyle = { color: 'var(--primary)', fontWeight: '600' };
+        parts.push(
+          href.startsWith('/') ? (
+            <Link key={match.index} href={href} style={linkStyle}>{label}</Link>
+          ) : (
+            <a key={match.index} href={href} style={linkStyle} target="_blank" rel="noopener noreferrer">{label}</a>
+          )
+        );
       } else if (segment.startsWith('`') && segment.endsWith('`')) {
         parts.push(
           <code 
