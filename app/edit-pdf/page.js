@@ -4,9 +4,9 @@ import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
   title: 'Edit PDF Online — Add Text, Annotations & Shapes',
-  description: 'Edit PDF documents online. Add text, drawings, shapes, and annotations directly to your PDF pages. 100% free and private.',
+  description: 'Edit PDF documents online. Add text (including Hindi), drawings, shapes and annotations directly to your PDF pages. 100% free and private.',
   route: '/edit-pdf',
-  keywords: ['Edit PDF', 'PDF editor online', 'add text to PDF', 'annotate PDF', 'free online PDF editor'],
+  keywords: ['Edit PDF', 'PDF editor online', 'add text to PDF', 'annotate PDF', 'free online PDF editor', 'Hindi PDF editor online', 'add Hindi text to PDF'],
 });
 
 const jsonLd = buildToolJsonLd({
