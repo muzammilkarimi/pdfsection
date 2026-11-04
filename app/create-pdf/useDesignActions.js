@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { clonePage, createImage, createShape, createText, readImageFile, resizeDesign, uid } from '@/lib/designModel';
+import { clonePage, createImage, createShape, createText, readImageFile, resizeDesign } from '@/lib/designModel';
+import { copyElements, patchElements, removeElements } from '@/lib/designSelection';
 
 /**
  * Everything that changes the elements on the current page.
@@ -13,11 +14,11 @@ export function useDesignActions({
   page,
   pageW,
   pageH,
-  selectedId,
-  selected,
+  selectedIds,
   isMobile,
   setPageIdx,
-  setSelectedId,
+  selectOnly,
+  setSelectedIds,
   setEditingId,
   setPanel,
   setNotice,
@@ -48,9 +49,9 @@ export function useDesignActions({
 
   const addToPage = useCallback((elements) => {
     patchPage(pageIdx, (p) => ({ elements: [...p.elements, ...elements] }));
-    setSelectedId(elements[elements.length - 1].id);
+    selectOnly(elements[elements.length - 1].id);
     if (isMobile) setPanel(null);
-  }, [patchPage, pageIdx, isMobile, setSelectedId, setPanel]);
+  }, [patchPage, pageIdx, isMobile, selectOnly, setPanel]);
 
   const moveLayer = useCallback((id, dir) => {
     patchPage(pageIdx, (p) => {
@@ -68,18 +69,18 @@ export function useDesignActions({
   }, [patchPage, pageIdx]);
 
   const deleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    patchPage(pageIdx, (p) => ({ elements: p.elements.filter((el) => el.id !== selectedId) }));
-    setSelectedId(null);
+    if (!selectedIds.length) return;
+    patchPage(pageIdx, (p) => ({ elements: removeElements(p.elements, selectedIds) }));
+    selectOnly(null);
     setEditingId(null);
-  }, [patchPage, pageIdx, selectedId, setSelectedId, setEditingId]);
+  }, [patchPage, pageIdx, selectedIds, selectOnly, setEditingId]);
 
   const duplicateSelected = useCallback(() => {
-    if (!selected) return;
-    const copy = { ...selected, id: uid(), x: selected.x + 12, y: selected.y + 12, locked: false };
-    patchPage(pageIdx, (p) => ({ elements: [...p.elements, copy] }));
-    setSelectedId(copy.id);
-  }, [patchPage, pageIdx, selected, setSelectedId]);
+    const copies = copyElements(page.elements, selectedIds);
+    if (!copies.length) return;
+    patchPage(pageIdx, (p) => ({ elements: [...p.elements, ...copies] }));
+    setSelectedIds(copies.map((el) => el.id));
+  }, [patchPage, pageIdx, page.elements, selectedIds, setSelectedIds]);
 
   const addImageFile = useCallback(async (file, background) => {
     try {
@@ -105,32 +106,33 @@ export function useDesignActions({
         const el = page.elements.find((x) => x.id === id);
         if (el && !el.text.trim()) {
           patchPage(pageIdx, (p) => ({ elements: p.elements.filter((x) => x.id !== id) }));
-          setSelectedId(null);
+          selectOnly(null);
         }
       }
       return null;
     });
-  }, [page.elements, patchPage, pageIdx, setEditingId, setSelectedId]);
+  }, [page.elements, patchPage, pageIdx, setEditingId, selectOnly]);
 
   const startEditing = useCallback((el) => {
     if (el.type === 'text' && !el.locked) {
-      setSelectedId(el.id);
+      selectOnly(el.id);
       setEditingId(el.id);
     }
-  }, [setSelectedId, setEditingId]);
+  }, [selectOnly, setEditingId]);
 
   const typeText = useCallback((id, text) => {
     updateEl(id, { text }, { key: `type-${id}` });
   }, [updateEl]);
 
   const api = useMemo(() => ({
-    select: setSelectedId,
+    select: selectOnly,
     moveLayer,
     toggleLock,
     deleteSelected,
     duplicateSelected,
     updateSelected: (patch, key) => {
-      if (selectedId) updateEl(selectedId, patch, key ? { key: `${key}-${selectedId}` } : undefined);
+      if (!selectedIds.length) return;
+      patchPage(pageIdx, (p) => ({ elements: patchElements(p.elements, selectedIds, patch) }), key ? { key: `${key}-${selectedIds.join()}` } : undefined);
     },
     addTexts: (specs) => {
       let y = pageH * 0.4;
@@ -166,12 +168,12 @@ export function useDesignActions({
     applyTemplate: (tpl) => {
       update((d) => ({ ...d, width: tpl.design.width, height: tpl.design.height, unit: tpl.design.unit, pages: tpl.design.pages.map(clonePage) }));
       setPageIdx(0);
-      setSelectedId(null);
+      selectOnly(null);
       zoomToFit();
       if (isMobile) setPanel(null);
     },
     setPageSize: (w, h, unit) => update((d) => resizeDesign(d, Math.max(1, w), Math.max(1, h), unit), { key: 'page-size' }),
-  }), [selectedId, updateEl, moveLayer, toggleLock, deleteSelected, duplicateSelected, addToPage, addImageFile, patchPage, pageIdx, pageW, pageH, baseScale, update, page.background, isMobile, setPageIdx, setSelectedId, setPanel, zoomToFit]);
+  }), [selectedIds, moveLayer, toggleLock, deleteSelected, duplicateSelected, addToPage, addImageFile, patchPage, pageIdx, pageW, pageH, baseScale, update, page.background, isMobile, setPageIdx, selectOnly, setPanel, zoomToFit]);
 
   return { api, updateEl, measure, moveLayer, toggleLock, deleteSelected, duplicateSelected, stopEditing, startEditing, typeText };
 }

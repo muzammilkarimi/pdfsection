@@ -69,7 +69,7 @@ Later features depend on this phase. It adds nothing users can see.
 - [x] **1. Add tests (M).** `npm test` uses Node's built-in test runner with no extra packages, and covers the data model, opening files, templates, fonts and page ranges. There are no automated browser tests, so run `tests/MANUAL_CHECKLIST.md` by hand after each phase for editing, saving and export.
 - [x] **2. Split up the editor (M).** Break `DesignEditor.js` into separate modules for the canvas, gestures, keyboard shortcuts and page strip.
 - [x] **3. Add design file versions (S).** `lib/designMigrations.js` upgrades both opened files and browser drafts, tested with a saved sample design. To change the format, follow the note at the top of that file.
-- [ ] **4. Allow several selected items (M).** Replace `selectedId` with a list of IDs. Behaviour stays the same until Phase 2.
+- [x] **4. Allow several selected items (M).** Replace `selectedId` with a list of IDs. Behaviour stays the same until Phase 2.
 - [ ] **5. Store images separately (M).** Keep each image once in an asset store, with elements pointing to it. Migrate existing designs, and keep single-file design downloads working.
 
 **Done when:** the editor behaves exactly as it does today, old designs still open, `npm test` passes, and the manual checklist has been run.

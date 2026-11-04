@@ -19,14 +19,14 @@ function track(startEvent, { move, end }) {
 }
 
 /** Dragging, resizing and rotating elements with the pointer. */
-export function useDesignGestures({ page, pageW, pageH, zoom, scalerRef, selectedId, editingId, setSelectedId, setEditingId, setGuides, updateEl }) {
+export function useDesignGestures({ page, pageW, pageH, zoom, scalerRef, selectedIds, editingId, selectOnly, setEditingId, setGuides, updateEl }) {
   const gestureId = useRef(0);
 
   const startDrag = useCallback((e, el) => {
     e.stopPropagation();
     if (editingId === el.id) return;
-    const wasSelected = selectedId === el.id;
-    setSelectedId(el.id);
+    const wasSelected = selectedIds.includes(el.id);
+    selectOnly(el.id);
     setEditingId(null);
     if (el.locked) return;
     const key = `g${++gestureId.current}`;
@@ -45,7 +45,7 @@ export function useDesignGestures({ page, pageW, pageH, zoom, scalerRef, selecte
         if (!moved && wasSelected && el.type === 'text') setEditingId(el.id);
       },
     });
-  }, [editingId, selectedId, page.elements, zoom, pageW, pageH, updateEl, setSelectedId, setEditingId, setGuides]);
+  }, [editingId, selectedIds, page.elements, zoom, pageW, pageH, updateEl, selectOnly, setEditingId, setGuides]);
 
   const startResize = useCallback((e, el, dir) => {
     e.stopPropagation();

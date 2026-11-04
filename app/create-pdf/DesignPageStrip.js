@@ -6,7 +6,7 @@ import { PageView } from './DesignRenderer';
 import DesignIcon from './DesignIcons';
 
 /** Page thumbnails, with adding, duplicating, deleting and reordering pages. */
-export default function DesignPageStrip({ design, pageIdx, update, setPageIdx, setSelectedId, onGoToPage }) {
+export default function DesignPageStrip({ design, pageIdx, update, setPageIdx, selectOnly, onGoToPage }) {
   const [dragPage, setDragPage] = useState(null);
   const { width: pageW, height: pageH } = design;
 
@@ -17,14 +17,14 @@ export default function DesignPageStrip({ design, pageIdx, update, setPageIdx, s
       return { ...d, pages };
     });
     setPageIdx(pageIdx + 1);
-    setSelectedId(null);
+    selectOnly(null);
   };
 
   const deletePage = () => {
     if (design.pages.length < 2) return;
     update((d) => ({ ...d, pages: d.pages.filter((_, i) => i !== pageIdx) }));
     setPageIdx(Math.max(0, pageIdx - 1));
-    setSelectedId(null);
+    selectOnly(null);
   };
 
   const dropPage = (target) => {

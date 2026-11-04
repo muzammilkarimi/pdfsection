@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import ToastNotification from '@/components/ToastNotification';
 import { PAGE_PRESETS, fromUnit, resizeDesign } from '@/lib/designModel';
+import { primaryElement, selectOnlyId } from '@/lib/designSelection';
 import { PanelContent, PANELS } from './DesignPanels';
 import { FloatingToolbar, PropertiesContent, PropertiesHeader } from './DesignProperties';
 import DesignCanvas from './DesignCanvas';
@@ -25,7 +26,7 @@ export default function DesignEditor({ initial, onExit }) {
   const isMobile = useIsMobile();
 
   const [rawPageIdx, setPageIdx] = useState(0);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [panel, setPanel] = useState(() => (window.matchMedia(MOBILE_QUERY).matches ? null : 'text'));
   const [propsOpen, setPropsOpen] = useState(false);
@@ -39,7 +40,8 @@ export default function DesignEditor({ initial, onExit }) {
 
   const pageIdx = Math.min(rawPageIdx, design.pages.length - 1);
   const page = design.pages[pageIdx];
-  const selected = page.elements.find((el) => el.id === selectedId) || null;
+  const selected = primaryElement(page.elements, selectedIds);
+  const selectOnly = useCallback((id) => setSelectedIds((ids) => selectOnlyId(ids, id)), []);
   const { width: pageW, height: pageH } = design;
 
   const { saveState, saveNow } = useDesignAutosave(design, canUndo);
@@ -61,11 +63,11 @@ export default function DesignEditor({ initial, onExit }) {
     page,
     pageW,
     pageH,
-    selectedId,
-    selected,
+    selectedIds,
     isMobile,
     setPageIdx,
-    setSelectedId,
+    selectOnly,
+    setSelectedIds,
     setEditingId,
     setPanel,
     setNotice,
@@ -77,9 +79,9 @@ export default function DesignEditor({ initial, onExit }) {
     pageH,
     zoom,
     scalerRef,
-    selectedId,
+    selectedIds,
     editingId,
-    setSelectedId,
+    selectOnly,
     setEditingId,
     setGuides,
     updateEl,
@@ -92,7 +94,7 @@ export default function DesignEditor({ initial, onExit }) {
     duplicateSelected,
     deleteSelected,
     updateEl,
-    setSelectedId,
+    selectOnly,
   });
 
   const exit = useCallback(async () => {
@@ -102,7 +104,7 @@ export default function DesignEditor({ initial, onExit }) {
 
   const goToPage = (i) => {
     setPageIdx(i);
-    setSelectedId(null);
+    selectOnly(null);
     setEditingId(null);
   };
 
@@ -112,7 +114,7 @@ export default function DesignEditor({ initial, onExit }) {
       pageIdx={pageIdx}
       update={update}
       setPageIdx={setPageIdx}
-      setSelectedId={setSelectedId}
+      selectOnly={selectOnly}
       onGoToPage={goToPage}
     />
   );
@@ -195,7 +197,7 @@ export default function DesignEditor({ initial, onExit }) {
             zoom={zoom}
             stageRef={stageRef}
             scalerRef={scalerRef}
-            onDeselect={() => { setSelectedId(null); setEditingId(null); }}
+            onDeselect={() => { selectOnly(null); setEditingId(null); }}
             onDropImages={api.addImageFiles}
             onStartDrag={startDrag}
             onStartResize={startResize}
