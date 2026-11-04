@@ -281,18 +281,18 @@
 /* ——— Footer ——— */
 
 .footer {
-  background-color: var(--footer-bg);
+  background-color: var(--card);
   border-top: 1px solid var(--hairline);
-  padding: 64px 32px;
-  color: #a5a8b5;
+  padding: 56px 32px 28px;
+  color: var(--ink-subtle);
 }
 
 .footer-inner {
-  max-width: var(--max-content);
+  max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1.5fr repeat(4, 1fr);
-  gap: var(--space-xxl);
+  grid-template-columns: 1.4fr repeat(5, 1fr);
+  gap: var(--space-xxl) var(--space-xl);
 }
 
 .footer-brand {
@@ -302,11 +302,10 @@
 }
 
 .footer-brand-name {
-  font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.4px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
@@ -314,17 +313,36 @@
 
 .footer-brand-desc {
   font-size: 14px;
-  color: #a5a8b5;
+  color: var(--ink-subtle);
   line-height: 1.6;
   max-width: 280px;
 }
 
+.footer-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-default);
+}
+
+.footer-social-link:hover {
+  color: var(--primary);
+}
+
 .footer-column-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: #ffffff;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
   margin-bottom: var(--space-md);
 }
 
@@ -336,38 +354,43 @@
 
 .footer-link {
   font-size: 14px;
-  color: #a5a8b5;
+  color: var(--ink-muted);
   text-decoration: none;
   transition: color var(--duration-fast) var(--ease-default);
 }
 
 .footer-link:hover {
-  color: #ffffff;
-}
-
-.footer-social-link:hover {
-  color: #ffffff !important;
-}
-
-.footer-author-link:hover {
-  text-decoration: underline !important;
-}
-
-.footer-bottom-link:hover {
-  color: #ffffff !important;
-  text-decoration: underline !important;
+  color: var(--primary);
 }
 
 .footer-bottom {
-  max-width: var(--max-content);
-  margin: var(--space-xxl) auto 0;
-  padding-top: var(--space-lg);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 1200px;
+  margin: 40px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--hairline);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
-  color: #6b6f7e;
+  gap: 12px 20px;
+  font-size: 13px;
+  color: var(--ink-subtle);
+}
+
+.footer-bottom-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-bottom-link {
+  color: var(--ink-subtle);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-default);
+}
+
+.footer-bottom-link:hover {
+  color: var(--primary);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Tool Grid Ã¢â€â‚¬Ã¢â€â‚¬ */

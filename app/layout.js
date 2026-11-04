@@ -2,6 +2,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import MobileTabBar from '@/components/MobileTabBar';
 import { Analytics } from '@vercel/analytics/next';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seoUtils';
@@ -152,7 +153,9 @@ export default function RootLayout({ children }) {
               (function() {
                 try {
                   var storedTheme = localStorage.getItem('theme');
-                  var theme = storedTheme || 'light';
+                  var theme = storedTheme === 'system'
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : (storedTheme || 'light');
                   document.documentElement.classList.add(theme);
                 } catch (e) {}
               })();
@@ -168,6 +171,7 @@ export default function RootLayout({ children }) {
         <Header />
         {children}
         <Footer />
+        <MobileTabBar />
         <Analytics />
         {gaId && <GoogleAnalytics gaId={gaId} />}
         {gtmId && <GoogleTagManager gtmId={gtmId} />}

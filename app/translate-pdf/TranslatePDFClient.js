@@ -208,6 +208,7 @@ export default function TranslatePDFClient() {
         />
       ) : (
         <PageToolWorkspace
+          privacyNote={false}
           title={toolInfo.name}
           description={toolInfo.description}
           icon={toolInfo.icon}

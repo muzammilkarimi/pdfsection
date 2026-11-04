@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
 import PageToolWorkspace from '@/components/PageToolWorkspace';
@@ -11,7 +11,14 @@ import { ToolIcon } from '@/components/Icons';
 import { loadPdfForRender } from '@/lib/renderUtils';
 import { useResultHandoff } from '@/lib/useResultHandoff';
 import { getToolById } from '@/lib/tools';
+import { pdfToDocx } from '@/lib/pdfToDocx';
 import JSZip from 'jszip';
+
+const TARGETS = {
+  'pdf-to-word': { name: 'Word', ext: 'DOCX', tint: 'var(--tool-convert-to)' },
+  'pdf-to-excel': { name: 'Excel', ext: 'XLSX', tint: 'var(--tool-edit)' },
+  'pdf-to-powerpoint': { name: 'PowerPoint', ext: 'PPTX', tint: 'var(--tool-security)' },
+};
 
 export default function PDFToOfficeClient({ toolId }) {
   const deliver = useResultHandoff(toolId);
@@ -26,19 +33,44 @@ export default function PDFToOfficeClient({ toolId }) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [warnings, setWarnings] = useState([]);
+  const [pageCount, setPageCount] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  const [convertError, setConvertError] = useState('');
+  const startedAt = useRef(0);
+  // There is no way to stop the converter midway; Cancel returns to the tool and the result is dropped.
+  const cancelled = useRef(false);
+
+  const updateProgress = useCallback((value) => {
+    setProgress(value);
+    const elapsed = Date.now() - startedAt.current;
+    setSecondsLeft(value > 8 && value < 100 ? Math.max(1, Math.round((elapsed * (100 - value)) / value / 1000)) : null);
+  }, []);
+
+  const cancelConversion = () => {
+    cancelled.current = true;
+    setProcessing(false);
+    setProgress(0);
+    setSecondsLeft(null);
+  };
 
   const handleFilesSelected = useCallback((files) => {
     const f = files[0];
     if (!f) return;
     setFile(f);
     setDone(false);
+    setWarnings([]);
     setProgress(0);
+    setConvertError('');
   }, []);
 
   const handleConvert = async () => {
     if (!file) return;
+    cancelled.current = false;
+    startedAt.current = Date.now();
+    setConvertError('');
     setProcessing(true);
-    setProgress(15);
+    updateProgress(15);
 
     const escapeXml = (str) => {
       return str
@@ -51,6 +83,17 @@ export default function PDFToOfficeClient({ toolId }) {
 
     try {
       const pdf = await loadPdfForRender(file);
+      setPageCount(pdf.numPages);
+
+      if (toolId === 'pdf-to-word') {
+        const { blob, warnings: w } = await pdfToDocx(pdf, { title: file.name, onProgress: updateProgress });
+        setWarnings(w);
+        if (!cancelled.current) await deliver(blob, file.name.replace(/\.pdf$/i, '.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        updateProgress(100);
+        if (!cancelled.current) setDone(true);
+        return;
+      }
+
       let pageTexts = [];
 
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -58,10 +101,10 @@ export default function PDFToOfficeClient({ toolId }) {
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item) => item.str).join(' ');
         pageTexts.push(pageText);
-        setProgress(Math.round(15 + (i / pdf.numPages) * 50));
+        updateProgress(Math.round(15 + (i / pdf.numPages) * 50));
       }
 
-      setProgress(70);
+      updateProgress(70);
 
       if (toolId === 'pdf-to-word') {
         // Generate a real editable .docx using JSZip
@@ -102,8 +145,8 @@ export default function PDFToOfficeClient({ toolId }) {
 </w:document>`);
 
         const docxBlob = await zip.generateAsync({ type: 'blob' });
-        setProgress(95);
-        await deliver(docxBlob, file.name.replace('.pdf', '.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        updateProgress(95);
+        if (!cancelled.current) await deliver(docxBlob, file.name.replace('.pdf', '.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
       } else if (toolId === 'pdf-to-excel') {
         // Generate a spreadsheet CSV (comma separated values)
@@ -120,8 +163,8 @@ export default function PDFToOfficeClient({ toolId }) {
         });
 
         const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-        setProgress(95);
-        await deliver(csvBlob, file.name.replace('.pdf', '.csv'), 'text/csv');
+        updateProgress(95);
+        if (!cancelled.current) await deliver(csvBlob, file.name.replace('.pdf', '.csv'), 'text/csv');
 
       } else if (toolId === 'pdf-to-powerpoint') {
         // Generate a valid PPTX structure using JSZip
@@ -213,23 +256,17 @@ export default function PDFToOfficeClient({ toolId }) {
         });
 
         const pptxBlob = await zip.generateAsync({ type: 'blob' });
-        setProgress(95);
-        await deliver(pptxBlob, file.name.replace('.pdf', '.pptx'), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        updateProgress(95);
+        if (!cancelled.current) await deliver(pptxBlob, file.name.replace('.pdf', '.pptx'), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
       }
 
-      setProgress(100);
-      setDone(true);
+      updateProgress(100);
+      if (!cancelled.current) setDone(true);
     } catch (err) {
-      alert('Error converting PDF: ' + err.message + '. Downloading plain text extract.');
-      
-      // Fallback plain text extract
-      try {
-        const textBlob = new Blob([file.name], { type: 'text/plain;charset=utf-8' });
-        await deliver(textBlob, file.name.replace('.pdf', '_text.txt'), 'text/plain');
-        setDone(true);
-      } catch (e) {
-        console.error(e);
-      }
+      if (cancelled.current) return;
+      console.error(err);
+      // Shown in the workspace; the old fallback "text extract" held only the file name, so it is gone.
+      setConvertError(err.message || 'Unknown error');
     } finally {
       setProcessing(false);
     }
@@ -244,7 +281,16 @@ export default function PDFToOfficeClient({ toolId }) {
       showHeader={!file}
       layoutMode={file ? 'page-preview' : 'page-scroll'}
     >
-      {!file ? (
+      {file && processing ? (
+        <ConvertingScreen
+          file={file}
+          target={TARGETS[toolId] || TARGETS['pdf-to-word']}
+          progress={progress}
+          pageCount={pageCount}
+          secondsLeft={secondsLeft}
+          onCancel={cancelConversion}
+        />
+      ) : !file ? (
         <FileDropzone
           accept=".pdf"
           multiple={false}
@@ -283,6 +329,18 @@ export default function PDFToOfficeClient({ toolId }) {
               Ready to generate editable office slides, worksheets, or paragraphs from the PDF document content.
             </p>
 
+            {convertError && (
+              <p className="ws-note ws-note-warn" role="alert">
+                This PDF couldn&apos;t be converted ({convertError}). Try again, or try PDF to Markdown for the text only.
+              </p>
+            )}
+
+            {warnings.length > 0 && (
+              <ul className="body-xs ink-subtle" style={{ paddingLeft: 'var(--space-md)', lineHeight: 1.5 }}>
+                {warnings.map((w) => <li key={w}>{w}</li>)}
+              </ul>
+            )}
+
             {processing && (
               <div style={{ width: '100%', marginTop: 'var(--space-xs)' }}>
                 <div className="progress-track">
@@ -304,5 +362,59 @@ export default function PDFToOfficeClient({ toolId }) {
         />
       )}
     </ToolPageLayout>
+  );
+}
+
+// The full-page progress view shown while a PDF converts (design D9).
+function ConvertingScreen({ file, target, progress, pageCount, secondsLeft, onCancel }) {
+  // The converter reports pages up to 85%, then writes the file.
+  const pageNow = pageCount ? Math.min(pageCount, Math.max(1, Math.ceil((progress / 85) * pageCount))) : 0;
+  const stages = [
+    { label: pageCount ? `Reading ${pageCount} page${pageCount === 1 ? '' : 's'}` : 'Opening the PDF', state: pageCount ? 'done' : 'now' },
+    {
+      label: pageCount && progress < 85 ? `Rebuilding text, tables and images — page ${pageNow} of ${pageCount}` : 'Rebuilding text, tables and images',
+      state: !pageCount ? 'next' : progress < 85 ? 'now' : 'done',
+    },
+    { label: `Writing the ${target.name} file`, state: progress >= 85 ? 'now' : 'next' },
+  ];
+
+  return (
+    <div className="convert-screen">
+      <div className="convert-card">
+        <div className="convert-files" aria-hidden="true">
+          <span className="convert-file">PDF</span>
+          <span className="convert-dots"><span /><span /><span /></span>
+          <span className="convert-file convert-file-out" style={{ '--tint': target.tint }}>{target.ext}</span>
+        </div>
+        <div className="convert-heading">
+          <h1>Converting to {target.name}…</h1>
+          <span>{file.name}{pageCount ? ` · ${pageCount} page${pageCount === 1 ? '' : 's'}` : ''}</span>
+        </div>
+        <div className="convert-progress">
+          <div className="ws-bar convert-bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Conversion progress">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <div className="convert-progress-meta">
+            <span>{progress}%</span>
+            <span>{secondsLeft ? `About ${secondsLeft} second${secondsLeft === 1 ? '' : 's'} left` : ''}</span>
+          </div>
+        </div>
+        <ol className="convert-stages">
+          {stages.map((stage) => (
+            <li key={stage.label} className={`convert-stage is-${stage.state}`}>
+              <span className="convert-stage-dot">
+                {stage.state === 'done' && <ToolIcon name="check" size={13} />}
+              </span>
+              {stage.label}
+            </li>
+          ))}
+        </ol>
+        <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+      </div>
+      <p className="convert-note">
+        <ToolIcon name="lock" size={18} />
+        <span><strong>Keep this tab open.</strong> Your computer is doing the work, not a server, so closing the tab stops the conversion.</span>
+      </p>
+    </div>
   );
 }

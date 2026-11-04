@@ -11,6 +11,9 @@ export default function sitemap() {
       url: baseUrl,
     },
     {
+      url: `${baseUrl}/tools`,
+    },
+    {
       url: `${baseUrl}/blog`,
     },
     {

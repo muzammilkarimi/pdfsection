@@ -37,6 +37,55 @@ export default function CropPDFClient() {
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const cropDrag = useRef(null); // { mode, startX, startY, start: { l, r, t, b }, rect }
+
+  const startCropDrag = (e, mode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    cropDrag.current = {
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      start: { l: cropLeft, r: cropRight, t: cropTop, b: cropBottom },
+      rect: containerRef.current.getBoundingClientRect(),
+    };
+  };
+
+  useEffect(() => {
+    const MIN_SIZE = 5; // the crop area never gets smaller than 5% of the page
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const step = (v) => Math.round(v * 2) / 2;
+    const onMove = (e) => {
+      const drag = cropDrag.current;
+      if (!drag) return;
+      const dx = ((e.clientX - drag.startX) / drag.rect.width) * 100;
+      const dy = ((e.clientY - drag.startY) / drag.rect.height) * 100;
+      let { l, r, t, b } = drag.start;
+      if (drag.mode === 'move') {
+        const mx = clamp(dx, -l, r);
+        const my = clamp(dy, -t, b);
+        l += mx; r -= mx; t += my; b -= my;
+      } else {
+        if (drag.mode.includes('w')) l = clamp(drag.start.l + dx, 0, 100 - r - MIN_SIZE);
+        if (drag.mode.includes('e')) r = clamp(drag.start.r - dx, 0, 100 - l - MIN_SIZE);
+        if (drag.mode.includes('n')) t = clamp(drag.start.t + dy, 0, 100 - b - MIN_SIZE);
+        if (drag.mode.includes('s')) b = clamp(drag.start.b - dy, 0, 100 - t - MIN_SIZE);
+      }
+      setCropLeft(step(l));
+      setCropRight(step(r));
+      setCropTop(step(t));
+      setCropBottom(step(b));
+    };
+    const onUp = () => {
+      cropDrag.current = null;
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, []);
 
   // File selection
   const handleFilesSelected = useCallback(async (files) => {
@@ -172,43 +221,31 @@ export default function CropPDFClient() {
                 </button>
               </div>
 
-              {/* Canvas workspace container with absolute margins border overlay */}
-              <div
-                ref={containerRef}
-                style={{
-                  position: 'relative',
-                  border: '1px solid var(--hairline-strong)',
-                  borderRadius: 'var(--rounded-lg)',
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  width: 'fit-content',
-                  margin: '0 auto',
-                }}
-              >
-                <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%', height: 'auto' }} />
-
-                {/* Crop visual overlay lines */}
+              {/* Page with the crop area: drag the box, its edges or its corners */}
+              <div ref={containerRef} className="crop-stage">
+                <div className="crop-page">
+                  <canvas ref={canvasRef} />
+                  <div
+                    className="crop-shade"
+                    style={{ left: `${cropLeft}%`, right: `${cropRight}%`, top: `${cropTop}%`, bottom: `${cropBottom}%` }}
+                  />
+                  {renderingPage && <div className="crop-loading">Loading page…</div>}
+                </div>
                 <div
-                  style={{
-                    position: 'absolute',
-                    left: `${cropLeft}%`,
-                    right: `${cropRight}%`,
-                    top: `${cropTop}%`,
-                    bottom: `${cropBottom}%`,
-                    border: '2px dashed var(--primary)',
-                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
-                    pointerEvents: 'none',
-                    zIndex: 2,
-                    transition: 'all 0.15s ease',
-                  }}
-                />
-
-                {renderingPage && (
-                  <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
-                    <p style={{ color: '#fff', fontSize: '13px' }}>Loading page...</p>
-                  </div>
-                )}
+                  className="crop-box"
+                  style={{ left: `${cropLeft}%`, right: `${cropRight}%`, top: `${cropTop}%`, bottom: `${cropBottom}%` }}
+                  onPointerDown={(e) => startCropDrag(e, 'move')}
+                  title="Drag to move the crop area"
+                >
+                  {['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se'].map((handle) => (
+                    <span
+                      key={handle}
+                      className={`crop-handle crop-handle-${handle}`}
+                      onPointerDown={(e) => startCropDrag(e, handle)}
+                      aria-hidden="true"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           }
@@ -246,9 +283,10 @@ export default function CropPDFClient() {
                 <input
                   type="range"
                   min="0"
-                  max="45"
+                  max="90"
+                  step="0.5"
                   value={cropTop}
-                  onChange={(e) => setCropTop(parseInt(e.target.value))}
+                  onChange={(e) => setCropTop(parseFloat(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--primary)' }}
                 />
               </div>
@@ -262,9 +300,10 @@ export default function CropPDFClient() {
                 <input
                   type="range"
                   min="0"
-                  max="45"
+                  max="90"
+                  step="0.5"
                   value={cropBottom}
-                  onChange={(e) => setCropBottom(parseInt(e.target.value))}
+                  onChange={(e) => setCropBottom(parseFloat(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--primary)' }}
                 />
               </div>
@@ -278,9 +317,10 @@ export default function CropPDFClient() {
                 <input
                   type="range"
                   min="0"
-                  max="45"
+                  max="90"
+                  step="0.5"
                   value={cropLeft}
-                  onChange={(e) => setCropLeft(parseInt(e.target.value))}
+                  onChange={(e) => setCropLeft(parseFloat(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--primary)' }}
                 />
               </div>
@@ -294,9 +334,10 @@ export default function CropPDFClient() {
                 <input
                   type="range"
                   min="0"
-                  max="45"
+                  max="90"
+                  step="0.5"
                   value={cropRight}
-                  onChange={(e) => setCropRight(parseInt(e.target.value))}
+                  onChange={(e) => setCropRight(parseFloat(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--primary)' }}
                 />
               </div>

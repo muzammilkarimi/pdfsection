@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useEffectEvent } from 'react';
 import Link from 'next/link';
 import { ToolIcon } from './Icons';
 import { checkPdfEncryption } from '@/lib/pdfUtils';
+import { takeIncomingFiles } from '@/lib/incomingFiles';
+
+let pageDropOwner = null;
 
 export default function FileDropzone({
   accept = '.pdf',
@@ -26,20 +29,23 @@ export default function FileDropzone({
   const acceptLabel = acceptTypes.map((t) => t.replace('.', '').replace('image/', '').toUpperCase()).join(', ');
   const acceptsImages = accept.includes('image');
   const acceptsOnlyPdf = acceptTypes.length === 1 && acceptTypes[0] === '.pdf';
+  const hasFiles = files.length > 0;
   const uploadLabel = isChecking
     ? 'Checking file...'
-    : acceptsImages
-      ? 'Select images'
-      : acceptsOnlyPdf
-        ? multiple ? 'Select PDF files' : 'Select PDF file'
-        : multiple ? 'Select files' : 'Select file';
+    : hasFiles
+      ? 'Add more files'
+      : acceptsImages
+        ? 'Select images'
+        : acceptsOnlyPdf
+          ? multiple ? 'Select PDF files' : 'Select PDF file'
+          : multiple ? 'Select files' : 'Select file';
   const dropHint = isChecking
     ? 'Please wait while we verify your document...'
     : acceptsImages
-      ? `or drag and drop ${acceptLabel} images here`
+      ? `or drop ${acceptLabel} images anywhere on this page`
       : acceptsOnlyPdf
-        ? `or drag and drop PDF ${multiple ? 'files' : 'file'} here`
-        : `or drag and drop ${acceptLabel} files here`;
+        ? `or drop PDF ${multiple ? 'files' : 'file'} anywhere on this page`
+        : `or drop ${acceptLabel} files anywhere on this page`;
 
   const validateFile = useCallback(
     (file) => {
@@ -113,6 +119,61 @@ export default function FileDropzone({
     [files, multiple, maxFiles, validateFile, onFilesSelected, allowLocked]
   );
 
+  // Files handed over from the home page drop zone load as if the user had picked them here.
+  const loadIncoming = useEffectEvent((incoming) => handleFiles(incoming));
+  useEffect(() => {
+    const incoming = takeIncomingFiles();
+    if (incoming.length) queueMicrotask(() => loadIncoming(incoming));
+  }, []);
+
+  // Files dropped anywhere on the page land here too. Only the first drop zone on a page
+  // takes them, and only while it can accept more files.
+  const canAcceptMore = files.length === 0 || multiple;
+  const onPageDrag = useEffectEvent((active) => setIsDragOver(active && canAcceptMore));
+  const onPageDrop = useEffectEvent((dropped) => {
+    if (canAcceptMore) handleFiles(dropped);
+  });
+  useEffect(() => {
+    if (pageDropOwner) return undefined;
+    const owner = {};
+    pageDropOwner = owner;
+    let depth = 0;
+    const carriesFiles = (e) => Array.from(e.dataTransfer?.types || []).includes('Files');
+    const onEnter = (e) => {
+      if (!carriesFiles(e)) return;
+      depth += 1;
+      onPageDrag(true);
+    };
+    const onLeave = (e) => {
+      if (!carriesFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) onPageDrag(false);
+    };
+    // Prevent the browser from opening the file in place of the page.
+    const onOver = (e) => {
+      if (carriesFiles(e)) e.preventDefault();
+    };
+    const onDrop = (e) => {
+      if (!carriesFiles(e)) return;
+      depth = 0;
+      onPageDrag(false);
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (e.dataTransfer.files.length > 0) onPageDrop(e.dataTransfer.files);
+    };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      if (pageDropOwner === owner) pageDropOwner = null;
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, []);
+
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -125,9 +186,10 @@ export default function FileDropzone({
     setIsDragOver(false);
   };
 
+  // No stopPropagation: the page-level listener needs the drop to reset its drag count,
+  // and it skips events that are already handled.
   const handleDrop = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragOver(false);
     if (e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
@@ -151,7 +213,7 @@ export default function FileDropzone({
       {/* Dropzone area */}
       {(files.length === 0 || multiple) && (
         <div
-          className={`dropzone ${isDragOver ? 'drag-over' : ''}`}
+          className={`dropzone ${hasFiles ? 'dropzone-compact' : 'dropzone-empty'} ${isDragOver ? 'drag-over' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -163,17 +225,23 @@ export default function FileDropzone({
           id={id}
         >
           <div className="dropzone-upload-content">
-            <div className="btn-upload-gradient btn-attention">
-              <ToolIcon name="upload" size={24} />
+            <div className="btn-upload-gradient">
+              <ToolIcon name={hasFiles ? 'plus' : 'upload'} size={20} />
               <span>{uploadLabel}</span>
             </div>
             <div className="dropzone-subtitle">
               {dropHint}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'var(--space-md)', color: 'var(--ink-muted)', fontSize: '11px', fontWeight: '500', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 'var(--rounded-md)', border: '1px solid var(--hairline)' }}>
-              <ToolIcon name="lock" size={12} style={{ color: 'var(--brand-blue)', flexShrink: 0 }} />
-              <span>100% Secure</span>
-            </div>
+            {!hasFiles && (
+              <ul className="dropzone-trust">
+                {['Never uploaded', 'Free, no sign-up', 'No watermark'].map((point) => (
+                  <li key={point}>
+                    <ToolIcon name="check" size={14} />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <input
             ref={inputRef}

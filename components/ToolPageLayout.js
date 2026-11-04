@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ToolIcon } from './Icons';
 import ToolGuideSection from './ToolGuideSection';
@@ -16,7 +17,6 @@ export default function ToolPageLayout({
   children,
   showHeader = true,
   layoutMode = 'page-scroll',
-  showGuide = false,
 }) {
   const pathname = usePathname();
   const tool = getToolByRoute(pathname);
@@ -65,30 +65,39 @@ export default function ToolPageLayout({
         <div className="tool-page page-enter">
           {showHeader && (
             <div className="tool-page-header">
-              <div
-                className="tool-page-icon"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${iconColor || 'var(--primary)'} 14%, var(--surface-2))`,
-                  color: iconColor || 'var(--primary)',
-                }}
-              >
-                <ToolIcon name={icon || 'pdf'} size={22} />
-              </div>
-              <div className="tool-page-heading">
-                <h1 className="tool-page-title">{title}</h1>
-                <p className="tool-page-description">{description}</p>
+              <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+                <Link href="/">Home</Link>
+                <span aria-hidden="true">/</span>
+                <Link href="/tools">{tool?.categoryLabel || 'All tools'}</Link>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{tool?.name || title}</span>
+              </nav>
+              <div className="tool-page-heading-row">
+                <div
+                  className="tool-page-icon"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${iconColor || 'var(--primary)'} 14%, var(--surface-2))`,
+                    color: iconColor || 'var(--primary)',
+                  }}
+                >
+                  <ToolIcon name={icon || 'pdf'} size={22} />
+                </div>
+                <div className="tool-page-heading">
+                  <h1 className="tool-page-title">{title}</h1>
+                  <p className="tool-page-description">{description}</p>
+                </div>
               </div>
             </div>
           )}
           
           <div className="tool-page-body">{children}</div>
 
-          {/* Related Tools Internal Link Network */}
-          <RelatedToolsSection currentRoute={pathname} />
-
-          {/* How to Use / Benefits / FAQ Guide Block */}
-          {(showGuide || layoutMode === 'page-scroll') && (
-            <ToolGuideSection title={title} seoData={seoData} />
+          {/* Once files are loaded the page is a workspace: only files and controls, nothing below. */}
+          {layoutMode === 'page-scroll' && (
+            <>
+              <RelatedToolsSection currentRoute={pathname} />
+              <ToolGuideSection title={title} seoData={seoData} />
+            </>
           )}
         </div>
       </div>

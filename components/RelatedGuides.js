@@ -15,7 +15,7 @@ export default function RelatedGuides({ route }) {
   if (guides.length === 0) return null;
 
   return (
-    <section className="container" aria-label={`${tool.name} guides`} style={{ paddingBottom: 'var(--space-xxl)' }}>
+    <section className="container related-guides" aria-label={`${tool.name} guides`} style={{ paddingBottom: 'var(--space-xxl)' }}>
       <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 'var(--space-sm)' }}>
         {tool.name} guides
       </h2>

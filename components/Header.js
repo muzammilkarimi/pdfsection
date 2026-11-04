@@ -7,27 +7,19 @@ import { ToolIcon } from './Icons';
 import { LIVE_TOOL_CATEGORIES } from '@/lib/tools';
 import CommandPalette from './CommandPalette';
 import IndependenceBanner from './IndependenceBanner';
+import { applyTheme } from '@/lib/preferences';
 
 export default function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      // 'system' is resolved by the inline script in layout.js, so read the applied class.
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     }
     return 'light';
   });
-  const [expandedCategories, setExpandedCategories] = useState({});
-
-  const toggleCategory = (catId) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [catId]: !prev[catId],
-    }));
-  };
-
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
-    if (storedTheme) {
+    if (storedTheme && storedTheme !== 'system') {
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(storedTheme);
     } else if (!document.documentElement.classList.contains('dark')) {
@@ -38,11 +30,7 @@ export default function Header() {
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    if (typeof window !== 'undefined') {
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(nextTheme);
-      localStorage.setItem('theme', nextTheme);
-    }
+    applyTheme(nextTheme);
   };
 
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -59,10 +47,12 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Tools', href: '/#tools' },
-    { label: 'Compress', href: '/compress-pdf' },
+    { label: 'All tools', href: '/tools' },
     { label: 'Merge', href: '/merge-pdf' },
-    { label: 'Blog', href: '/blog' },
+    { label: 'Compress', href: '/compress-pdf' },
+    { label: 'Edit', href: '/edit-pdf' },
+    { label: 'Create', href: '/create-pdf' },
+    { label: 'Guides', href: '/blog' },
   ];
 
   return (
@@ -93,8 +83,8 @@ export default function Header() {
 
           <nav className="nav-links" aria-label="Main navigation">
             <div className="nav-item-dropdown">
-              <Link href="/#tools" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                Tools 
+              <Link href="/tools" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                All tools
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="dropdown-chevron" style={{ transition: 'transform var(--duration-fast) var(--ease-default)', marginLeft: '2px' }}>
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
@@ -149,6 +139,13 @@ export default function Header() {
               <kbd className="desktop-only-inline" style={{ fontSize: '10px', backgroundColor: 'var(--surface-1)', padding: '1px 5px', borderRadius: '3px', border: '1px solid var(--hairline)', color: 'var(--ink-subtle)' }}>Ctrl K</kbd>
             </button>
 
+            <Link href="/files" className="nav-icon-link desktop-only-inline" aria-label="Your recent files" title="Your files">
+              <ToolIcon name="folder" size={18} />
+            </Link>
+            <Link href="/settings" className="nav-icon-link nav-settings-link" aria-label="Settings" title="Settings">
+              <ToolIcon name="settings" size={18} />
+            </Link>
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
@@ -172,142 +169,11 @@ export default function Header() {
               <ToolIcon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
 
-            <Link href="/merge-pdf" className="btn btn-primary nav-primary-action">
-              Merge PDF
-            </Link>
-            
-            <button
-              className="nav-menu-btn"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
-            >
-              <ToolIcon name={mobileOpen ? 'x' : 'menu'} size={20} />
-            </button>
           </div>
         </div>
       </header>
       </div>
 
-      {/* Mobile Navigation */}
-      <div className={`mobile-nav ${mobileOpen ? 'open' : ''}`} role="navigation" aria-label="Mobile navigation">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--ink-subtle)' }}>Theme</span>
-          <button
-            onClick={toggleTheme}
-            style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--hairline)',
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '13px'
-            }}
-          >
-            <ToolIcon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </button>
-        </div>
-
-        <hr className="divider" style={{ margin: '12px 0' }} />
-
-        {navLinks.filter(link => link.label !== 'Tools').map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="mobile-nav-link"
-            onClick={() => setMobileOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
-
-        <hr className="divider" style={{ margin: '12px 0' }} />
-
-        {/* Tool categories in mobile menu */}
-        <div style={{ padding: '0 16px', marginTop: '12px' }}>
-          <div className="eyebrow" style={{ color: 'var(--ink-tertiary)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
-            PDF Tools By Category
-          </div>
-          {LIVE_TOOL_CATEGORIES.map((cat) => {
-            const isExpanded = !!expandedCategories[cat.id];
-            return (
-              <div key={cat.id} style={{ marginBottom: '8px', border: '1px solid var(--hairline)', borderRadius: 'var(--rounded-md)', overflow: 'hidden', backgroundColor: 'var(--surface-1)' }}>
-                <button
-                  onClick={() => toggleCategory(cat.id)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 14px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--ink)',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '13.5px',
-                    textAlign: 'left'
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: cat.color }}></span>
-                    {cat.label}
-                  </span>
-                  <svg 
-                    width="12" 
-                    height="12" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    style={{ 
-                      transition: 'transform var(--duration-normal)', 
-                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      color: 'var(--ink-tertiary)'
-                    }}
-                  >
-                    <path d="m6 9 6 6 6-6"/>
-                  </svg>
-                </button>
-                
-                <div className={`mobile-accordion ${isExpanded ? 'open' : ''}`}>
-                  <div className="mobile-accordion-inner" style={{ borderTop: isExpanded ? '1px solid var(--hairline-soft)' : '1px solid transparent', backgroundColor: 'var(--canvas)' }}>
-                    <div style={{ padding: '6px 0' }}>
-                      {cat.tools.map((tool) => (
-                        <Link
-                          key={tool.id}
-                          href={tool.route}
-                          className="mobile-nav-link"
-                          onClick={() => setMobileOpen(false)}
-                          style={{ 
-                            padding: '10px 16px 10px 32px', 
-                            fontSize: '13px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            textDecoration: 'none',
-                            color: 'var(--ink-muted)'
-                          }}
-                        >
-                          <ToolIcon name={tool.icon} size={15} style={{ color: cat.color }} />
-                          {tool.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </>
   );
 }

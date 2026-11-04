@@ -1,0 +1,1296 @@
+/* ============================================
+   Phone layouts. Everything that only exists on phones starts hidden here,
+   and the 768px block at the end switches it on.
+   ============================================ */
+
+.mobile-tabs,
+.home-title-mobile,
+.open-file-card,
+.home-recent,
+.home-see-all,
+.ws-mobile-bar,
+.ws-mobile-back,
+.dl-mobile-bar,
+.merge-card-handle,
+.scan-live-top,
+.scan-live-bottom {
+  display: none;
+}
+
+.home-hero-title > span {
+  color: inherit;
+}
+
+.home-title-desktop > span {
+  display: block;
+  color: var(--primary);
+}
+
+/* Scan's camera on desktop: a framed preview with buttons under it */
+.scan-live {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.scan-video {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--hairline-strong);
+  background: #000000;
+}
+
+.scan-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  /* ── Shell ── */
+
+  .mobile-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 8px 12px max(10px, env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .mobile-tabs a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    color: var(--ink-subtle);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .mobile-tabs a[aria-current='page'] {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  body {
+    padding-bottom: 76px;
+  }
+
+  /* Header: logo and settings; the tab bar covers the rest */
+  .nav-actions > button {
+    display: none;
+  }
+
+  .nav-settings-link {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--hairline);
+    background: var(--card);
+    color: var(--ink-muted);
+  }
+
+  /* The browsing pages end at the tab bar */
+  body:has(.home-hero) .footer,
+  body:has(.tools-page) .footer,
+  body:has(.account-page) .footer {
+    display: none;
+  }
+
+  /* Work screens have their own top and bottom bars instead */
+  body:has(.tool-layout-page-preview) .mobile-tabs,
+  body:has(.tool-layout-app-fixed) .mobile-tabs,
+  body:has(.dl-result) .mobile-tabs,
+  body:has(.tool-layout-page-preview) .nav-fixed-holder,
+  body:has(.tool-layout-app-fixed) .nav-fixed-holder,
+  body:has(.dl-result) .nav-fixed-holder {
+    display: none;
+  }
+
+  body:has(.tool-layout-page-preview),
+  body:has(.tool-layout-app-fixed),
+  body:has(.dl-result) {
+    padding-bottom: 0;
+  }
+
+  body:has(.tool-layout-page-preview) .main,
+  body:has(.tool-layout-app-fixed) .main,
+  body:has(.dl-result) .main {
+    padding-top: 0;
+  }
+
+  /* ── Home ── */
+
+  .home-hero {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 22px;
+    padding-top: 20px;
+    padding-bottom: 22px;
+  }
+
+  .home-hero-copy {
+    flex: 0 0 auto;
+    gap: 14px;
+  }
+
+  .home-badge {
+    align-self: flex-start;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .home-title-desktop,
+  .home-hero-subtitle,
+  .smart-drop-card {
+    display: none;
+  }
+
+  .home-title-mobile {
+    display: block;
+  }
+
+  .home-hero-title {
+    font-size: 30px;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+  }
+
+  .home-hero-search {
+    max-width: none;
+    height: 48px;
+    border-radius: 14px;
+  }
+
+  .open-file-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+
+  .open-file-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .open-file-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .open-file-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+  }
+
+  .open-file-text strong {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .open-file-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .open-file-actions > * {
+    height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .open-file-actions .open-file-primary {
+    background: #ffffff;
+    color: #3b44b0;
+    font-weight: 700;
+  }
+
+  .home-section {
+    gap: 12px;
+    padding-bottom: 22px;
+  }
+
+  .home-section-head {
+    gap: 8px;
+  }
+
+  .home-section-head h2 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .home-section-head > span {
+    display: none;
+  }
+
+  .home-see-all {
+    display: inline;
+    padding: 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .home-popular-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .home-popular-grid .tool-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .home-popular-grid .tool-card:nth-child(n + 7),
+  .home-popular-grid .tool-card-description {
+    display: none;
+  }
+
+  .home-popular-grid .tool-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .home-popular-grid .tool-card-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .home-recent {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 22px;
+  }
+
+  .home-recent h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .home-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--hairline);
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .home-recent-ext {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 44px;
+    box-sizing: border-box;
+    padding-bottom: 5px;
+    border-radius: 6px;
+    border: 1px solid var(--hairline);
+    background: var(--surface-1);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--tool-organize);
+  }
+
+  .home-recent-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 12px;
+    color: var(--ink-subtle);
+  }
+
+  .home-recent-text strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* All tools live on the Tools tab on phones */
+  .home-categories,
+  .home-promises {
+    display: none;
+  }
+
+  /* Suggestions after choosing a file */
+  .smart-results-file {
+    max-width: none;
+  }
+
+  .smart-results-title {
+    font-size: 24px;
+  }
+
+  .smart-pick {
+    flex-wrap: wrap;
+    padding: 14px;
+  }
+
+  .smart-pick-open {
+    flex: 1 1 100%;
+  }
+
+  /* ── All tools ── */
+
+  .tools-page {
+    gap: 24px;
+    padding-top: 20px;
+    padding-bottom: 28px;
+  }
+
+  .tools-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .tools-page-head h1 {
+    margin: 0;
+    font-size: 30px;
+  }
+
+  .tools-page-head p,
+  .tools-page-group h2 small,
+  .tools-page-item-text span {
+    display: none;
+  }
+
+  .tools-page-head .home-hero-search {
+    flex: 0 0 auto;
+    height: 48px;
+  }
+
+  /* One sideways-scrolling row of filters */
+  .tools-page-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-top: -10px;
+    scrollbar-width: none;
+  }
+
+  .tools-page-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tools-page-chip {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .tools-page-group {
+    gap: 10px;
+  }
+
+  .tools-page-group h2 {
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .tools-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .tools-page-item {
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 10px;
+    border-radius: 14px;
+  }
+
+  .tools-page-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .tools-page-item-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .tools-page-item-text strong {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /* ── Tool workspace: top bar, content in the page, main button fixed at the bottom ── */
+
+  .tool-layout-page-preview > .container {
+    padding: 0;
+  }
+
+  .tool-page-shell .tool-page {
+    padding: 0;
+    min-height: 0;
+  }
+
+  .tool-layout-page-preview .page-editor-workspace,
+  .page-editor-workspace {
+    display: flex;
+    flex-direction: column;
+    /* Every section fills the screen width; the desktop rule (start) would size them to their content. */
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 16px;
+    min-height: 0;
+    margin: 0;
+    padding: 0 16px 130px;
+  }
+
+  .ws-mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -8px;
+    padding: 10px 0 2px;
+  }
+
+  .ws-mobile-back,
+  .ws-mobile-spacer {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+  }
+
+  .ws-mobile-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+  }
+
+  .ws-mobile-title {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* On phones the panels are not boxes: their content flows down the page */
+  .page-preview-panel,
+  .tool-layout-page-preview .page-preview-panel,
+  .page-controls-panel,
+  .tool-layout-page-preview .page-controls-panel {
+    position: static;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .page-controls-header {
+    display: none;
+  }
+
+  .page-controls-body {
+    padding: 0;
+    overflow: visible;
+  }
+
+  .page-controls-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    gap: 10px;
+    padding: 14px 16px max(14px, env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .page-controls-footer .btn-lg {
+    min-height: 54px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* Start over is the back arrow on phones */
+  .page-controls-footer .btn-secondary {
+    display: none;
+  }
+
+  .ws-privacy {
+    font-size: 12px;
+  }
+
+  /* Heading row used by Split */
+  .ws-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0;
+    padding: 16px 16px 16px;
+  }
+
+  .ws-topbar-title h1 {
+    font-size: 24px;
+  }
+
+  .ws-tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .ws-tabs button {
+    padding: 0 6px;
+    font-size: 13px;
+  }
+
+  .ws-toolbar {
+    font-size: 14px;
+  }
+
+  .ws-choice {
+    padding: 14px 16px;
+  }
+
+  .ws-choice-size {
+    font-size: 20px;
+  }
+
+  /* ── Merge: a vertical list with a drag handle ── */
+
+  .merge-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .merge-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 6px 10px 6px;
+    border-radius: 16px;
+    background: var(--card);
+    cursor: default;
+  }
+
+  .merge-card-handle {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-subtle);
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .merge-card-order,
+  .merge-card-move {
+    display: none;
+  }
+
+  .merge-card-paper {
+    flex: 0 0 auto;
+    width: 46px;
+    height: 60px;
+    padding: 2px;
+    border-radius: 6px;
+  }
+
+  .merge-card-meta {
+    flex: 1;
+  }
+
+  .merge-card-meta strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .merge-card-remove {
+    position: static;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .merge-add-tile button {
+    flex-direction: row;
+    min-height: 56px;
+    border-radius: 16px;
+  }
+
+  .merge-add-tile svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .merge-card.is-dragging {
+    opacity: 1;
+    border-color: var(--primary);
+    box-shadow: 0 10px 24px rgba(20, 19, 32, 0.12);
+  }
+
+  /* ── Result ── */
+
+  .dl-result {
+    gap: 22px;
+    padding-top: 8px;
+    padding-bottom: 32px;
+  }
+
+  .dl-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 -8px -14px;
+  }
+
+  .dl-mobile-bar a {
+    min-height: 44px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .dl-mobile-bar .dl-mobile-close {
+    color: var(--ink);
+  }
+
+  .dl-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .dl-preview {
+    width: 168px;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .dl-preview img {
+    max-height: 212px;
+  }
+
+  .dl-details {
+    flex: 0 0 auto;
+    align-self: stretch;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .dl-details .dl-badge {
+    width: 40px;
+    height: 40px;
+    margin-top: -36px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dl-details .dl-title {
+    font-size: 26px;
+  }
+
+  .dl-details .dl-sub {
+    font-size: 14px;
+  }
+
+  .dl-actions {
+    align-self: stretch;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    margin-top: 14px;
+  }
+
+  .dl-actions .btn {
+    padding: 0 8px;
+  }
+
+  .dl-details > .dl-link {
+    display: none;
+  }
+
+  .dl-next {
+    gap: 10px;
+  }
+
+  .dl-next h2 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  /* One card with rows, not separate tiles */
+  .dl-next-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--hairline);
+    background: var(--card);
+  }
+
+  .dl-next-item {
+    min-height: 56px;
+    padding: 8px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--hairline-soft);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .dl-next-item:last-child {
+    border-bottom: 0;
+  }
+
+  .dl-next-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .dl-next-text strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .dl-next-text span {
+    display: none;
+  }
+
+  /* ── Files: two-column cards instead of a table ── */
+
+  .account-page {
+    gap: 18px;
+    padding-top: 20px;
+    padding-bottom: 24px;
+  }
+
+  .account-page-head {
+    align-items: center;
+  }
+
+  .account-page-head h1 {
+    margin: 0;
+    font-size: 30px;
+  }
+
+  .account-page-head p,
+  .account-page-actions .btn-secondary {
+    display: none;
+  }
+
+  .account-banner {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .files-table-wrap {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .files-table,
+  .files-table tbody {
+    display: block;
+  }
+
+  .files-table thead {
+    display: none;
+  }
+
+  .files-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .files-table tr {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .files-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    font-size: 12px;
+    color: var(--ink-subtle);
+  }
+
+  .files-name {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .files-name > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+  }
+
+  .files-ext {
+    height: 120px;
+    box-sizing: border-box;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: var(--card);
+    font-size: 15px;
+  }
+
+  /* The tool tag sits on the card's picture area */
+  .files-table td:nth-child(2) {
+    position: absolute;
+    left: 8px;
+    top: 90px;
+  }
+
+  .files-tool {
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .files-table td:nth-child(3),
+  .files-table td:nth-child(4) {
+    padding: 0 2px;
+  }
+
+  .files-actions {
+    justify-content: flex-start;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .files-actions .btn-sm {
+    flex: 1;
+    min-height: 40px;
+    padding: 0 4px;
+    font-size: 12px;
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .files-delete {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 40px;
+  }
+
+  /* ── Settings ── */
+
+  .settings-card {
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .settings-card h2 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+  }
+
+  .settings-row {
+    font-size: 14px;
+  }
+
+  .settings-segmented {
+    width: 100%;
+  }
+
+  .settings-segmented button {
+    flex: 1;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .settings-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* ── Sign ── */
+
+  .sign-workspace {
+    padding: 12px 16px 24px;
+  }
+
+  .sign-dialog {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  /* ── Edit: its own top bar, tools along the bottom ── */
+
+  .tool-layout-app-fixed:has(.editor) {
+    height: 100dvh;
+  }
+
+  .editor-bar {
+    gap: 4px;
+    padding: 8px 8px 8px 4px;
+  }
+
+  .editor-file {
+    flex: 1 1 auto;
+  }
+
+  .editor-file span {
+    display: none;
+  }
+
+  .editor-tools {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 8px 8px max(10px, env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .editor-tool {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-width: 62px;
+    min-height: 56px;
+    padding: 0 6px;
+    border-radius: 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .editor-body {
+    flex-direction: column;
+    overflow-y: auto;
+    padding-bottom: 84px;
+  }
+
+  .editor-stage {
+    flex: 0 0 auto;
+    padding: 12px;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .editor-zoom {
+    margin-left: 0;
+  }
+
+  .editor-panel {
+    flex: 0 0 auto;
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* ── Scan: the camera fills the screen while it's on ── */
+
+  .scan-live {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    gap: 0;
+    background: #0c0b14;
+  }
+
+  .scan-live-top {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .scan-round-btn {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--rounded-full);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scan-filters {
+    display: flex;
+    gap: 4px;
+  }
+
+  .scan-filters button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--rounded-full);
+    background: transparent;
+    color: #b8b5c9;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .scan-filters button[aria-checked='true'] {
+    background: #ffffff;
+    color: #141320;
+    font-weight: 700;
+  }
+
+  .scan-video {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .scan-live-bottom {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 16px 24px max(24px, env(safe-area-inset-bottom));
+  }
+
+  .scan-count {
+    justify-self: start;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .scan-shutter {
+    width: 76px;
+    height: 76px;
+    box-sizing: border-box;
+    padding: 4px;
+    border-radius: var(--rounded-full);
+    border: 4px solid #ffffff;
+    background: transparent;
+  }
+
+  .scan-shutter span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--rounded-full);
+    background: #ffffff;
+  }
+
+  .scan-done {
+    justify-self: end;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: var(--rounded-full);
+    background: var(--primary);
+    color: var(--on-primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .scan-desktop-controls {
+    display: none !important;
+  }
+
+  /* ── Crop and converting screen ── */
+
+  .convert-screen {
+    padding: 16px;
+  }
+
+  .convert-card {
+    padding: 28px 20px;
+  }
+
+  .convert-heading h1 {
+    font-size: 24px;
+  }
+
+  /* ── Tool pages: fixes from checking Merge and Split against the designs ── */
+
+  /* Before a file is chosen: nothing to drag on a phone, and one clear button */
+  .dropzone-empty .dropzone-subtitle {
+    display: none;
+  }
+
+  .dropzone .dropzone-upload-content {
+    width: 100%;
+  }
+
+  .dropzone-empty .btn-upload-gradient {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tool-page-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Merge: the remove button belongs at the end of the row, and Sort is the only action */
+  .merge-card-remove {
+    order: 5;
+  }
+
+  .merge-workspace .ws-toolbar-actions .btn:nth-child(2) {
+    display: none;
+  }
+
+  /* Split: the same back arrow and centred title as the other tools */
+  .ws-topbar {
+    gap: 12px;
+    padding: 10px 16px 14px;
+  }
+
+  .ws-topbar-title {
+    position: relative;
+    justify-content: center;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  .ws-topbar-title .tool-page-icon {
+    display: none;
+  }
+
+  .ws-topbar-title .ws-mobile-back {
+    position: absolute;
+    left: -8px;
+    top: 0;
+  }
+
+  .ws-topbar-title h1 {
+    padding-top: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .ws-topbar-file {
+    justify-content: center;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+
+  /* Page grids: three across, so a document fits on screen */
+  .page-preview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .ws-toolbar {
+    gap: 8px;
+  }
+
+  /* Holding a Merge row drags it, so no text selection or long-press image menu */
+  .merge-card {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .merge-card-paper img {
+    pointer-events: none;
+  }
+}

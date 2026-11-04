@@ -28,7 +28,7 @@ export default function Footer() {
     {
       title: 'Categories & Hubs',
       links: [
-        { label: 'All PDF Tools', href: '/#tools' },
+        { label: 'All PDF Tools', href: '/tools' },
         { label: 'Convert PDF Hub', href: '/convert-pdf' },
         { label: 'Security & Privacy Hub', href: '/security-pdf' },
         { label: 'Blog & Insights', href: '/blog' },
@@ -76,40 +76,16 @@ export default function Footer() {
           <p className="footer-brand-desc">
             Every tool you need to work with PDFs in one place. Completely free, private, and runs entirely in your browser.
           </p>
-          <div className="footer-social" style={{ display: 'flex', gap: 'var(--space-md)', marginTop: '8px', flexWrap: 'wrap' }}>
-            <Link
-              href="/about"
-              className="footer-social-link"
-              style={{
-                color: '#a5a8b5',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
-                textDecoration: 'none',
-                transition: 'color var(--duration-fast) var(--ease-default)'
-              }}
-            >
-              ℹ️ About Us
-            </Link>
-
+          <div className="footer-social">
+            <Link href="/about" className="footer-social-link">About us</Link>
             <a
               href="https://x.com/pdfsection"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-social-link"
               aria-label="Follow PDF Section on X"
-              style={{
-                color: '#a5a8b5',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
-                textDecoration: 'none',
-                transition: 'color var(--duration-fast) var(--ease-default)'
-              }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
                 <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
               </svg>
@@ -133,29 +109,18 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>
-            (c) {currentYear} PDF Section. All rights reserved. Made with ❤️ by{' '}
-            <a
-              href="https://x.com/muzammilkarimi"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer-author-link"
-              style={{ color: '#ffffff', textDecoration: 'none', fontWeight: '500' }}
-            >
-              MAK
-            </a>
-          </span>
-          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
-          <Link href="/privacy" className="footer-bottom-link" style={{ color: 'inherit', textDecoration: 'none' }}>
-            Privacy Policy
-          </Link>
-          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
-          <Link href="/terms" className="footer-bottom-link" style={{ color: 'inherit', textDecoration: 'none' }}>
-            Terms of Service
-          </Link>
-        </div>
-        <span>All processing happens in your browser. Your files never leave your device.</span>
+        <span>
+          © {currentYear} PDF Section · Free, private PDF tools · Made by{' '}
+          <a href="https://x.com/muzammilkarimi" target="_blank" rel="noopener noreferrer" className="footer-bottom-link">
+            MAK
+          </a>
+        </span>
+        <nav className="footer-bottom-links" aria-label="Site information">
+          <Link href="/blog" className="footer-bottom-link">Blog</Link>
+          <Link href="/privacy" className="footer-bottom-link">Privacy</Link>
+          <Link href="/terms" className="footer-bottom-link">Terms</Link>
+          <Link href="/about" className="footer-bottom-link">About</Link>
+        </nav>
       </div>
     </footer>
   );
