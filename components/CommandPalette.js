@@ -1,198 +1,196 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { LIVE_TOOLS } from '@/lib/tools';
 import { BLOG_POSTS } from '@/lib/blog';
+import { listLibrary } from '@/lib/fileLibrary';
+import { setIncomingFiles } from '@/lib/incomingFiles';
 import { ToolIcon } from './Icons';
+
+const LIMITS = { tools: 6, guides: 3, files: 3 };
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+
+function matches(query, ...fields) {
+  const q = query.trim().toLowerCase();
+  return !q || fields.some((field) => (field || '').toLowerCase().includes(q));
+}
 
 export default function CommandPalette({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentFiles, setRecentFiles] = useState([]);
   const router = useRouter();
   const inputRef = useRef(null);
 
-  // Combine tools & articles for unified search
-  const toolsList = LIVE_TOOLS.map((t) => ({
-    ...t,
-    title: t.name || t.title || '',
-    type: 'tool',
-  }));
-  const blogsList = BLOG_POSTS.map((b) => ({
-    id: `blog-${b.slug}`,
-    title: b.title || '',
-    description: b.description || '',
-    route: `/blog/${b.slug}`,
-    type: 'blog',
-  }));
-
-  const allItems = [...toolsList, ...blogsList];
-
-  const filteredItems = query.trim() === ''
-    ? allItems.slice(0, 10)
-    : allItems.filter((item) => {
-        const itemTitle = (item.title || item.name || '').toLowerCase();
-        const itemDesc = (item.description || '').toLowerCase();
-        const q = query.toLowerCase();
-        return itemTitle.includes(q) || itemDesc.includes(q);
-      }).slice(0, 12);
-
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-        setSelectedIndex(0);
-      }, 50);
-    }
+    if (!isOpen) return undefined;
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 30);
+    // Recent files live in this browser's file library; none if storage is off or blocked.
+    listLibrary()
+      .then((entries) => setRecentFiles(entries))
+      .catch(() => setRecentFiles([]));
+    return () => clearTimeout(focusTimer);
   }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  const groups = useMemo(() => {
+    const tools = LIVE_TOOLS
+      .filter((t) => matches(query, t.name, t.description, t.categoryLabel))
+      .slice(0, LIMITS.tools)
+      .map((t) => ({
+        key: `tool-${t.id}`,
+        title: t.name,
+        description: t.description,
+        icon: t.icon,
+        color: t.categoryColor,
+        open: () => router.push(t.route),
+      }));
+    const guides = BLOG_POSTS
+      .filter((b) => matches(query, b.title, b.description, b.category))
+      .slice(0, LIMITS.guides)
+      .map((b) => ({
+        key: `guide-${b.slug}`,
+        title: b.title,
+        description: `Guide · ${b.readTime}`,
+        icon: 'pdf',
+        color: 'var(--ink-subtle)',
+        open: () => router.push(`/blog/${b.slug}`),
+      }));
+    const files = recentFiles
+      .filter((f) => matches(query, f.filename))
+      .slice(0, LIMITS.files)
+      .map((f) => {
+        const tool = LIVE_TOOLS.find((t) => t.route === `/${f.tool}`);
+        return {
+          key: `file-${f.id}`,
+          title: f.filename,
+          description: `${tool ? `${tool.name} · ` : ''}${dateFormat.format(f.createdAt)}`,
+          icon: 'pdf',
+          color: 'var(--tool-organize)',
+          open: () => {
+            setIncomingFiles([new File([f.blob], f.filename, { type: f.mime })]);
+            router.push('/');
+          },
+        };
+      });
+    return [
+      { title: 'Tools', items: tools },
+      { title: 'Guides', items: guides },
+      { title: 'Recent files in this browser', items: files },
+    ].filter((group) => group.items.length > 0);
+  }, [query, recentFiles, router]);
+
+  const flatItems = groups.flatMap((group) => group.items);
+  const activeIndex = Math.min(selectedIndex, Math.max(0, flatItems.length - 1));
+
   const handleSelect = (item) => {
     onClose();
-    router.push(item.route);
+    item.open();
   };
 
   const handleKeyDownInModal = (e) => {
+    if (!flatItems.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
+      setSelectedIndex((activeIndex + 1) % flatItems.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
-    } else if (e.key === 'Enter' && filteredItems[selectedIndex]) {
+      setSelectedIndex((activeIndex - 1 + flatItems.length) % flatItems.length);
+    } else if (e.key === 'Enter') {
       e.preventDefault();
-      handleSelect(filteredItems[selectedIndex]);
+      handleSelect(flatItems[activeIndex]);
     }
   };
 
   if (!isOpen) return null;
 
+  let runningIndex = -1;
+
   return (
-    <div
-      className="cmd-palette-backdrop"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(14, 13, 21, 0.75)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '10vh',
-      }}
-    >
+    <div className="cmd-backdrop" onClick={onClose}>
       <div
-        className="cmd-palette-modal"
+        className="cmd-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search tools"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: '620px',
-          backgroundColor: 'var(--surface-1)',
-          border: '1px solid var(--hairline-strong)',
-          borderRadius: 'var(--rounded-lg)',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
-          overflow: 'hidden',
-        }}
       >
-        {/* Search Input Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--hairline)' }}>
-          <ToolIcon name="search" size={20} style={{ color: 'var(--ink-muted)', marginRight: '12px' }} />
+        <label className="cmd-search">
+          <ToolIcon name="search" size={20} />
           <input
             ref={inputRef}
-            type="text"
+            type="search"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDownInModal}
-            placeholder="Type a tool name or topic... (e.g. Merge, Convert, Sign)"
-            style={{
-              width: '100%',
-              backgroundColor: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--ink)',
-              fontSize: '16px',
-              fontFamily: 'inherit',
-            }}
+            placeholder="Search tools, guides and your files"
+            aria-label="Search"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="cmd-results"
+            aria-activedescendant={flatItems[activeIndex] ? `cmd-${flatItems[activeIndex].key}` : undefined}
           />
-          <kbd
-            style={{
-              padding: '3px 8px',
-              fontSize: '11px',
-              fontWeight: '600',
-              color: 'var(--ink-subtle)',
-              backgroundColor: 'var(--surface-2)',
-              border: '1px solid var(--hairline-strong)',
-              borderRadius: '4px',
-            }}
-          >
-            ESC
-          </kbd>
-        </div>
+          <kbd>Esc</kbd>
+        </label>
 
-        {/* Results List */}
-        <div style={{ maxHeight: '380px', overflowY: 'auto', padding: '8px' }}>
-          {filteredItems.length === 0 ? (
-            <div style={{ padding: '30px', textAlign: 'center', color: 'var(--ink-subtle)', fontSize: '14px' }}>
-              No matching PDF tools or articles found.
-            </div>
+        <div className="cmd-results" id="cmd-results" role="listbox" aria-label="Results">
+          {groups.length === 0 ? (
+            <p className="cmd-empty">Nothing matches “{query.trim()}”.</p>
           ) : (
-            filteredItems.map((item, idx) => (
-              <div
-                key={item.id || item.route}
-                onClick={() => handleSelect(item)}
-                onMouseEnter={() => setSelectedIndex(idx)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--rounded-md)',
-                  cursor: 'pointer',
-                  backgroundColor: selectedIndex === idx ? 'color-mix(in srgb, var(--primary) 12%, var(--surface-1))' : 'transparent',
-                  transition: 'background-color 0.1s ease',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: 'var(--rounded-sm)',
-                    backgroundColor: 'var(--surface-2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--primary)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <ToolIcon name={item.type === 'blog' ? 'blog' : (item.icon || 'pdf')} size={16} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--ink)' }}>{item.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.description}
-                  </div>
-                </div>
-                <span style={{ fontSize: '11px', color: 'var(--ink-subtle)', textTransform: 'uppercase', fontWeight: '600' }}>
-                  {item.type}
-                </span>
+            groups.map((group) => (
+              <div key={group.title} role="group" aria-label={group.title}>
+                <span className="cmd-group-title">{group.title}</span>
+                {group.items.map((item) => {
+                  runningIndex += 1;
+                  const index = runningIndex;
+                  const selected = index === activeIndex;
+                  return (
+                    <div
+                      key={item.key}
+                      id={`cmd-${item.key}`}
+                      role="option"
+                      aria-selected={selected}
+                      className="cmd-item"
+                      onClick={() => handleSelect(item)}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                    >
+                      <span
+                        className="cmd-item-icon"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, ${item.color} 14%, var(--surface-1))`,
+                          color: item.color,
+                        }}
+                      >
+                        <ToolIcon name={item.icon} size={17} />
+                      </span>
+                      <span className="cmd-item-text">
+                        <strong>{item.title}</strong>
+                        <span>{item.description}</span>
+                      </span>
+                      {selected && <span className="cmd-item-enter">Enter ↵</span>}
+                    </div>
+                  );
+                })}
               </div>
             ))
           )}
+        </div>
+
+        <div className="cmd-footer" aria-hidden="true">
+          <span>↑ ↓ to move</span>
+          <span>Enter to open</span>
+          <span>Esc to close</span>
         </div>
       </div>
     </div>

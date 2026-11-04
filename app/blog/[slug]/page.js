@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog';
+import { LIVE_TOOLS } from '@/lib/tools';
 import { buildToolMetadata, buildBlogPostJsonLd, buildBreadcrumbJsonLd } from '@/lib/seoUtils';
 import SocialShare from '@/components/SocialShare';
+import GuideToolCard from '@/components/GuideToolCard';
+
+const SHORT_ANSWER_HEADING = /^(the short answer|in short)$/i;
+const RELATED_COUNT = 3;
 
 // Pre-render blog slug routes statically
 export async function generateStaticParams() {
@@ -26,6 +31,135 @@ export async function generateMetadata({ params }) {
   });
 }
 
+function slugify(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// The tool a guide is about: the first tool page it links to.
+function guideTool(content) {
+  for (const match of content.matchAll(/\]\((\/[a-z0-9-]+)\)/g)) {
+    const tool = LIVE_TOOLS.find((t) => t.route === match[1]);
+    if (tool) return tool;
+  }
+  return null;
+}
+
+function relatedPosts(post) {
+  const others = BLOG_POSTS.filter((p) => p.slug !== post.slug);
+  return [
+    ...others.filter((p) => p.category === post.category),
+    ...others.filter((p) => p.category !== post.category),
+  ].slice(0, RELATED_COUNT);
+}
+
+// Inline bold, code and [text](url) link renderer
+function renderInline(str) {
+  const parts = [];
+  const regex = /(\*\*.*?\*\*|`.*?`|\[[^\]]+\]\([^)\s]+\))/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(str)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(str.substring(lastIndex, match.index));
+    }
+
+    const segment = match[0];
+    if (segment.startsWith('**') && segment.endsWith('**')) {
+      parts.push(<strong key={match.index}>{segment.slice(2, -2)}</strong>);
+    } else if (segment.startsWith('[')) {
+      const [, label, href] = segment.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
+      parts.push(
+        href.startsWith('/') ? (
+          <Link key={match.index} href={href}>{label}</Link>
+        ) : (
+          <a key={match.index} href={href} target="_blank" rel="noopener noreferrer">{label}</a>
+        )
+      );
+    } else if (segment.startsWith('`') && segment.endsWith('`')) {
+      parts.push(<code key={match.index}>{segment.slice(1, -1)}</code>);
+    }
+
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < str.length) {
+    parts.push(str.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : str;
+}
+
+/**
+ * Turns the post's markdown-like text into sections, one per "### " heading.
+ * Each section is { heading, id, blocks } where blocks are JSX elements.
+ */
+function parseSections(text) {
+  const sections = [{ heading: null, id: null, blocks: [] }];
+  let list = null; // { type: 'ul' | 'ol', items: [] }
+  let paragraph = [];
+  const current = () => sections.at(-1);
+
+  const flushParagraph = (key) => {
+    if (paragraph.length) {
+      current().blocks.push(<p key={`p-${key}`}>{renderInline(paragraph.join(' '))}</p>);
+      paragraph = [];
+    }
+  };
+
+  const flushList = (key) => {
+    if (!list) return;
+    const ListTag = list.type;
+    current().blocks.push(
+      <ListTag key={`list-${key}`}>
+        {list.items.map((item, i) => {
+          const lead = item.match(/^\*\*(.*?)\*\*:(.*)$/);
+          return lead ? (
+            <li key={i}><strong>{lead[1]}:</strong>{renderInline(lead[2])}</li>
+          ) : (
+            <li key={i}>{renderInline(item)}</li>
+          );
+        })}
+      </ListTag>
+    );
+    list = null;
+  };
+
+  const lines = (text || '').split('\n');
+  lines.forEach((raw, idx) => {
+    const line = raw.trim();
+    if (!line || line === '---') {
+      flushParagraph(idx);
+      flushList(idx);
+      return;
+    }
+    if (line.startsWith('### ')) {
+      flushParagraph(idx);
+      flushList(idx);
+      const heading = line.slice(4);
+      sections.push({ heading, id: slugify(heading), blocks: [] });
+      return;
+    }
+    const ordered = /^\d+\.\s/.test(line);
+    if (line.startsWith('* ') || ordered) {
+      flushParagraph(idx);
+      const type = ordered ? 'ol' : 'ul';
+      if (!list || list.type !== type) {
+        flushList(idx);
+        list = { type, items: [] };
+      }
+      list.items.push(ordered ? line.replace(/^\d+\.\s/, '') : line.slice(2));
+      return;
+    }
+    flushList(idx);
+    paragraph.push(line);
+  });
+  flushParagraph(lines.length);
+  flushList(lines.length);
+
+  return sections.filter((section) => section.heading || section.blocks.length);
+}
+
 export default async function BlogArticlePage({ params }) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
@@ -46,187 +180,10 @@ export default async function BlogArticlePage({ params }) {
     parent: { name: 'Blog', route: '/blog' },
   });
 
-  // Inline bold, code and [text](url) link renderer
-  const renderParagraphText = (str) => {
-    let parts = [];
-    let regex = /(\*\*.*?\*\*|`.*?`|\[[^\]]+\]\([^)\s]+\))/g;
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(str)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(str.substring(lastIndex, match.index));
-      }
-
-      const segment = match[0];
-      if (segment.startsWith('**') && segment.endsWith('**')) {
-        parts.push(<strong key={match.index} style={{ color: 'var(--ink)', fontWeight: '600' }}>{segment.slice(2, -2)}</strong>);
-      } else if (segment.startsWith('[')) {
-        const linkMatch = segment.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
-        const label = linkMatch[1];
-        const href = linkMatch[2];
-        const linkStyle = { color: 'var(--primary)', fontWeight: '600' };
-        parts.push(
-          href.startsWith('/') ? (
-            <Link key={match.index} href={href} style={linkStyle}>{label}</Link>
-          ) : (
-            <a key={match.index} href={href} style={linkStyle} target="_blank" rel="noopener noreferrer">{label}</a>
-          )
-        );
-      } else if (segment.startsWith('`') && segment.endsWith('`')) {
-        parts.push(
-          <code 
-            key={match.index} 
-            style={{ 
-              fontFamily: 'var(--font-jetbrains)', 
-              backgroundColor: 'var(--surface-2)', 
-              padding: '2px 6px', 
-              borderRadius: '4px',
-              fontSize: '13.5px',
-              color: 'var(--primary)',
-              border: '1px solid var(--hairline-strong)'
-            }}
-          >
-            {segment.slice(1, -1)}
-          </code>
-        );
-      }
-
-      lastIndex = regex.lastIndex;
-    }
-
-    if (lastIndex < str.length) {
-      parts.push(str.substring(lastIndex));
-    }
-
-    return parts.length > 0 ? parts : str;
-  };
-
-  // Parse markdown-like content blocks into JSX elements safely using a robust line-by-line compiler
-  const parseContent = (text) => {
-    if (!text) return [];
-
-    const lines = text.split('\n');
-    const elements = [];
-    
-    let currentList = null; // { type: 'ul' | 'ol', items: [] }
-    let currentParagraph = [];
-
-    const flushParagraph = (key) => {
-      if (currentParagraph.length > 0) {
-        const textContent = currentParagraph.join(' ');
-        elements.push(
-          <p key={`p-${key}`} style={{ lineHeight: '1.8', fontSize: '16px', color: 'var(--ink-muted)', marginBottom: 'var(--space-md)' }}>
-            {renderParagraphText(textContent)}
-          </p>
-        );
-        currentParagraph = [];
-      }
-    };
-
-    const flushList = (key) => {
-      if (currentList) {
-        const ListTag = currentList.type;
-        const listStyle = currentList.type === 'ul' ? 'disc' : 'decimal';
-        elements.push(
-          <ListTag 
-            key={`list-${key}`} 
-            style={{ 
-              margin: '0 0 var(--space-md) var(--space-md)', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '8px', 
-              listStyleType: listStyle, 
-              color: 'var(--ink-muted)',
-              paddingLeft: '20px'
-            }}
-          >
-            {currentList.items.map((itemText, i) => {
-              const boldMatch = itemText.match(/^\*\*(.*?)\*\*:(.*)$/);
-              if (boldMatch) {
-                return (
-                  <li key={i} style={{ lineHeight: '1.7', fontSize: '15.5px' }}>
-                    <strong style={{ color: 'var(--ink)', fontWeight: '600' }}>{boldMatch[1]}:</strong>{renderParagraphText(boldMatch[2])}
-                  </li>
-                );
-              }
-              return (
-                <li key={i} style={{ lineHeight: '1.7', fontSize: '15.5px' }}>
-                  {renderParagraphText(itemText)}
-                </li>
-              );
-            })}
-          </ListTag>
-        );
-        currentList = null;
-      }
-    };
-
-    for (let idx = 0; idx < lines.length; idx++) {
-      const line = lines[idx].trim();
-      
-      // Empty line
-      if (!line) {
-        flushParagraph(idx);
-        flushList(idx);
-        continue;
-      }
-
-      // Horizontal rule
-      if (line === '---') {
-        flushParagraph(idx);
-        flushList(idx);
-        elements.push(<hr key={`hr-${idx}`} style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-xl) 0' }} />);
-        continue;
-      }
-
-      // Heading 3 / H2
-      if (line.startsWith('### ')) {
-        flushParagraph(idx);
-        flushList(idx);
-        elements.push(
-          <h2 key={`h2-${idx}`} style={{ fontWeight: '800', color: 'var(--ink)', marginTop: 'var(--space-xl)', marginBottom: 'var(--space-md)', fontSize: '22px', letterSpacing: '-0.4px', lineHeight: '1.3' }}>
-            {line.replace('### ', '')}
-          </h2>
-        );
-        continue;
-      }
-
-      // Unordered list item
-      if (line.startsWith('* ')) {
-        flushParagraph(idx);
-        if (!currentList || currentList.type !== 'ul') {
-          flushList(idx);
-          currentList = { type: 'ul', items: [] };
-        }
-        currentList.items.push(line.replace('* ', ''));
-        continue;
-      }
-
-      // Ordered list item
-      if (/^\d+\.\s/.test(line)) {
-        flushParagraph(idx);
-        if (!currentList || currentList.type !== 'ol') {
-          flushList(idx);
-          currentList = { type: 'ol', items: [] };
-        }
-        currentList.items.push(line.replace(/^\d+\.\s/, ''));
-        continue;
-      }
-
-      // Standard paragraph text
-      if (currentList) {
-        flushList(idx);
-      }
-      currentParagraph.push(line);
-    }
-
-    // Flush remaining
-    flushParagraph(lines.length);
-    flushList(lines.length);
-
-    return elements;
-  };
+  const sections = parseSections(post.content);
+  const tool = guideTool(post.content);
+  const related = relatedPosts(post);
+  const toc = sections.filter((section) => section.heading);
 
   return (
     <>
@@ -234,78 +191,88 @@ export default async function BlogArticlePage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumbJsonLd]) }}
       />
-      <main className="main page-scroll" style={{ minHeight: '100vh', padding: 'calc(var(--nav-height) + var(--space-xl)) 0 var(--space-xxl)', background: 'radial-gradient(circle at top right, rgba(94, 106, 210, 0.02), transparent 45%)' }}>
-        <div className="container" style={{ maxWidth: '700px' }}>
-          
-          {/* Back Button */}
-          <Link href="/blog" className="btn btn-secondary" style={{ display: 'inline-flex', padding: '8px 16px', gap: '8px', marginBottom: 'var(--space-xl)', fontSize: '13px', width: 'fit-content' }}>
-            ◀ Back to articles
-          </Link>
+      <main className="main page-scroll guide-page">
+        <div className="guide-layout container">
+          <article className="guide-article">
+            <nav className="tool-breadcrumb" aria-label="Breadcrumb">
+              <Link href="/blog">Guides</Link>
+              <span aria-hidden="true">/</span>
+              <span aria-current="page">{post.category}</span>
+            </nav>
+            <h1 className="guide-title">{post.title}</h1>
+            <div className="guide-meta">
+              <span>{post.author}</span>
+              <span aria-hidden="true">·</span>
+              <span>{post.readTime}</span>
+              <span aria-hidden="true">·</span>
+              <span>{post.date}</span>
+            </div>
+            <p className="guide-lead">{post.description}</p>
 
-          {/* Article Container */}
-          <article style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--hairline-strong)', borderRadius: 'var(--rounded-lg)', padding: 'var(--space-xl)', boxShadow: '0 4px 24px rgba(0,0,0,0.01)' }}>
-            {/* Article Meta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap', marginBottom: 'var(--space-sm)' }}>
-              <span 
-                style={{ 
-                  fontSize: '10px', 
-                  fontWeight: '700', 
-                  textTransform: 'uppercase', 
-                  color: 'var(--primary)',
-                  backgroundColor: 'color-mix(in srgb, var(--primary) 12%, var(--surface-2))',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                {post.category}
-              </span>
-              <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.date}</span>
-              <span style={{ color: 'var(--hairline-strong)' }}>•</span>
-              <span className="caption ink-subtle" style={{ fontSize: '12px' }}>{post.readTime}</span>
+            {sections.map((section, index) => {
+              const isShort = section.heading && SHORT_ANSWER_HEADING.test(section.heading);
+              return (
+                <section
+                  key={section.id || `intro-${index}`}
+                  id={section.id || undefined}
+                  className={`guide-section${isShort ? ' guide-short' : ''}`}
+                >
+                  {section.heading && <h2>{isShort ? 'In short' : section.heading}</h2>}
+                  {section.blocks}
+                </section>
+              );
+            })}
+
+            {tool && tool.id !== 'translate' && (
+              <div className="guide-callout">
+                <strong>Private by design.</strong>
+                <span>
+                  {tool.name} runs in your browser tab. Your file is never sent to a server, so it is safe for contracts and ID documents.
+                </span>
+              </div>
+            )}
+
+            <div className="guide-share">
+              <SocialShare title={post.title} url={`https://www.pdfsection.com/blog/${post.slug}`} />
             </div>
 
-            {/* Title */}
-            <h1 className="display-sm" style={{ fontWeight: '800', marginBottom: 'var(--space-md)', fontSize: '30px', lineHeight: '1.3', letterSpacing: '-0.6px', color: 'var(--ink)' }}>
-              {post.title}
-            </h1>
-
-            {/* Horizontal Divider separating header and content */}
-            <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-md) 0 var(--space-lg)' }} />
-
-            {/* Content body */}
-            <div className="prose" style={{ fontFamily: 'inherit', color: 'var(--ink-muted)' }}>
-              {parseContent(post.content)}
-            </div>
-
-            <hr style={{ border: 'none', borderTop: '1px solid var(--hairline-strong)', margin: 'var(--space-lg) 0' }} />
-            
-            {/* Social Share Bar */}
-            <SocialShare title={post.title} url={`https://www.pdfsection.com/blog/${post.slug}`} />
+            {related.length > 0 && (
+              <section className="guide-related" id="related-guides" aria-labelledby="related-guides-title">
+                <h2 id="related-guides-title">Related guides</h2>
+                <div className="guide-related-grid">
+                  {related.map((other) => (
+                    <Link key={other.slug} href={`/blog/${other.slug}`}>{other.title}</Link>
+                  ))}
+                </div>
+              </section>
+            )}
           </article>
 
-          {/* CTA box */}
-          <section 
-            className="card" 
-            style={{ 
-              textAlign: 'center', 
-              padding: 'var(--space-xl)', 
-              border: '1px solid var(--primary)', 
-              borderRadius: 'var(--rounded-xl)',
-              backgroundColor: 'color-mix(in srgb, var(--primary) 3%, var(--surface-1))',
-              marginTop: 'var(--space-xxl)',
-              boxShadow: '0 8px 30px rgba(94, 106, 210, 0.03)'
-            }}
-          >
-            <h3 className="body-lg" style={{ fontWeight: '800', color: 'var(--ink)' }}>Need to work with PDF documents?</h3>
-            <p className="body-sm ink-muted" style={{ margin: 'var(--space-xs) 0 var(--space-md)', fontSize: '14px' }}>
-              Experience 100% private local compiling with zero file uploads.
-            </p>
-            <Link href="/" className="btn btn-primary" style={{ display: 'inline-flex', padding: '10px 24px', textDecoration: 'none', fontWeight: '600' }}>
-              Browse tools workspace
-            </Link>
-          </section>
+          <aside className="guide-aside">
+            {tool ? (
+              <GuideToolCard
+                tool={{ id: tool.id, name: tool.name, route: tool.route, icon: tool.icon, categoryColor: tool.categoryColor }}
+              />
+            ) : (
+              <div className="guide-tool-card">
+                <strong>Every PDF tool, free</strong>
+                <span className="guide-tool-text">Merge, compress, sign and more, right in your browser.</span>
+                <Link href="/tools" className="btn btn-primary">Browse all tools</Link>
+              </div>
+            )}
 
+            {toc.length > 1 && (
+              <nav className="guide-toc" aria-label="On this page">
+                <span>On this page</span>
+                {toc.map((section) => (
+                  <a key={section.id} href={`#${section.id}`}>
+                    {SHORT_ANSWER_HEADING.test(section.heading) ? 'In short' : section.heading}
+                  </a>
+                ))}
+                {related.length > 0 && <a href="#related-guides">Related guides</a>}
+              </nav>
+            )}
+          </aside>
         </div>
       </main>
     </>

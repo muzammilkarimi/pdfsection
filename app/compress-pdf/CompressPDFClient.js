@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import FileDropzone from '@/components/FileDropzone';
@@ -10,27 +10,26 @@ import { ToolIcon } from '@/components/Icons';
 import { loadPdf, downloadBlob, checkPdfEncryption } from '@/lib/pdfUtils';
 import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender } from '@/lib/renderUtils';
+import { usePref } from '@/lib/preferences';
 
 const COMPRESSION_LEVELS = {
   low: {
-    label: 'Low Compression',
-    desc: 'Lossless PDF optimization. Keeps text selectable, preserves vectors, and cleans up document headers.',
-    icon: 'Low',
+    label: 'Light',
+    desc: 'No quality loss and text stays selectable. Best for text documents.',
     mode: 'lossless',
   },
   medium: {
-    label: 'Recommended',
-    desc: 'Balances quality and size. Best for scanned files, targeting sizes under 1MB–2MB.',
-    icon: 'Med',
+    label: 'Balanced',
+    badge: 'Recommended',
+    desc: 'Good for scans and photo-heavy files. Pages are saved as images, so text can’t be selected afterwards.',
     mode: 'raster',
     dpi: 115,
     quality: 0.72,
     maxDimension: 1800,
   },
   high: {
-    label: 'Maximum Compression',
-    desc: 'Smallest file size. Optimizes image grids to target sizes under 100KB–200KB.',
-    icon: 'Max',
+    label: 'Smallest',
+    desc: 'For strict upload limits. Lower image quality, and pages are saved as images.',
     mode: 'raster',
     dpi: 92,
     quality: 0.58,
@@ -63,44 +62,73 @@ async function compressLossless(file) {
   });
 }
 
+// Renders one page to a JPEG with the level's settings. Shared by compression and the estimate.
+async function renderPageJpeg(renderDoc, pageNumber, settings) {
+  const sourcePage = await renderDoc.getPage(pageNumber);
+  const baseViewport = sourcePage.getViewport({ scale: 1 });
+  const requestedScale = settings.dpi / 72;
+  const maxSide = Math.max(baseViewport.width, baseViewport.height);
+  const scale = Math.min(requestedScale, settings.maxDimension / maxSide);
+  const viewport = sourcePage.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.floor(viewport.width));
+  canvas.height = Math.max(1, Math.floor(viewport.height));
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  await sourcePage.render({ canvasContext: ctx, viewport }).promise;
+
+  const imageBlob = await blobFromCanvas(canvas, settings.quality);
+  canvas.width = 1;
+  canvas.height = 1;
+  sourcePage.cleanup?.();
+  return { blob: imageBlob, width: baseViewport.width, height: baseViewport.height };
+}
+
+const EMAIL_LIMIT_BYTES = 10 * 1024 * 1024;
+const ESTIMATE_SAMPLE_PAGES = 3;
+// Rough per-page cost of the PDF structure around each embedded image.
+const PAGE_OVERHEAD_BYTES = 600;
+
+// Expected output size per level. Light runs for real (no rendering, so it is quick);
+// the image levels render a few pages spread through the document and scale up.
+// Like the real run, a level never ends up larger than the original file.
+async function estimateSizes(file) {
+  const lossless = Math.min((await compressLossless(file)).byteLength, file.size);
+  const renderDoc = await loadPdfForRender(file);
+  try {
+    const total = renderDoc.numPages;
+    const count = Math.min(ESTIMATE_SAMPLE_PAGES, total);
+    const samples = Array.from({ length: count }, (_, i) => 1 + Math.floor((i * total) / count));
+    const estimates = { low: lossless };
+    for (const id of ['medium', 'high']) {
+      let sampleBytes = 0;
+      for (const pageNumber of samples) {
+        sampleBytes += (await renderPageJpeg(renderDoc, pageNumber, COMPRESSION_LEVELS[id])).blob.size;
+      }
+      const raster = (sampleBytes / count + PAGE_OVERHEAD_BYTES) * total;
+      estimates[id] = Math.min(raster, lossless);
+    }
+    return estimates;
+  } finally {
+    renderDoc.cleanup?.();
+    renderDoc.destroy?.();
+  }
+}
+
 async function compressRaster(file, settings, onProgress) {
   const renderDoc = await loadPdfForRender(file);
   const outputDoc = await PDFDocument.create({ updateMetadata: false });
 
   try {
     for (let pageNumber = 1; pageNumber <= renderDoc.numPages; pageNumber++) {
-      const sourcePage = await renderDoc.getPage(pageNumber);
-      const baseViewport = sourcePage.getViewport({ scale: 1 });
-      const requestedScale = settings.dpi / 72;
-      const maxSide = Math.max(baseViewport.width, baseViewport.height);
-      const scale = Math.min(requestedScale, settings.maxDimension / maxSide);
-      const viewport = sourcePage.getViewport({ scale });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.floor(viewport.width));
-      canvas.height = Math.max(1, Math.floor(viewport.height));
-
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      await sourcePage.render({ canvasContext: ctx, viewport }).promise;
-
-      const imageBlob = await blobFromCanvas(canvas, settings.quality);
-      const imageBytes = await imageBlob.arrayBuffer();
-      const image = await outputDoc.embedJpg(imageBytes);
-      const page = outputDoc.addPage([baseViewport.width, baseViewport.height]);
-
-      page.drawImage(image, {
-        x: 0,
-        y: 0,
-        width: baseViewport.width,
-        height: baseViewport.height,
-      });
-
-      canvas.width = 1;
-      canvas.height = 1;
-      sourcePage.cleanup?.();
+      const { blob, width, height } = await renderPageJpeg(renderDoc, pageNumber, settings);
+      const image = await outputDoc.embedJpg(await blob.arrayBuffer());
+      const page = outputDoc.addPage([width, height]);
+      page.drawImage(image, { x: 0, y: 0, width, height });
       onProgress?.(Math.round((pageNumber / renderDoc.numPages) * 100));
     }
 
@@ -119,30 +147,47 @@ async function compressRaster(file, settings, onProgress) {
 export default function CompressPDFClient() {
   const deliver = useResultHandoff('compress-pdf');
   const [file, setFile] = useState(null);
-  const [level, setLevel] = useState('medium');
+  const preferredLevel = usePref('compressLevel');
+  const [chosenLevel, setLevel] = useState(null);
+  const level = chosenLevel ?? (COMPRESSION_LEVELS[preferredLevel] ? preferredLevel : 'medium');
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  // null while estimating, 'failed' if the sample could not be measured.
+  const [estimates, setEstimates] = useState(null);
+  const estimateRun = useRef(0);
 
   const handleFilesSelected = useCallback(async (files) => {
     const selectedFile = files[0] || null;
+    const run = ++estimateRun.current;
     setFile(selectedFile);
     setResult(null);
     setShowToast(false);
     setProgress(0);
     setIsLocked(false);
+    setEstimates(null);
 
     if (selectedFile) {
       const locked = await checkPdfEncryption(selectedFile);
       if (locked) {
         setIsLocked(true);
+        return;
       }
+      estimateSizes(selectedFile)
+        .then((sizes) => {
+          if (run === estimateRun.current) setEstimates(sizes);
+        })
+        .catch(() => {
+          if (run === estimateRun.current) setEstimates('failed');
+        });
     }
   }, []);
 
   const resetFile = () => {
+    estimateRun.current += 1;
+    setEstimates(null);
     setFile(null);
     setResult(null);
     setShowToast(false);
@@ -211,6 +256,13 @@ export default function CompressPDFClient() {
     { id: 'high', ...COMPRESSION_LEVELS.high },
   ];
 
+  const estimateOf = (id) => (estimates && estimates !== 'failed' ? estimates[id] : null);
+  const savingOf = (bytes) => Math.max(0, Math.round((1 - bytes / file.size) * 100));
+  const afterBytes = result ? result.compressedSize : estimateOf(level);
+  const afterText = afterBytes != null
+    ? `${result ? '' : '~'}${formatSize(afterBytes)}`
+    : estimates === null && !isLocked ? 'Estimating…' : '—';
+
   return (
     <ToolPageLayout
       title="Compress PDF"
@@ -231,14 +283,24 @@ export default function CompressPDFClient() {
       ) : (
         <PageToolWorkspace
           title="Compress PDF"
-          description="Choose a compression level below, then export your optimized PDF."
+          description="Make your PDF smaller for email and uploads."
           icon="compress"
           iconColor="var(--tool-optimize)"
-          file={file}
-          onReset={resetFile}
           ariaLabel="Compress PDF workspace"
           preview={(
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div className="ws-toolbar">
+                <span className="ws-file-label">
+                  <ToolIcon name="pdf" size={18} />
+                  <strong>{file.name}</strong>
+                  <span>· {formatSize(file.size)}</span>
+                </span>
+                <div className="ws-toolbar-actions">
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={resetFile} disabled={processing}>
+                    Change file
+                  </button>
+                </div>
+              </div>
               {result ? (
                 <div
                   className="card"
@@ -318,32 +380,32 @@ export default function CompressPDFClient() {
                 <>
                   {!isLocked && (
                     <>
-                      <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Select Compression Level</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                      <h2 className="ws-section-title" id="compress-level-label">How small?</h2>
+                      <div className="ws-choice-grid" role="radiogroup" aria-labelledby="compress-level-label">
                         {levels.map((item) => (
                           <button
                             key={item.id}
                             type="button"
-                            className="card"
+                            role="radio"
+                            aria-checked={level === item.id}
+                            className="ws-choice"
                             onClick={() => setLevel(item.id)}
                             disabled={processing}
-                            style={{
-                              padding: 'var(--space-md)',
-                              textAlign: 'left',
-                              cursor: processing ? 'not-allowed' : 'pointer',
-                              border: level === item.id ? '2px solid var(--primary)' : '1px solid var(--hairline-strong)',
-                              backgroundColor: level === item.id ? 'rgba(94, 106, 210, 0.05)' : 'var(--surface-1)',
-                              borderRadius: 'var(--rounded-lg)',
-                              transition: 'all 0.15s ease',
-                            }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                              <span style={{ minWidth: 40, fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{item.icon}</span>
-                              <div>
-                                <div style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</div>
-                                <div style={{ fontSize: 12, color: 'var(--ink-subtle)', marginTop: 4, lineHeight: 1.4 }}>{item.desc}</div>
-                              </div>
-                            </div>
+                            <span className="ws-choice-head">
+                              <span className="ws-choice-name">{item.label}</span>
+                              <span className="ws-choice-radio" aria-hidden="true" />
+                            </span>
+                            {estimateOf(item.id) != null ? (
+                              <span className="ws-choice-size">
+                                ~{formatSize(estimateOf(item.id))}
+                                <span className="ws-choice-saving">−{savingOf(estimateOf(item.id))}%</span>
+                              </span>
+                            ) : estimates === null ? (
+                              <span className="ws-choice-size ws-choice-size-pending">Estimating…</span>
+                            ) : null}
+                            {item.badge && <span className="ws-choice-badge">{item.badge}</span>}
+                            <span className="ws-choice-desc">{item.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -381,7 +443,7 @@ export default function CompressPDFClient() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
                 <button
                   type="button"
-                  className="btn btn-primary btn-lg btn-attention btn-success-state"
+                  className="btn btn-primary btn-lg btn-success-state"
                   onClick={() => downloadBlob(result.bytes, result.filename, 'application/pdf')}
                   style={{ width: '100%' }}
                   id="redownload-compress-button"
@@ -403,7 +465,7 @@ export default function CompressPDFClient() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', width: '100%' }}>
                 <button
                   type="button"
-                  className="btn btn-primary btn-lg btn-attention"
+                  className="btn btn-primary btn-lg"
                   onClick={handleCompress}
                   disabled={processing || isLocked}
                   id="compress-button"
@@ -425,40 +487,31 @@ export default function CompressPDFClient() {
             )
           )}
         >
-          <div className="page-control-stat">
-            <span>Original File Size</span>
-            <strong>{formatSize(file.size)}</strong>
+          <div className="ws-estimate">
+            <span className="ws-estimate-title">{result ? 'Result' : 'Estimate'}</span>
+            <div className="ws-estimate-row">
+              <span>Now</span>
+              <strong>{formatSize(file.size)}</strong>
+            </div>
+            <div className="ws-bar"><span className="ws-bar-muted" style={{ width: '100%' }} /></div>
+            <div className="ws-estimate-row">
+              <span>After{result ? '' : ` · ${COMPRESSION_LEVELS[level].label}`}</span>
+              <strong className="ws-estimate-after">{afterText}</strong>
+            </div>
+            <div className="ws-bar">
+              <span style={{ width: afterBytes != null ? `${Math.max(2, 100 - savingOf(afterBytes))}%` : '0%' }} />
+            </div>
           </div>
 
-          <div className="merge-summary-list">
-            <div>
-              <span className="ink-muted">Selected Level</span>
-              <strong>{COMPRESSION_LEVELS[level].label}</strong>
-            </div>
-            <div>
-              <span className="ink-muted">Compression Mode</span>
-              <strong style={{ textTransform: 'capitalize' }}>{COMPRESSION_LEVELS[level].mode}</strong>
-            </div>
-            {result && (
-              <>
-                <div>
-                  <span className="ink-muted">New File Size</span>
-                  <strong style={{ color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--primary)' }}>{formatSize(result.compressedSize)}</strong>
-                </div>
-                <div>
-                  <span className="ink-muted">Size Reduction</span>
-                  <strong style={{ color: result.isAlreadyOptimized ? 'var(--primary)' : 'var(--semantic-success)' }}>
-                    {result.isAlreadyOptimized ? '0% (Already Optimal)' : `-${result.reduction}%`}
-                  </strong>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="page-help-note">
-            <ToolIcon name="check" size={16} />
-            <span>Files are processed 100% locally in your browser. Your documents never touch external servers.</span>
-          </div>
+          {afterBytes != null && (
+            <p className={`ws-note ${afterBytes < EMAIL_LIMIT_BYTES ? 'ws-note-good' : 'ws-note-warn'}`}>
+              {result?.isAlreadyOptimized
+                ? 'This file was already as small as it can get, so the original is kept.'
+                : afterBytes < EMAIL_LIMIT_BYTES
+                  ? `${savingOf(afterBytes)}% smaller — fits most email attachment limits (under 10 MB).`
+                  : `${savingOf(afterBytes)}% smaller, but still over 10 MB. Try Smallest for strict limits.`}
+            </p>
+          )}
         </PageToolWorkspace>
       )}
 

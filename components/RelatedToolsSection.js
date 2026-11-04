@@ -1,10 +1,15 @@
 import Link from 'next/link';
-import { LIVE_TOOLS } from '@/lib/tools';
+import { LIVE_TOOLS, getToolByRoute } from '@/lib/tools';
 import { ToolIcon } from './Icons';
 
 export default function RelatedToolsSection({ currentRoute }) {
-  // Select related tools excluding current route
-  const relatedTools = LIVE_TOOLS.filter((t) => t.route !== currentRoute).slice(0, 6);
+  // Tools from the same category first, then the rest, excluding the current tool
+  const category = getToolByRoute(currentRoute)?.category;
+  const others = LIVE_TOOLS.filter((t) => t.route !== currentRoute);
+  const relatedTools = [
+    ...others.filter((t) => t.category === category),
+    ...others.filter((t) => t.category !== category),
+  ].slice(0, 6);
 
   return (
     <section className="related-tools-section" style={{ marginTop: 'var(--space-xxl)', paddingTop: 'var(--space-xl)', borderTop: '1px solid var(--hairline)' }}>

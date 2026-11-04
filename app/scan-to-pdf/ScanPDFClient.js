@@ -149,31 +149,33 @@ export default function ScanPDFClient() {
         preview={
           <div style={{ width: '100%' }}>
             {stream ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 'var(--space-sm)',
-                  width: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: '100%',
-                    maxWidth: '480px',
-                    borderRadius: 'var(--rounded-lg)',
-                    overflow: 'hidden',
-                    border: '1px solid var(--hairline-strong)',
-                    backgroundColor: '#000000',
-                    aspectRatio: '4/3',
-                    position: 'relative',
-                  }}
-                >
-                  <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} playsInline muted />
+              <div className="scan-live">
+                <div className="scan-live-top">
+                  <button type="button" className="scan-round-btn" onClick={stopCamera} aria-label="Close camera">
+                    <ToolIcon name="x" size={20} />
+                  </button>
+                  <div className="scan-filters" role="radiogroup" aria-label="Scan style">
+                    {[['bw', 'Document'], ['grayscale', 'Grey'], ['color', 'Colour']].map(([id, label]) => (
+                      <button key={id} type="button" role="radio" aria-checked={filterMode === id} onClick={() => setFilterMode(id)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                <div className="scan-video">
+                  <video ref={videoRef} playsInline muted />
+                </div>
+
+                <div className="scan-live-bottom">
+                  <span className="scan-count">{scannedPages.length} page{scannedPages.length === 1 ? '' : 's'}</span>
+                  <button type="button" className="scan-shutter" onClick={captureFrame} aria-label="Take photo">
+                    <span />
+                  </button>
+                  <button type="button" className="scan-done" onClick={stopCamera}>Done</button>
+                </div>
+
+                <div className="scan-desktop-controls" style={{ display: 'flex', gap: 'var(--space-sm)' }}>
                   <button className="btn btn-primary" onClick={captureFrame}>
                     Snap Snapshot
                   </button>

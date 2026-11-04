@@ -16,6 +16,7 @@
 
   /* ── Surface Ladder ── */
   --canvas: #fbfaff;
+  --card: #ffffff;
   --surface-1: #f6f4fa;
   --surface-2: #ededf5;
   --surface-3: #e3e2ed;
@@ -77,6 +78,7 @@
 
   /* ── Surface Ladder ── */
   --canvas: #0a0910;
+  --card: #12111a;
   --surface-1: #12111a;
   --surface-2: #1b1926;
   --surface-3: #242233;

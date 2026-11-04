@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
           <h1 className="display-sm" style={{ fontWeight: '800', marginBottom: 'var(--space-xs)' }}>
             Privacy Policy
           </h1>
-          <p className="caption ink-subtle">Last updated: July 17, 2026</p>
+          <p className="caption ink-subtle">Last updated: November 3, 2026</p>
         </header>
 
         {/* Content */}
@@ -44,7 +44,7 @@ export default function PrivacyPolicyPage() {
             <ul style={{ margin: 'var(--space-xs) 0 0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <li>❌ <strong>No Uploads</strong>: Your documents are never transmitted over the internet to our servers.</li>
               <li>❌ <strong>No Logs</strong>: We do not capture, cache, inspect, or save any text content, passwords, metadata, or images from your files.</li>
-              <li>❌ <strong>No Storage</strong>: File buffers exist only temporarily within your local browser memory tab and are wiped instantly when the tab is closed.</li>
+              <li>❌ <strong>No Server Storage</strong>: Your documents are never stored on our servers. Your browser keeps only the most recent finished file, on your own device, so the download page still works after a refresh (see section 4).</li>
             </ul>
             <p style={{ marginTop: 'var(--space-xs)' }}>
               <strong>Exception — Translate PDF:</strong> this tool extracts text from your PDF in your browser and sends that text, in short chunks, to the third-party MyMemory translation API (api.mymemory.translated.net) to obtain the translation. The PDF file itself is not uploaded, but its text is. Do not use this tool for confidential documents. All other tools stay fully local.
@@ -62,10 +62,24 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>4. Local Storage Usage</h2>
+            <h2 className="body-md" style={{ fontWeight: '700', color: 'var(--ink)', marginBottom: 'var(--space-xs)' }}>4. Storage in Your Browser</h2>
             <p>
-              We use the browser&apos;s standard Local Storage mechanism to persist only your UI layout preferences (such as light vs. dark theme selection). No personal or document-related data is ever stored in Local Storage.
+              Everything below is saved on your own device, inside your browser. None of it is sent to us.
             </p>
+            <ul style={{ margin: 'var(--space-xs) 0 0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <li>
+                <strong>Your most recent result</strong>: when a tool finishes, the output file is saved in your browser&apos;s IndexedDB so the download page keeps working if you refresh it. Only one file is kept; it is replaced by your next result and is no longer offered after one hour. It stays in your browser until it is replaced, you choose to start over from the download page, or you clear this site&apos;s data in your browser settings.
+              </li>
+              <li>
+                <strong>Your files</strong>: unless you turn it off in <Link href="/settings">Settings</Link>, finished files are also saved in your browser&apos;s IndexedDB so you can find them again on the <Link href="/files">Your files</Link> page. They are deleted after the period you choose (7 days unless you change it, and never more than the 50 newest files). You can delete them at any time from either page. Anyone using the same browser profile can see them.
+              </li>
+              <li>
+                <strong>Your signature</strong>: if you tick &quot;Remember this signature&quot; in Sign PDF, the signature (and initials) image is kept in Local Storage so you don&apos;t have to make it again. Remove it any time with &quot;Forget saved signature&quot; in <Link href="/settings">Settings</Link>.
+              </li>
+              <li>
+                <strong>Preferences</strong>: Local Storage holds your theme choice, your Settings choices, and whether you have dismissed a seasonal banner.
+              </li>
+            </ul>
           </section>
 
           <section>
