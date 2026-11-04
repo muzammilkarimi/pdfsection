@@ -131,7 +131,7 @@ test('page clones get new ids and share nothing', () => {
 
 test('files that are not designs are rejected', () => {
   const valid = JSON.parse(JSON.stringify(designWith([])));
-  for (const bad of [null, {}, 'text', { ...valid, v: 99 }, { ...valid, pages: [] }, { ...valid, pages: 'x' }, { ...valid, width: 0 }, { ...valid, height: -5 }]) {
+  for (const bad of [null, {}, 'text', { ...valid, v: 0 }, { ...valid, v: '1' }, { ...valid, pages: [] }, { ...valid, pages: 'x' }, { ...valid, width: 0 }, { ...valid, height: -5 }]) {
     assert.throws(() => parseDesign(bad), /Not a PDF Section design file/);
   }
 });
