@@ -9,7 +9,7 @@ import DesignIcon from './DesignIcons';
 const SAFE_MARGIN = 5 * MM;
 
 /** An element on the editable page. */
-function EditableElement({ el, editing, onPointerDown, onDoubleClick, onMeasure, onText, onStopEditing }) {
+function EditableElement({ el, assets, editing, onPointerDown, onDoubleClick, onMeasure, onText, onStopEditing }) {
   const textRef = useRef(null);
   const areaRef = useRef(null);
   const isText = el.type === 'text';
@@ -37,7 +37,7 @@ function EditableElement({ el, editing, onPointerDown, onDoubleClick, onMeasure,
       onPointerDown={(e) => onPointerDown(e, el)}
       onDoubleClick={() => onDoubleClick(el)}
     >
-      <ElementBody el={el} hidden={editing} />
+      <ElementBody el={el} assets={assets} hidden={editing} />
       {editing && (
         <textarea
           ref={areaRef}
@@ -134,6 +134,7 @@ export default function DesignCanvas({
             <EditableElement
               key={el.id}
               el={el}
+              assets={design.assets}
               editing={editingId === el.id}
               onPointerDown={onStartDrag}
               onDoubleClick={onStartEditing}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ToolIcon } from '@/components/Icons';
-import { downloadBlob } from '@/lib/pdfUtils';
+import { downloadBlob, isInAppBrowser } from '@/lib/pdfUtils';
 import { loadResult, clearResult } from '@/lib/resultStore';
 import { setIncomingFiles } from '@/lib/incomingFiles';
 import { generateThumbnail } from '@/lib/renderUtils';
@@ -42,6 +42,7 @@ export default function DownloadClient({ slug, tool }) {
   const [thumbnail, setThumbnail] = useState('');
   const [canShare, setCanShare] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [inApp, setInApp] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +54,7 @@ export default function DownloadClient({ slug, tool }) {
 
       const file = new File([found.blob], found.filename, { type: found.mime });
       setCanShare(typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] }));
+      setInApp(isInAppBrowser());
 
       if (found.mime === 'application/pdf') {
         try {
@@ -188,6 +190,12 @@ export default function DownloadClient({ slug, tool }) {
                 </button>
               )}
             </div>
+
+            {inApp && (
+              <p className="ws-note ws-note-warn" role="note">
+                This app&apos;s built-in browser may not save files.{canShare ? ' Use Share, or open' : ' Open'} this page in Chrome or Safari to download.
+              </p>
+            )}
 
             <p className="dl-privacy">
               <ToolIcon name="lock" size={13} />

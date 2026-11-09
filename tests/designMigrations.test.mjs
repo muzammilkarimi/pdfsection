@@ -4,8 +4,6 @@ import { readFileSync } from 'node:fs';
 import { DESIGN_VERSION, DesignTooNewError, migrateDesign, migrateSavedDesigns } from '@/lib/designMigrations';
 import { parseDesign } from '@/lib/designModel';
 
-const withoutIds = (value) => JSON.parse(JSON.stringify(value, (key, v) => (key === 'id' ? undefined : v)));
-
 // A pretend future format, so the upgrade path can be tested before any real upgrade exists.
 const future = {
   version: 3,
@@ -77,15 +75,16 @@ test('a file saved in format 1 still opens with all its content', () => {
   const opened = parseDesign(file);
   assert.equal(opened.v, DESIGN_VERSION);
   assert.equal(opened.name, 'Sample saved in format 1');
-  if (DESIGN_VERSION === 1) {
-    assert.deepEqual(withoutIds(opened), withoutIds(file));
-  }
+  assert.equal(opened.pages.length, 2);
+  assert.equal(opened.pages[0].elements.length, 4);
   const [text, star, line, image] = opened.pages[0].elements;
   assert.equal(text.text, 'Heading\nनमस्ते दुनिया');
   assert.equal(text.font, 'Playfair Display');
   assert.equal(star.rotation, 30);
   assert.equal(star.locked, true);
   assert.equal(line.fill, null);
-  assert.equal(image.src.startsWith('data:image/png;base64,'), true);
+  assert.equal(image.rotation, -15);
+  assert.equal(image.opacity, 0.8);
+  assert.equal(opened.assets[image.assetId], file.pages[0].elements[3].src);
   assert.equal(opened.pages[1].background, '#ffffff');
 });

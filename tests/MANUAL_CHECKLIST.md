@@ -24,7 +24,9 @@ Use Chrome on a computer, and a real phone for the last section.
 - [ ] Make a change and wait for "Saved in this browser". After a reload, the design is under "Continue a design" with its content.
 - [ ] Opening a template and leaving without changes leaves no draft.
 - [ ] "Save editable copy" downloads a file, and "Open saved design" reopens it unchanged.
-- [ ] A design saved before this phase still opens and looks the same.
+- [ ] A design saved before this phase still opens and looks the same, including its images.
+- [ ] A design with images keeps them after a reload, and after being edited and reloaded again.
+- [ ] Deleting a saved design doesn't affect the images in other saved designs.
 
 ## Export
 Open these beside the editor and compare them closely.
@@ -42,3 +44,11 @@ Open these beside the editor and compare them closely.
 - [ ] Add text, then edit, style, copy and delete it from the bottom toolbar.
 - [ ] Dragging an item moves it and doesn't scroll the page.
 - [ ] Move between pages and download a PDF.
+
+## Sign PDF on a phone
+
+- [ ] Swiping on the page scrolls the screen (it used to be stuck).
+- [ ] Tap Signature, draw it, tap "Use signature": the signature appears on the page right away, in the part you can see, and the page scrolls into view if it was below.
+- [ ] Drag the signature with a finger; resize it from the corner; remove it with the red ×.
+- [ ] Tap the page again: another copy is added where you tapped.
+- [ ] Edit PDF → Sign: the signature lands in the visible part of the page.

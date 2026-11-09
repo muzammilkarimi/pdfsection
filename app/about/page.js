@@ -4,7 +4,7 @@ import { ToolIcon } from '@/components/Icons';
 import { buildToolMetadata, buildOrganizationJsonLd, buildBreadcrumbJsonLd } from '@/lib/seoUtils';
 
 export const metadata = buildToolMetadata({
-  title: 'About PDF Section — 100% Private Local PDF Processing',
+  title: 'About PDF Section — Private PDF Tools That Run in Your Browser',
   description:
     'Learn about PDF Section and founder Muzammil Ahmad Karimi. Built at IIT Patna to eliminate file privacy risks and offer free local browser PDF tools.',
   route: '/about',

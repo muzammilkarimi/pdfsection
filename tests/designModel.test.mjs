@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { DESIGN_VERSION } from '@/lib/designMigrations';
 import {
   INCH,
   PAGE_PRESETS,
   clonePage,
   createDesign,
-  createImage,
   createShape,
   createText,
   effectiveStyle,
@@ -39,7 +39,7 @@ test('every page preset creates a page of the advertised size', () => {
     near(design.width, fromUnit(preset.w, preset.unit));
     near(design.height, fromUnit(preset.h, preset.unit));
     assert.equal(design.pages.length, 1);
-    assert.equal(design.v, 1);
+    assert.equal(design.v, DESIGN_VERSION);
   }
 });
 
@@ -155,8 +155,11 @@ test('unknown element types and shapes are dropped', () => {
   assert.equal(opened.pages[0].elements[0].text, 'kept');
 });
 
-test('only embedded PNG and JPEG images are accepted', () => {
-  const load = (src) => parseDesign(JSON.parse(JSON.stringify(designWith([createImage(src)])))).pages[0].elements.length;
+test('only embedded PNG and JPEG images are accepted from old files', () => {
+  const load = (src) => {
+    const file = { v: 1, width: 100, height: 100, pages: [{ elements: [{ type: 'image', src }] }] };
+    return parseDesign(file).pages[0].elements.length;
+  };
   assert.equal(load('data:image/png;base64,AAAA'), 1);
   assert.equal(load('data:image/jpeg;base64,AAAA'), 1);
   assert.equal(load('data:image/svg+xml;base64,AAAA'), 0);

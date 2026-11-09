@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useResultHandoff } from '@/lib/useResultHandoff';
 import { downloadBlob } from '@/lib/pdfUtils';
+import { designForFile } from '@/lib/designAssets';
 import { saveDesign } from '@/lib/designStore';
 import { toUnit } from '@/lib/designModel';
 import { parseRange } from '@/lib/pageRange';
@@ -95,8 +96,7 @@ export default function DesignDownload({ design, pageIdx, onClose }) {
   };
 
   const saveCopy = () => {
-    const { savedAt: _savedAt, ...clean } = design;
-    downloadBlob(new Blob([JSON.stringify(clean)], { type: 'application/json' }), `${safeName(fileName)}.pdfsection.json`, 'application/json');
+    downloadBlob(new Blob([JSON.stringify(designForFile(design))], { type: 'application/json' }), `${safeName(fileName)}.pdfsection.json`, 'application/json');
   };
 
   return (

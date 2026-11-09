@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { usedAssetIds } from '@/lib/designAssets';
 import { DESIGN_FONTS, fontStack } from '@/lib/designFonts';
 import { createShape, shapePath } from '@/lib/designModel';
 import { TEMPLATES } from '@/lib/designTemplates';
@@ -127,11 +128,7 @@ function ElementsPanel({ api }) {
 
 function ImagesPanel({ api, design }) {
   const inputRef = useRef(null);
-  const used = useMemo(() => {
-    const seen = new Set();
-    for (const page of design.pages) for (const el of page.elements) if (el.type === 'image') seen.add(el.src);
-    return [...seen];
-  }, [design.pages]);
+  const used = useMemo(() => [...usedAssetIds(design)], [design]);
 
   return (
     <>
@@ -154,10 +151,10 @@ function ImagesPanel({ api, design }) {
         <div className="ds-group">
           <span className="ds-group-label">In this design</span>
           <div className="ds-image-grid">
-            {used.map((src, i) => (
-              <button key={src.length + src.slice(-32)} type="button" className="ds-image-thumb" aria-label={`Add image ${i + 1} again`} onClick={() => api.addImageSrc(src)}>
+            {used.map((assetId, i) => (
+              <button key={assetId} type="button" className="ds-image-thumb" aria-label={`Add image ${i + 1} again`} onClick={() => api.addImageAsset(assetId)}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- a user's local image held as a data URL */}
-                <img src={src} alt="" />
+                <img src={design.assets?.[assetId]} alt="" />
               </button>
             ))}
           </div>

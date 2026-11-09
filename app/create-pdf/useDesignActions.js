@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { clonePage, createImage, createShape, createText, readImageFile, resizeDesign } from '@/lib/designModel';
+import { storeAsset } from '@/lib/designAssets';
+import { clonePage, createImage, createShape, createText, readImageFile, resizeDesign, uid } from '@/lib/designModel';
 import { copyElements, patchElements, removeElements } from '@/lib/designSelection';
 
 /**
@@ -85,19 +86,29 @@ export function useDesignActions({
   const addImageFile = useCallback(async (file, background) => {
     try {
       const { src, width, height } = await readImageFile(file);
-      if (background) {
-        const el = createImage(src, { x: 0, y: 0, w: pageW, h: pageH, locked: true });
-        patchPage(pageIdx, (p) => ({ elements: [el, ...p.elements] }));
-        return;
-      }
       const fit = Math.min((pageW * 0.6) / width, (pageH * 0.6) / height);
       const w = width * fit;
       const h = height * fit;
-      addToPage([createImage(src, { x: (pageW - w) / 2, y: (pageH - h) / 2, w, h })]);
+      const el = background
+        ? createImage(null, { x: 0, y: 0, w: pageW, h: pageH, locked: true })
+        : createImage(null, { x: (pageW - w) / 2, y: (pageH - h) / 2, w, h });
+      const newAssetId = uid();
+      update((d) => {
+        const { assets, assetId } = storeAsset(d.assets, src, newAssetId);
+        const placed = { ...el, assetId };
+        return {
+          ...d,
+          assets,
+          pages: d.pages.map((p, i) => (i === pageIdx ? { ...p, elements: background ? [placed, ...p.elements] : [...p.elements, placed] } : p)),
+        };
+      });
+      if (background) return;
+      selectOnly(el.id);
+      if (isMobile) setPanel(null);
     } catch (err) {
       setNotice(err.message || 'That image could not be opened');
     }
-  }, [addToPage, patchPage, pageIdx, pageW, pageH, setNotice]);
+  }, [update, pageIdx, pageW, pageH, isMobile, selectOnly, setPanel, setNotice]);
 
   // ── Editing text in place ──
   const stopEditing = useCallback(() => {
@@ -158,9 +169,9 @@ export function useDesignActions({
       addToPage([{ ...el, w, h, x: (pageW - w) / 2, y: (pageH - h) / 2, strokeWidth: el.strokeWidth * baseScale, radius: el.radius * baseScale }]);
     },
     addImageFiles: (files) => { files.forEach((f) => addImageFile(f)); },
-    addImageSrc: (src) => {
+    addImageAsset: (assetId) => {
       const w = pageW * 0.4;
-      addToPage([createImage(src, { x: (pageW - w) / 2, y: (pageH - w) / 2, w, h: w })]);
+      addToPage([createImage(assetId, { x: (pageW - w) / 2, y: (pageH - w) / 2, w, h: w })]);
     },
     addBackgroundImage: (file) => addImageFile(file, true),
     setBackground: (color, key) => patchPage(pageIdx, () => ({ background: color }), key ? { key } : undefined),

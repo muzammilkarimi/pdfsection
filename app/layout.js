@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata = {
   title: {
-    default: 'PDF Section — Free Online PDF Tools (100% Private)',
+    default: 'PDF Section — Free, Private PDF Tools in Your Browser',
     template: '%s | PDF Section',
   },
   description:
@@ -62,7 +62,7 @@ export const metadata = {
     locale: 'en_US',
     url: 'https://www.pdfsection.com',
     siteName: 'PDF Section',
-    title: 'PDF Section — Free Online PDF Tools (100% Private)',
+    title: 'PDF Section — Free, Private PDF Tools in Your Browser',
     description:
       'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser with zero file uploads. Private & instant.',
     images: [
@@ -70,13 +70,13 @@ export const metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'PDF Section — Free Online PDF Tools (100% Private)',
+        alt: 'PDF Section — Free, Private PDF Tools in Your Browser',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PDF Section — Free Online PDF Tools (100% Private)',
+    title: 'PDF Section — Free, Private PDF Tools in Your Browser',
     description:
       'Every PDF tool in one place. Merge, split, compress, convert, edit, and sign PDFs 100% free in your browser.',
     images: ['/opengraph-image'],

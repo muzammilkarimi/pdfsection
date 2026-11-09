@@ -94,7 +94,7 @@ export default function IndependenceBanner() {
 
           <span className="independence-banner-msg">
             <strong className="independence-banner-strong">Happy Independence Day!</strong>
-            <span className="independence-banner-msg-sub"> Celebrate digital freedom with 100% private PDF tools.</span>
+            <span className="independence-banner-msg-sub"> Celebrate digital freedom with private PDF tools that run in your browser.</span>
           </span>
         </div>
 

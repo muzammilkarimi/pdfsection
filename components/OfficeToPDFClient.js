@@ -37,6 +37,12 @@ export default function OfficeToPDFClient({ toolId }) {
     'powerpoint-to-pdf': '.pptx,.ppt',
   };
 
+  // What each converter keeps. Keep in line with lib/wordToPdf.js, lib/xlsxToPdf.js and lib/pptxToPdf.js.
+  const conversionNotes = {
+    'excel-to-pdf': 'Each visible sheet is laid out as print pages, keeping cell colors, borders, merged cells, number formats and charts. Pictures are not included yet.',
+  };
+  const defaultConversionNote = 'All headings, tables, borders, colors, text styles, and embedded images are parsed and formatted directly inside your browser before downloading as PDF.';
+
   const handleFilesSelected = useCallback((files) => {
     const f = files[0];
     if (!f) return;
@@ -151,7 +157,7 @@ export default function OfficeToPDFClient({ toolId }) {
       ) : (
         <PageToolWorkspace
           title={toolInfo.name}
-          description="High-fidelity client-side document formatting and PDF conversion."
+          description="Converted in your browser. Check the preview before you download."
           icon={toolInfo.icon}
           iconColor={toolInfo.categoryColor}
           file={file}
@@ -182,7 +188,7 @@ export default function OfficeToPDFClient({ toolId }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>Formatted Document Conversion</p>
             <p className="body-xs ink-subtle" style={{ lineHeight: 1.5 }}>
-              All headings, tables, borders, colors, text styles, and embedded images are parsed and formatted directly inside your browser before downloading as PDF.
+              {conversionNotes[toolId] || defaultConversionNote}
             </p>
 
             {warnings.length > 0 && (

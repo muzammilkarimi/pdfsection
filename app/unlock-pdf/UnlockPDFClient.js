@@ -10,6 +10,8 @@ import { ToolIcon } from '@/components/Icons';
 import { PDFDocument } from 'pdf-lib';
 import { useResultHandoff } from '@/lib/useResultHandoff';
 import { loadPdfForRender } from '@/lib/renderUtils';
+import { checkPdfEncryption, openPdfWithoutPassword } from '@/lib/pdfUtils';
+import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
 
 export default function UnlockPDFClient() {
   const deliver = useResultHandoff('unlock-pdf');
@@ -31,15 +33,10 @@ export default function UnlockPDFClient() {
     setPassword('');
 
     try {
-      const buffer = await f.arrayBuffer();
-      await PDFDocument.load(buffer);
-      setNeedsPassword(false);
+      // Files encrypted only for permissions open without a password, so don't ask for one.
+      setNeedsPassword(await checkPdfEncryption(f));
     } catch (err) {
-      if (err.message.includes('password') || err.message.includes('encrypt') || err.message.includes('decrypt')) {
-        setNeedsPassword(true);
-      } else {
-        setErrorMsg('Could not read PDF metadata: ' + err.message);
-      }
+      setErrorMsg('Could not read PDF metadata: ' + err.message);
     }
   }, []);
 
@@ -69,57 +66,49 @@ export default function UnlockPDFClient() {
         }
 
         try {
-          // Attempt native pdf-lib load (supports RC4 and AES-128)
-          const pdfDoc = await PDFDocument.load(buffer, { password });
-          pdfBytes = await pdfDoc.save();
+          // Real decryption keeps text, links and fonts (RC4 and AES-256).
+          pdfBytes = await decryptPDF(new Uint8Array(buffer), password);
         } catch (err) {
-          // Check if error is due to V5 AES-256 encryption being unsupported by pdf-lib
           const msg = err.message || '';
-          if (
-            msg.includes('encrypted') ||
-            msg.includes('ignoreEncryption') ||
-            err.name === 'PasswordResponseRequiredError' ||
-            msg.includes('password')
-          ) {
-            // Trigger PDF.js High-Compatibility Decryption mode (reconstructs pages safely via rasterization)
-            const renderDoc = await loadPdfForRender(buffer, password);
-            const outPdf = await PDFDocument.create();
-            const numPages = renderDoc.numPages;
+          if (msg.toLowerCase().includes('incorrect password')) throw err;
+          // Encryption the decrypter can't handle: rebuild pages from PDF.js renders instead
+          const renderDoc = await loadPdfForRender(buffer, password);
+          const outPdf = await PDFDocument.create();
+          const numPages = renderDoc.numPages;
 
-            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-              setProgress(Math.round((pageNum / numPages) * 100));
-              const page = await renderDoc.getPage(pageNum);
-              
-              // Render scale 2.0 keeps high visual layout clarity
-              const viewport = page.getViewport({ scale: 2.0 });
-              const canvas = document.createElement('canvas');
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
-              const ctx = canvas.getContext('2d');
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
+          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            setProgress(Math.round((pageNum / numPages) * 100));
+            const page = await renderDoc.getPage(pageNum);
+            
+            // Render scale 2.0 keeps high visual layout clarity
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-              await page.render({ canvasContext: ctx, viewport }).promise;
+            await page.render({ canvasContext: ctx, viewport }).promise;
 
-              const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-              const imageBytes = await imageBlob.arrayBuffer();
-              const image = await outPdf.embedJpg(imageBytes);
+            const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+            const imageBytes = await imageBlob.arrayBuffer();
+            const image = await outPdf.embedJpg(imageBytes);
 
-              const newPage = outPdf.addPage([viewport.width, viewport.height]);
-              newPage.drawImage(image, {
-                x: 0,
-                y: 0,
-                width: viewport.width,
-                height: viewport.height,
-              });
-            }
-            pdfBytes = await outPdf.save();
-          } else {
-            throw err;
+            const newPage = outPdf.addPage([viewport.width, viewport.height]);
+            newPage.drawImage(image, {
+              x: 0,
+              y: 0,
+              width: viewport.width,
+              height: viewport.height,
+            });
           }
+          pdfBytes = await outPdf.save();
         }
       } else {
-        const pdfDoc = await PDFDocument.load(buffer);
+        // No open password: strip permission-only encryption if there is any.
+        const opened = await openPdfWithoutPassword(buffer);
+        const pdfDoc = await PDFDocument.load(opened.bytes || buffer, { ignoreEncryption: true });
         pdfBytes = await pdfDoc.save();
       }
 

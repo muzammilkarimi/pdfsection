@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect, useEffectEvent } from 'react';
 import Link from 'next/link';
 import { ToolIcon } from './Icons';
-import { checkPdfEncryption } from '@/lib/pdfUtils';
+import { openPdfFileWithoutPassword } from '@/lib/pdfUtils';
 import { takeIncomingFiles } from '@/lib/incomingFiles';
 
 let pageDropOwner = null;
@@ -81,11 +81,13 @@ export default function FileDropzone({
       if (!allowLocked) {
         setIsChecking(true);
         try {
-          for (const file of fileArray) {
+          for (const [index, file] of fileArray.entries()) {
             const ext = '.' + file.name.split('.').pop().toLowerCase();
             if (ext === '.pdf') {
-              const locked = await checkPdfEncryption(file);
-              if (locked) {
+              // Files with permission-only encryption come back opened, so tools can edit them.
+              const opened = await openPdfFileWithoutPassword(file);
+              fileArray[index] = opened.file;
+              if (opened.locked) {
                 setError(
                   <span>
                     🔒 <strong>{file.name}</strong> is password-protected. Please unlock it using our free{' '}

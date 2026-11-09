@@ -46,3 +46,15 @@ for (const pkg of ['inter', 'poppins', 'montserrat', 'oswald', 'bebas-neue', 'pl
     }
   }
 }
+
+// Edit PDF: metric-compatible stand-ins for common PDF fonts (Arimo = Helvetica/Arial,
+// Tinos = Times, Cousine = Courier, Carlito = Calibri, Caladea = Cambria), latin only.
+mkdirSync(new URL('edit/', OUT), { recursive: true });
+for (const pkg of ['arimo', 'tinos', 'cousine', 'carlito', 'caladea']) {
+  for (const w of [400, 700]) {
+    for (const style of ['normal', 'italic']) {
+      const name = `${pkg}-latin-${w}-${style}.woff`;
+      copyFileSync(new URL(`${pkg}/files/${name}`, NM), new URL(`edit/${name}`, OUT));
+    }
+  }
+}

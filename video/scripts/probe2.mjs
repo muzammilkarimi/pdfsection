@@ -1,0 +1,17 @@
+import { chromium } from 'playwright-core';
+const b = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
+const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+await p.addStyleTag({ content: '' }).catch(()=>{});
+await p.goto('http://localhost:3030/merge-pdf', { waitUntil: 'networkidle' });
+await p.setInputFiles('input[type=file]', ['samples/Q3-Report.pdf', 'samples/Invoice-2041.pdf', 'samples/Contract.pdf']);
+await p.waitForTimeout(6000);
+await p.screenshot({ path: 'footage/probe-merge3.png' });
+await p.getByRole('button', { name: /Merge PDFs/ }).first().click();
+await p.waitForTimeout(3000);
+await p.screenshot({ path: 'footage/probe-merge4.png' });
+await p.goto('http://localhost:3030/compress-pdf', { waitUntil: 'networkidle' });
+await p.setInputFiles('input[type=file]', ['samples/Big-Scan.pdf']);
+await p.waitForTimeout(4000);
+await p.screenshot({ path: 'footage/probe-comp1.png' });
+console.log(await p.$$eval('button', (bs) => bs.map((x) => x.innerText.trim()).filter(Boolean)));
+await b.close();

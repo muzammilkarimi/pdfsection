@@ -9,6 +9,14 @@ registerHooks({
     if (specifier.startsWith('@/')) {
       return nextResolve(pathToFileURL(resolve(`${specifier.slice(2)}.js`)).href, context);
     }
-    return nextResolve(specifier, context);
+    try {
+      return nextResolve(specifier, context);
+    } catch (err) {
+      // package subpaths written without ".js" (e.g. "regenerator-runtime/runtime") work in the bundler
+      if (err?.code === 'ERR_MODULE_NOT_FOUND' && !specifier.endsWith('.js') && !specifier.startsWith('.')) {
+        return nextResolve(`${specifier}.js`, context);
+      }
+      throw err;
+    }
   },
 });

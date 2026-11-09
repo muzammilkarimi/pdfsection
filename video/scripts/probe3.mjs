@@ -1,0 +1,10 @@
+import { chromium } from 'playwright-core';
+const b = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
+const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+p.on('console', (m) => { if (['error','warning'].includes(m.type())) console.log('CONSOLE', m.type(), m.text().slice(0, 200)); });
+p.on('pageerror', (e) => console.log('PAGEERR', String(e).slice(0, 200)));
+await p.goto('http://localhost:3030/merge-pdf', { waitUntil: 'networkidle' });
+await p.setInputFiles('input[type=file]', ['samples/Q3-Report.pdf', '../dummy.pdf']);
+await p.waitForTimeout(7000);
+await p.screenshot({ path: 'footage/probe-merge5.png' });
+await b.close();
