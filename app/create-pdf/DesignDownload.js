@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useResultHandoff } from '@/lib/useResultHandoff';
 import { downloadBlob } from '@/lib/pdfUtils';
+import { designForFile } from '@/lib/designAssets';
 import { saveDesign } from '@/lib/designStore';
 import { toUnit } from '@/lib/designModel';
+import { parseRange } from '@/lib/pageRange';
 import DesignIcon from './DesignIcons';
 
 const FORMATS = [
@@ -14,20 +16,6 @@ const FORMATS = [
 ];
 
 const safeName = (name) => name.trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '-').toLowerCase().slice(0, 80) || 'design';
-
-/** Parses "1-3, 5" into zero-based page indexes. Returns null if it isn't valid. */
-function parseRange(text, total) {
-  const out = new Set();
-  for (const part of text.split(',')) {
-    const m = /^\s*(\d+)\s*(?:-\s*(\d+)\s*)?$/.exec(part);
-    if (!m) return null;
-    const from = Number(m[1]);
-    const to = m[2] ? Number(m[2]) : from;
-    if (from < 1 || to > total || from > to) return null;
-    for (let i = from; i <= to; i++) out.add(i - 1);
-  }
-  return out.size ? [...out].sort((a, b) => a - b) : null;
-}
 
 export default function DesignDownload({ design, pageIdx, onClose }) {
   const deliver = useResultHandoff('create-pdf');
@@ -108,8 +96,7 @@ export default function DesignDownload({ design, pageIdx, onClose }) {
   };
 
   const saveCopy = () => {
-    const { savedAt: _savedAt, ...clean } = design;
-    downloadBlob(new Blob([JSON.stringify(clean)], { type: 'application/json' }), `${safeName(fileName)}.pdfsection.json`, 'application/json');
+    downloadBlob(new Blob([JSON.stringify(designForFile(design))], { type: 'application/json' }), `${safeName(fileName)}.pdfsection.json`, 'application/json');
   };
 
   return (

@@ -15,13 +15,13 @@ export function elementBoxStyle(el) {
   };
 }
 
-export function ElementBody({ el, hidden = false }) {
+export function ElementBody({ el, assets, hidden = false }) {
   if (el.type === 'text') {
     return <div style={{ ...textCss(el), visibility: hidden ? 'hidden' : undefined }}>{el.text || '​'}</div>;
   }
   if (el.type === 'image') {
     // eslint-disable-next-line @next/next/no-img-element -- a user's local image held as a data URL
-    return <img src={el.src} alt="" draggable={false} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />;
+    return <img src={assets?.[el.assetId]} alt="" draggable={false} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />;
   }
   return (
     <svg width={el.w} height={el.h} style={{ display: 'block', overflow: 'visible' }} aria-hidden="true">
@@ -47,7 +47,7 @@ export function PageView({ design, page, scale }) {
       >
         {page.elements.map((el) => (
           <div key={el.id} style={elementBoxStyle(el)}>
-            <ElementBody el={el} />
+            <ElementBody el={el} assets={design.assets} />
           </div>
         ))}
       </div>

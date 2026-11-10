@@ -1,0 +1,20 @@
+{
+  "name": "pdfsection-launch-video",
+  "private": true,
+  "scripts": {
+    "sfx": "node scripts/make-audio.mjs",
+    "studio": "remotion studio src/index.jsx",
+    "render": "remotion render src/index.jsx LaunchWide out/pdfsection-launch-16x9.mp4",
+    "render:vertical": "remotion render src/index.jsx LaunchVertical out/pdfsection-launch-9x16.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.539",
+    "@remotion/google-fonts": "^4.0.539",
+    "googleapis": "^189.0.0",
+    "msedge-tts": "^2.1.1",
+    "playwright-core": "^1.64.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539"
+  }
+}

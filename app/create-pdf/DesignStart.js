@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ToastNotification from '@/components/ToastNotification';
 import { PAGE_PRESETS, createDesign, parseDesign } from '@/lib/designModel';
+import { DesignTooNewError } from '@/lib/designMigrations';
 import { TEMPLATES, TEMPLATE_CATEGORIES, designFromTemplate } from '@/lib/designTemplates';
 import { deleteDesign, listDesigns } from '@/lib/designStore';
 import { PageView } from './DesignRenderer';
@@ -40,8 +41,8 @@ export default function DesignStart({ onOpen }) {
     if (!file) return;
     try {
       onOpen(parseDesign(JSON.parse(await file.text())));
-    } catch {
-      setError('That file is not a saved PDF Section design.');
+    } catch (err) {
+      setError(err instanceof DesignTooNewError ? err.message : 'That file is not a saved PDF Section design.');
     }
   };
 

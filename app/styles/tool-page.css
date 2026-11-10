@@ -1339,7 +1339,8 @@ body:has(.tool-layout-app-fixed) .related-guides {
   background: #ffffff;
   box-shadow: 0 8px 28px rgba(20, 19, 32, 0.12);
   user-select: none;
-  touch-action: none;
+  /* a finger can still scroll past the page; the stamps themselves don't scroll (touch-action: none) */
+  touch-action: pan-x pan-y;
 }
 
 .sign-page canvas {
@@ -1650,7 +1651,7 @@ body:has(.tool-layout-app-fixed) .related-guides {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  max-width: 260px;
+  max-width: 340px;
 }
 
 .editor-file strong {
@@ -1662,6 +1663,10 @@ body:has(.tool-layout-app-fixed) .related-guides {
 }
 
 .editor-file span {
+  /* one line always: the status text changes as you edit, and wrapping made the bar jump */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   color: var(--ink-subtle);
 }
@@ -1827,6 +1832,14 @@ body:has(.tool-layout-app-fixed) .related-guides {
   border-left: 1px solid var(--hairline);
 }
 
+.editor-style-sheet {
+  display: contents;
+}
+
+.editor-sheet-head {
+  display: none;
+}
+
 .editor-panel section {
   display: flex;
   flex-direction: column;
@@ -1941,6 +1954,572 @@ body:has(.tool-layout-app-fixed) .related-guides {
   color: var(--ink-muted);
 }
 
+/* Page frame: sized to the page as displayed. The page inside is rotated with the user's rotation,
+   so edits turn with it. */
+.editor-page-frame {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: none;
+  border-radius: 4px;
+  box-shadow: 0 8px 28px rgba(20, 19, 32, 0.12);
+}
+
+.editor-page-frame > .editor-page {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  overflow: visible;
+  box-shadow: none;
+}
+
+/* While a drawing tool is active, existing elements let the pointer through. */
+.editor-page-frame.is-creating .edit-el,
+.editor-page-frame.is-creating .edit-el-hit,
+.editor-page-frame.is-creating .edit-el-handle,
+.editor-page-frame.is-creating .edit-el-actions {
+  pointer-events: none;
+}
+
+.editor-rendering {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.editor-rendering span {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.editor-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.editor-bar + .editor-notice {
+  margin: 8px 12px 0;
+}
+
+.editor-notice.is-error {
+  background: color-mix(in srgb, #e5484d 10%, var(--card));
+  color: var(--ink);
+}
+
+.editor-notice-close {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+
+.editor-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.editor-block {
+  position: absolute;
+  border-radius: 2px;
+  cursor: text;
+  pointer-events: auto;
+  transition: background-color 0.12s ease, outline-color 0.12s ease;
+}
+
+/* Editable text shows only under the pointer, so the page looks untouched until you point at it. */
+.editor-block:hover {
+  outline: 1px solid var(--primary);
+  background: rgba(94, 106, 210, 0.14);
+}
+
+.editor-draft {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Elements added or edited on the page */
+.edit-el {
+  position: absolute;
+  box-sizing: border-box;
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.edit-el.is-selected {
+  outline: 1.5px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.edit-el-text {
+  display: flex;
+  flex-direction: column;
+  border-radius: 2px;
+}
+
+.edit-el-text.is-selected {
+  background: rgba(94, 106, 210, 0.06);
+}
+
+.edit-el-rich {
+  position: relative;
+  display: block;
+  min-width: 2px;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  overflow-wrap: break-word;
+  /* the PDF's own fonts carry their weight; never fake bold or italic on top of them */
+  font-synthesis: none;
+  /* PDFs place letters by their plain widths: no kerning or ligatures, or lines change length */
+  font-kerning: none;
+  font-variant-ligatures: none;
+  cursor: inherit;
+}
+
+.edit-el-text.is-selected .edit-el-rich {
+  cursor: text;
+}
+
+.edit-el-text.is-one-line .edit-el-rich {
+  overflow-wrap: normal;
+}
+
+.edit-el-rich:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.edit-el-highlight {
+  mix-blend-mode: multiply;
+}
+
+.edit-el-erase:not(.is-selected) {
+  outline: 1px dashed rgba(20, 19, 32, 0.12);
+}
+
+/* The cover behind an edited line: invisible as a box and not clickable, so the page looks untouched. */
+/* An opened PDF line that hasn't changed: the original page shows through, only the caret and
+   the selection are drawn. The first change swaps in the cover and the live text. */
+.edit-el.is-cover.is-ghost {
+  opacity: 0;
+}
+
+.edit-el-text.is-ghost .edit-el-rich,
+.edit-el-text.is-ghost .edit-el-rich * {
+  color: transparent !important;
+  -webkit-text-stroke: 0 !important;
+}
+
+.edit-el-text.is-ghost .edit-el-rich::selection,
+.edit-el-text.is-ghost .edit-el-rich *::selection {
+  color: transparent;
+  background: rgba(37, 99, 235, 0.28);
+}
+
+.edit-el-erase.is-cover {
+  outline: none;
+  pointer-events: none;
+}
+
+.edit-el-stamp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #ffffff;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.edit-el-shape-ellipse {
+  border-radius: 50%;
+}
+
+.edit-el-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.edit-el-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.edit-el-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.edit-el-hit {
+  stroke: transparent;
+  pointer-events: stroke;
+  cursor: move;
+  touch-action: none;
+}
+
+.edit-el-bbox {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.edit-el-actions {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  transform: translate(-100%, calc(-100% - 12px));
+  pointer-events: auto;
+}
+
+.edit-el-actions button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(20, 19, 32, 0.14);
+  cursor: pointer;
+}
+
+.edit-el-actions button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.edit-el-actions .edit-el-grip {
+  cursor: move;
+  touch-action: none;
+}
+
+.edit-el-actions .edit-el-delete:hover {
+  border-color: #e5484d;
+  color: #e5484d;
+}
+
+.edit-el-handle {
+  position: absolute;
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* edge-middle handles are smaller squares, so the corners read as the main ones */
+.edit-el-handle.is-edge {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.edit-el-handle-side {
+  top: 50%;
+  left: 100%;
+  cursor: ew-resize;
+}
+
+.edit-el-handle-side.at-w {
+  left: 0;
+}
+
+/* text box corners: scale the text */
+.edit-el-handle-text.at-nw { left: 0; top: 0; cursor: nwse-resize; }
+.edit-el-handle-text.at-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.edit-el-handle-text.at-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.edit-el-handle-text.at-sw { left: 0; top: 100%; cursor: nesw-resize; }
+
+/* the side handles are small filled dots, so they read differently from the corners */
+.edit-el-handle-side {
+  width: 9px;
+  height: 9px;
+  background: var(--primary);
+}
+
+/* Touch screens: the dots stay small so they don't hide the text, but each has a finger-sized
+   invisible touch area around it. Fewer handles: corners for shapes; the bottom-right corner
+   (scale) and the right side (width) for text, pushed just outside the box. */
+.edit-el-handle::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+
+@media (pointer: coarse) {
+  .edit-el-handle,
+  .edit-el-handle.is-edge {
+    width: 12px;
+    height: 12px;
+  }
+
+  .edit-el-handle::after {
+    inset: -10px;
+  }
+
+  .edit-el-handle.is-edge,
+  .edit-el-handle-text.at-nw,
+  .edit-el-handle-text.at-ne,
+  .edit-el-handle-text.at-sw,
+  .edit-el-handle-side.at-w {
+    display: none;
+  }
+
+  .edit-el-handle-text.at-se {
+    transform: translate(2px, 2px);
+  }
+
+  .edit-el-handle-side.at-e {
+    transform: translate(4px, -50%);
+  }
+
+  /* a single line is too short for two handles: it scales by its corner */
+  .edit-el-text.is-one-line .edit-el-handle-side {
+    display: none;
+  }
+
+  .edit-el-actions {
+    gap: 6px;
+  }
+
+  .edit-el-actions button {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.editor-stroke {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-stroke input {
+  flex: 1;
+  accent-color: var(--primary);
+}
+
+.editor-stroke output {
+  min-width: 36px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+/* Stage area: the page scrolls; the tool bar floats over it at the bottom. */
+.editor-bar-spacer {
+  flex: 1 1 auto;
+}
+
+.editor-stage-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+}
+
+.editor-stage-wrap > .editor-stage {
+  flex: 1 1 auto;
+  padding-bottom: 120px;
+  touch-action: pan-x pan-y;
+}
+
+.edit-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.edit-toolbar-bar,
+.edit-toolbar-panel {
+  pointer-events: auto;
+  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 10px 30px rgba(20, 19, 32, 0.16), 0 2px 6px rgba(20, 19, 32, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.edit-toolbar-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 5px;
+  border-radius: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.edit-toolbar-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.edit-toolbar-item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 62px;
+  padding: 7px 8px 6px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.edit-toolbar-item:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.edit-toolbar-item[aria-pressed='true'],
+.edit-toolbar-item[aria-checked='true'] {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+
+.edit-toolbar-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.edit-toolbar-sep {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 6px 3px;
+  background: var(--hairline);
+}
+
+.edit-toolbar-panel {
+  padding: 8px;
+  border-radius: 18px;
+}
+
+.edit-toolbar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(62px, 1fr));
+  gap: 2px;
+}
+
+.edit-toolbar-stamps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 260px;
+}
+
+.edit-toolbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 4px 8px 4px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-toolbar-stamp-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.edit-toolbar-stamp-list button {
+  padding: 8px 10px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  background: var(--card);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .edit-toolbar {
+    bottom: 10px;
+  }
+
+  .edit-toolbar-item {
+    min-width: 54px;
+    padding: 6px 5px;
+    font-size: 10.5px;
+  }
+
+  .edit-toolbar-grid {
+    grid-template-columns: repeat(3, minmax(64px, 1fr));
+  }
+}
+
 @media (max-width: 1100px) {
   .editor-panel {
     flex-basis: 240px;
@@ -1981,6 +2560,30 @@ body:has(.tool-layout-app-fixed) .related-guides {
   touch-action: none;
 }
 
+/* touch: bigger delete and resize targets */
+.sign-stamp-resize::after,
+.sign-stamp-delete::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+@media (pointer: coarse) {
+  .sign-stamp-resize {
+    right: -10px;
+    bottom: -10px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .sign-stamp-delete {
+    top: -14px;
+    right: -14px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
 .sign-page.is-resizing {
   cursor: nwse-resize;
 }
@@ -2017,7 +2620,7 @@ body:has(.tool-layout-app-fixed) .related-guides {
 }
 
 .editor-file {
-  flex: 0 1 220px;
+  flex: 0 1 320px;
 }
 
 .editor-undo {

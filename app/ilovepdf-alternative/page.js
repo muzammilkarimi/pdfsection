@@ -3,8 +3,8 @@ import { buildToolMetadata } from '@/lib/seoUtils';
 import { LIVE_TOOLS } from '@/lib/tools';
 
 export const metadata = buildToolMetadata({
-  title: 'Free iLovePDF Alternative — 100% Private Local PDF Tools',
-  description: 'Looking for a private, free alternative to iLovePDF? PDF Section processes all files 100% locally in your browser with zero file uploads, no file size caps, and zero registration.',
+  title: 'Free iLovePDF Alternative — Private PDF Tools in Your Browser',
+  description: 'Looking for a private, free alternative to iLovePDF? PDF Section processes your files in your browser, with no file uploads and no sign-up.',
   route: '/ilovepdf-alternative',
   keywords: ['iLovePDF alternative', 'private iLovePDF substitute', 'free online PDF tools no upload', 'browser PDF editor', 'secure PDF tools'],
 });
@@ -22,7 +22,7 @@ export default function ILovePDFAlternativePage() {
             PRIVACY COMPARISON & ALTERNATIVE
           </span>
           <h1 className="display-sm" style={{ fontWeight: '800', marginTop: 'var(--space-xs)', marginBottom: 'var(--space-md)', fontSize: '36px' }}>
-            The 100% Private, Local Alternative to iLovePDF
+            The Private, In-Browser Alternative to iLovePDF
           </h1>
           <p className="body-lg ink-muted" style={{ maxWidth: '680px', margin: '0 auto', lineHeight: '1.6', fontSize: '16px' }}>
             Why upload confidential contracts, tax forms, and financial statements to remote servers when you can merge, split, compress, edit, sign, and convert PDFs 100% locally in your browser?
@@ -52,7 +52,7 @@ export default function ILovePDFAlternativePage() {
                 </tr>
                 <tr style={{ borderBottom: '1px solid var(--hairline)' }}>
                   <td style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--ink)' }}>Data Privacy & Compliance</td>
-                  <td style={{ padding: '14px 18px', color: '#10b981', fontWeight: '700' }}>🛡️ 100% Private (GDPR/HIPAA Safe)</td>
+                  <td style={{ padding: '14px 18px', color: '#10b981', fontWeight: '700' }}>🛡️ Files are processed on your device</td>
                   <td style={{ padding: '14px 18px', color: 'var(--ink-muted)' }}>Server storage logs</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid var(--hairline)' }}>

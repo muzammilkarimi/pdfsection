@@ -3,26 +3,17 @@ import { buildToolMetadata, buildToolJsonLd } from '@/lib/seoUtils';
 import RelatedGuides from '@/components/RelatedGuides';
 
 export const metadata = buildToolMetadata({
-  title: 'Excel to PDF Converter — Free Online & Private',
-  description: 'Convert Excel spreadsheets (XLSX, XLS) to clean PDF documents. Preserve cell data and tables. 100% free, private, and runs in your browser.',
+  title: 'Excel to PDF Converter — Free Online, No Upload',
+  description: 'Convert Excel (.xlsx) to PDF free in your browser. Keeps cell colors, borders, merged cells, number formats and charts, and turns wide sheets to landscape. No sign-up.',
   route: '/excel-to-pdf',
-  keywords: ['Excel to PDF', 'XLSX to PDF', 'convert Excel to PDF', 'free Excel to PDF converter', 'spreadsheet to PDF'],
+  keywords: ['Excel to PDF', 'how to convert Excel to PDF', 'XLSX to PDF', 'Excel to PDF converter free online', 'convert Excel to PDF one page'],
 });
 
+// The FAQPage schema comes from ToolPageLayout, built from the visible FAQs in lib/seoToolContent.js.
 const jsonLd = buildToolJsonLd({
   name: 'Excel to PDF Converter',
-  description: 'Convert Excel spreadsheets (XLSX/XLS) into PDF format with tabular formatting preserved.',
+  description: 'Convert Excel .xlsx spreadsheets to PDF in your browser, keeping cell formatting, number formats and charts.',
   route: '/excel-to-pdf',
-  faqs: [
-    {
-      question: 'How do I convert Excel to PDF online?',
-      answer: 'Simply upload your XLSX file, click Convert to PDF, and download your formatted PDF document.',
-    },
-    {
-      question: 'Is my spreadsheet data kept private?',
-      answer: 'Yes, your spreadsheet files remain 100% private because all processing is performed locally in your browser.',
-    },
-  ],
 });
 
 export default function Page() {

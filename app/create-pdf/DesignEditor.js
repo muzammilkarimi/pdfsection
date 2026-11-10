@@ -1,598 +1,125 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import ToastNotification from '@/components/ToastNotification';
-import {
-  MM,
-  PAGE_PRESETS,
-  clonePage,
-  createImage,
-  createPage,
-  createShape,
-  createText,
-  fromUnit,
-  readImageFile,
-  resizeDesign,
-  textCss,
-  uid,
-} from '@/lib/designModel';
-import { saveDesign } from '@/lib/designStore';
+import { PAGE_PRESETS, fromUnit, resizeDesign } from '@/lib/designModel';
+import { primaryElement, selectOnlyId } from '@/lib/designSelection';
 import { PanelContent, PANELS } from './DesignPanels';
-import { ElementBody, PageView, elementBoxStyle } from './DesignRenderer';
 import { FloatingToolbar, PropertiesContent, PropertiesHeader } from './DesignProperties';
+import DesignCanvas from './DesignCanvas';
 import DesignDownload from './DesignDownload';
 import DesignIcon from './DesignIcons';
+import DesignPageStrip from './DesignPageStrip';
+import DesignPreview from './DesignPreview';
+import { useDesignActions } from './useDesignActions';
+import { useDesignAutosave } from './useDesignAutosave';
+import { useDesignGestures } from './useDesignGestures';
 import { useDesignHistory } from './useDesignHistory';
+import { useDesignKeyboard } from './useDesignKeyboard';
+import { useDesignZoom } from './useDesignZoom';
+import { MOBILE_QUERY, useIsMobile } from './useIsMobile';
 
-const MIN_SIZE = 6;
-const SAFE_MARGIN = 5 * MM;
-const HANDLES = { nw: [-1, -1], n: [0, -1], ne: [1, -1], e: [1, 0], se: [1, 1], s: [0, 1], sw: [-1, 1], w: [-1, 0] };
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 4;
-const MOBILE_QUERY = '(max-width: 899px)';
-
-function useIsMobile() {
-  return useSyncExternalStore(
-    (notify) => {
-      const mq = window.matchMedia(MOBILE_QUERY);
-      mq.addEventListener('change', notify);
-      return () => mq.removeEventListener('change', notify);
-    },
-    () => window.matchMedia(MOBILE_QUERY).matches,
-    () => false
-  );
-}
-
-/** Follows the pointer until it is released. */
-function track(startEvent, { move, end }) {
-  const { clientX: x0, clientY: y0 } = startEvent;
-  const onMove = (e) => move(e.clientX - x0, e.clientY - y0, e);
-  const stop = () => {
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', stop);
-    window.removeEventListener('pointercancel', stop);
-    end?.();
-  };
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', stop);
-  window.addEventListener('pointercancel', stop);
-}
-
-/** Pulls a moving box onto page edges/centers and other elements' edges/centers. */
-function snapBox(x, y, w, h, others, pageW, pageH, threshold) {
-  const targetsX = [0, pageW / 2, pageW];
-  const targetsY = [0, pageH / 2, pageH];
-  for (const o of others) {
-    targetsX.push(o.x, o.x + o.w / 2, o.x + o.w);
-    targetsY.push(o.y, o.y + o.h / 2, o.y + o.h);
-  }
-  const best = (pos, size, targets) => {
-    let hit = null;
-    for (const offset of [0, size / 2, size]) {
-      for (const t of targets) {
-        const d = t - (pos + offset);
-        if (Math.abs(d) < threshold && (!hit || Math.abs(d) < Math.abs(hit.d))) hit = { d, line: t };
-      }
-    }
-    return hit;
-  };
-  const hx = best(x, w, targetsX);
-  const hy = best(y, h, targetsY);
-  return { x: x + (hx?.d || 0), y: y + (hy?.d || 0), guideX: hx?.line ?? null, guideY: hy?.line ?? null };
-}
-
-/** An element on the editable page. */
-function EditableElement({ el, editing, onPointerDown, onDoubleClick, onMeasure, onText, onStopEditing }) {
-  const textRef = useRef(null);
-  const areaRef = useRef(null);
-  const isText = el.type === 'text';
-
-  useEffect(() => {
-    if (!isText || !textRef.current) return undefined;
-    const node = textRef.current;
-    const observer = new ResizeObserver(() => onMeasure(el.id, node.offsetHeight));
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [isText, el.id, onMeasure]);
-
-  useEffect(() => {
-    if (!editing || !areaRef.current) return;
-    const area = areaRef.current;
-    area.focus();
-    area.setSelectionRange(area.value.length, area.value.length);
-  }, [editing]);
-
-  return (
-    <div
-      ref={textRef}
-      className={`ds-el ${el.locked ? 'ds-el-locked' : ''}`}
-      style={elementBoxStyle(el)}
-      onPointerDown={(e) => onPointerDown(e, el)}
-      onDoubleClick={() => onDoubleClick(el)}
-    >
-      <ElementBody el={el} hidden={editing} />
-      {editing && (
-        <textarea
-          ref={areaRef}
-          className="ds-el-textarea"
-          aria-label="Edit text"
-          dir="auto"
-          style={textCss(el)}
-          value={el.text}
-          onChange={(e) => onText(el.id, e.target.value)}
-          onScroll={(e) => { e.currentTarget.scrollTop = 0; }}
-          onBlur={onStopEditing}
-          onKeyDown={(e) => { if (e.key === 'Escape') e.currentTarget.blur(); e.stopPropagation(); }}
-          onPointerDown={(e) => e.stopPropagation()}
-        />
-      )}
-    </div>
-  );
-}
-
-/** Selection frame with resize and rotate handles. Drawn outside the scaled page so handles keep their size. */
-function SelectionFrame({ el, zoom, onResize, onRotate }) {
-  const isLine = el.type === 'shape' && el.kind === 'line';
-  let dirs = Object.keys(HANDLES);
-  if (isLine) dirs = ['w', 'e'];
-  else if (el.type === 'text') dirs = ['nw', 'ne', 'sw', 'se', 'w', 'e'];
-  return (
-    <div
-      className={`ds-frame ${el.locked ? 'ds-frame-locked' : ''}`}
-      style={{
-        left: el.x * zoom,
-        top: el.y * zoom,
-        width: el.w * zoom,
-        height: el.h * zoom,
-        transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-      }}
-    >
-      {!el.locked && dirs.map((dir) => (
-        <span
-          key={dir}
-          className={`ds-handle ds-handle-${dir}`}
-          style={{ left: `${((HANDLES[dir][0] + 1) / 2) * 100}%`, top: `${((HANDLES[dir][1] + 1) / 2) * 100}%` }}
-          onPointerDown={(e) => onResize(e, el, dir)}
-        />
-      ))}
-      {!el.locked && (
-        <span className="ds-rotate" onPointerDown={(e) => onRotate(e, el)}>
-          <DesignIcon name="rotate" size={14} />
-        </span>
-      )}
-    </div>
-  );
-}
-
-function PreviewDialog({ design, startIndex, onClose }) {
-  const ref = useRef(null);
-  const [index, setIndex] = useState(startIndex);
-  useEffect(() => {
-    if (ref.current && !ref.current.open) ref.current.showModal();
-  }, []);
-  const scale = Math.min((window.innerWidth * 0.9) / design.width, (window.innerHeight - 140) / design.height);
-  return (
-    <dialog ref={ref} className="ds-preview" aria-label="Preview" onClose={onClose}>
-      <PageView design={design} page={design.pages[index]} scale={scale} />
-      <div className="ds-preview-bar">
-        <button type="button" className="ds-icon-btn" aria-label="Previous page" disabled={index === 0} onClick={() => setIndex(index - 1)}><DesignIcon name="back" /></button>
-        <span>Page {index + 1} of {design.pages.length}</span>
-        <button type="button" className="ds-icon-btn" aria-label="Next page" disabled={index === design.pages.length - 1} onClick={() => setIndex(index + 1)}><DesignIcon name="forward" /></button>
-        <button type="button" className="ds-secondary-btn" onClick={onClose}>Close preview</button>
-      </div>
-    </dialog>
-  );
-}
+const SAVE_STATUS = { idle: 'Autosaves in this browser', saved: 'Saved in this browser', saving: 'Saving…', failed: "Couldn't save in this browser" };
 
 export default function DesignEditor({ initial, onExit }) {
   const { design, update, undo, redo, canUndo, canRedo } = useDesignHistory(initial);
   const isMobile = useIsMobile();
 
   const [rawPageIdx, setPageIdx] = useState(0);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [panel, setPanel] = useState(() => (window.matchMedia(MOBILE_QUERY).matches ? null : 'text'));
   const [propsOpen, setPropsOpen] = useState(false);
-  const [zoomOverride, setZoomOverride] = useState(null);
-  const [fitZoom, setFitZoom] = useState(0.5);
   const [guides, setGuides] = useState(null);
-  const [saveState, setSaveState] = useState('idle');
   const [showDownload, setShowDownload] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [notice, setNotice] = useState('');
-  const [dragPage, setDragPage] = useState(null);
 
   const stageRef = useRef(null);
   const scalerRef = useRef(null);
-  const gestureId = useRef(0);
 
   const pageIdx = Math.min(rawPageIdx, design.pages.length - 1);
   const page = design.pages[pageIdx];
-  const selected = page.elements.find((el) => el.id === selectedId) || null;
-  const zoom = zoomOverride ?? fitZoom;
+  const selected = primaryElement(page.elements, selectedIds);
+  const selectOnly = useCallback((id) => setSelectedIds((ids) => selectOnlyId(ids, id)), []);
   const { width: pageW, height: pageH } = design;
-  const baseScale = pageW / 595; // default sizes are written for an A4-wide page
 
-  // ── Autosave ──
-  // Only once the user has changed something, so just opening a template doesn't leave a draft behind.
-  const latestDesign = useRef(design);
-  const dirty = useRef(false);
-  useEffect(() => {
-    latestDesign.current = design;
-    if (canUndo) dirty.current = true;
-    if (!dirty.current) return undefined;
-    const timer = setTimeout(() => {
-      setSaveState('saving');
-      saveDesign(design).then(() => setSaveState('saved')).catch(() => setSaveState('failed'));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [design, canUndo]);
-
-  const exit = useCallback(async () => {
-    if (dirty.current) await saveDesign(latestDesign.current).catch(() => {});
-    onExit();
-  }, [onExit]);
-
-  // ── Fit to window ──
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return undefined;
-    const compute = () => {
-      // matches .ds-stage padding, which leaves room for the floating toolbar on desktop
-      const padX = isMobile ? 32 : 64;
-      const padY = isMobile ? 32 : 100;
-      const fit = Math.min((stage.clientWidth - padX) / pageW, (stage.clientHeight - padY) / pageH);
-      setFitZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fit)));
-    };
-    compute();
-    const observer = new ResizeObserver(compute);
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, [pageW, pageH, isMobile]);
-
-  // ── Changing elements ──
-  const patchPage = useCallback((index, patch, options) => {
-    update((d) => ({ ...d, pages: d.pages.map((p, i) => (i === index ? { ...p, ...patch(p) } : p)) }), options);
-  }, [update]);
-
-  const updateEl = useCallback((id, patch, options) => {
-    patchPage(pageIdx, (p) => ({ elements: p.elements.map((el) => (el.id === id ? { ...el, ...patch } : el)) }), options);
-  }, [patchPage, pageIdx]);
-
-  const measure = useCallback((id, h) => {
-    update((d) => {
-      let changed = false;
-      const pages = d.pages.map((p) => {
-        const hit = p.elements.find((el) => el.id === id);
-        if (!hit || Math.abs(hit.h - h) < 0.5) return p;
-        changed = true;
-        return { ...p, elements: p.elements.map((el) => (el.id === id ? { ...el, h } : el)) };
-      });
-      return changed ? { ...d, pages } : d;
-    }, { silent: true });
-  }, [update]);
-
-  const addToPage = useCallback((elements) => {
-    patchPage(pageIdx, (p) => ({ elements: [...p.elements, ...elements] }));
-    setSelectedId(elements[elements.length - 1].id);
-    if (isMobile) setPanel(null);
-  }, [patchPage, pageIdx, isMobile]);
-
-  const moveLayer = useCallback((id, dir) => {
-    patchPage(pageIdx, (p) => {
-      const i = p.elements.findIndex((el) => el.id === id);
-      const j = i + dir;
-      if (i < 0 || j < 0 || j >= p.elements.length) return {};
-      const elements = [...p.elements];
-      [elements[i], elements[j]] = [elements[j], elements[i]];
-      return { elements };
-    });
-  }, [patchPage, pageIdx]);
-
-  const toggleLock = useCallback((id) => {
-    patchPage(pageIdx, (p) => ({ elements: p.elements.map((el) => (el.id === id ? { ...el, locked: !el.locked } : el)) }));
-  }, [patchPage, pageIdx]);
-
-  const deleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    patchPage(pageIdx, (p) => ({ elements: p.elements.filter((el) => el.id !== selectedId) }));
-    setSelectedId(null);
-    setEditingId(null);
-  }, [patchPage, pageIdx, selectedId]);
-
-  const duplicateSelected = useCallback(() => {
-    if (!selected) return;
-    const copy = { ...selected, id: uid(), x: selected.x + 12, y: selected.y + 12, locked: false };
-    patchPage(pageIdx, (p) => ({ elements: [...p.elements, copy] }));
-    setSelectedId(copy.id);
-  }, [patchPage, pageIdx, selected]);
-
-  const addImageFile = useCallback(async (file, background) => {
-    try {
-      const { src, width, height } = await readImageFile(file);
-      if (background) {
-        const el = createImage(src, { x: 0, y: 0, w: pageW, h: pageH, locked: true });
-        patchPage(pageIdx, (p) => ({ elements: [el, ...p.elements] }));
-        return;
-      }
-      const fit = Math.min((pageW * 0.6) / width, (pageH * 0.6) / height);
-      const w = width * fit;
-      const h = height * fit;
-      addToPage([createImage(src, { x: (pageW - w) / 2, y: (pageH - h) / 2, w, h })]);
-    } catch (err) {
-      setNotice(err.message || 'That image could not be opened');
-    }
-  }, [addToPage, patchPage, pageIdx, pageW, pageH]);
-
-  const api = useMemo(() => ({
-    select: setSelectedId,
+  const { saveState, saveNow } = useDesignAutosave(design, canUndo);
+  const { zoom, zoomIn, zoomOut, zoomToFit } = useDesignZoom(stageRef, pageW, pageH, isMobile);
+  const {
+    api,
+    updateEl,
+    measure,
     moveLayer,
     toggleLock,
     deleteSelected,
     duplicateSelected,
-    updateSelected: (patch, key) => {
-      if (selectedId) updateEl(selectedId, patch, key ? { key: `${key}-${selectedId}` } : undefined);
-    },
-    addTexts: (specs) => {
-      let y = pageH * 0.4;
-      const elements = specs.map((spec) => {
-        const w = Math.min(pageW * 0.9, spec.w * baseScale);
-        const el = createText({
-          ...spec,
-          w,
-          size: spec.size * baseScale,
-          letterSpacing: (spec.letterSpacing || 0) * baseScale,
-          x: (pageW - w) / 2,
-          y,
-        });
-        y += el.size * 1.4;
-        return el;
-      });
-      addToPage(elements);
-    },
-    addShape: (kind) => {
-      const el = createShape(kind);
-      const w = el.w * baseScale;
-      const h = kind === 'line' ? el.h : (kind === 'arrow' ? 80 : el.h) * baseScale;
-      addToPage([{ ...el, w, h, x: (pageW - w) / 2, y: (pageH - h) / 2, strokeWidth: el.strokeWidth * baseScale, radius: el.radius * baseScale }]);
-    },
-    addImageFiles: (files) => { files.forEach((f) => addImageFile(f)); },
-    addImageSrc: (src) => {
-      const w = pageW * 0.4;
-      addToPage([createImage(src, { x: (pageW - w) / 2, y: (pageH - w) / 2, w, h: w })]);
-    },
-    addBackgroundImage: (file) => addImageFile(file, true),
-    setBackground: (color, key) => patchPage(pageIdx, () => ({ background: color }), key ? { key } : undefined),
-    backgroundToAllPages: () => update((d) => ({ ...d, pages: d.pages.map((p) => ({ ...p, background: page.background })) })),
-    applyTemplate: (tpl) => {
-      update((d) => ({ ...d, width: tpl.design.width, height: tpl.design.height, unit: tpl.design.unit, pages: tpl.design.pages.map(clonePage) }));
-      setPageIdx(0);
-      setSelectedId(null);
-      setZoomOverride(null);
-      if (isMobile) setPanel(null);
-    },
-    setPageSize: (w, h, unit) => update((d) => resizeDesign(d, Math.max(1, w), Math.max(1, h), unit), { key: 'page-size' }),
-  }), [selectedId, updateEl, moveLayer, toggleLock, deleteSelected, duplicateSelected, addToPage, addImageFile, patchPage, pageIdx, pageW, pageH, baseScale, update, page.background, isMobile]);
+    stopEditing,
+    startEditing,
+    typeText,
+  } = useDesignActions({
+    update,
+    pageIdx,
+    page,
+    pageW,
+    pageH,
+    selectedIds,
+    isMobile,
+    setPageIdx,
+    selectOnly,
+    setSelectedIds,
+    setEditingId,
+    setPanel,
+    setNotice,
+    zoomToFit,
+  });
+  const { startDrag, startResize, startRotate } = useDesignGestures({
+    page,
+    pageW,
+    pageH,
+    zoom,
+    scalerRef,
+    selectedIds,
+    editingId,
+    selectOnly,
+    setEditingId,
+    setGuides,
+    updateEl,
+  });
+  useDesignKeyboard({
+    enabled: !showDownload && !showPreview,
+    selected,
+    undo,
+    redo,
+    duplicateSelected,
+    deleteSelected,
+    updateEl,
+    selectOnly,
+  });
 
-  // ── Pointer gestures ──
-  const startDrag = useCallback((e, el) => {
-    e.stopPropagation();
-    if (editingId === el.id) return;
-    const wasSelected = selectedId === el.id;
-    setSelectedId(el.id);
-    setEditingId(null);
-    if (el.locked) return;
-    const key = `g${++gestureId.current}`;
-    const others = page.elements.filter((o) => o.id !== el.id);
-    let moved = false;
-    track(e, {
-      move: (dx, dy) => {
-        if (!moved && Math.hypot(dx, dy) < 3) return;
-        moved = true;
-        const next = snapBox(el.x + dx / zoom, el.y + dy / zoom, el.w, el.h, others, pageW, pageH, 6 / zoom);
-        updateEl(el.id, { x: next.x, y: next.y }, { key, hold: true });
-        setGuides({ x: next.guideX, y: next.guideY });
-      },
-      end: () => {
-        setGuides(null);
-        if (!moved && wasSelected && el.type === 'text') setEditingId(el.id);
-      },
-    });
-  }, [editingId, selectedId, page.elements, zoom, pageW, pageH, updateEl]);
-
-  const startResize = useCallback((e, el, dir) => {
-    e.stopPropagation();
-    e.preventDefault();
-    document.activeElement?.blur(); // a focused number field would keep showing its old value
-    const [hx, hy] = HANDLES[dir];
-    const key = `g${++gestureId.current}`;
-    const rad = (el.rotation * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const cx0 = el.x + el.w / 2;
-    const cy0 = el.y + el.h / 2;
-    const corner = !!(hx && hy);
-    const isText = el.type === 'text';
-    track(e, {
-      move: (dx, dy, ev) => {
-        // pointer movement in the element's own (rotated) axes
-        const lx = (dx * cos + dy * sin) / zoom;
-        const ly = (-dx * sin + dy * cos) / zoom;
-        let w = Math.max(MIN_SIZE, el.w + hx * lx);
-        let h = hy ? Math.max(MIN_SIZE, el.h + hy * ly) : el.h;
-        let ratio = 1;
-        if (corner && (isText || el.type === 'image' || ev.shiftKey)) {
-          ratio = Math.max(w / el.w, h / el.h);
-          w = el.w * ratio;
-          h = el.h * ratio;
-        }
-        const sx = (hx * (w - el.w)) / 2;
-        const sy = (hy * (h - el.h)) / 2;
-        const cx = cx0 + sx * cos - sy * sin;
-        const cy = cy0 + sx * sin + sy * cos;
-        const patch = { x: cx - w / 2, y: cy - h / 2, w, h };
-        if (isText && corner) {
-          patch.size = Math.max(1, el.size * ratio);
-          patch.letterSpacing = el.letterSpacing * ratio;
-        }
-        updateEl(el.id, patch, { key, hold: true });
-      },
-    });
-  }, [zoom, updateEl]);
-
-  const startRotate = useCallback((e, el) => {
-    e.stopPropagation();
-    e.preventDefault();
-    document.activeElement?.blur(); // a focused number field would keep showing its old value
-    const key = `g${++gestureId.current}`;
-    const rect = scalerRef.current.getBoundingClientRect();
-    const cx = rect.left + (el.x + el.w / 2) * zoom;
-    const cy = rect.top + (el.y + el.h / 2) * zoom;
-    track(e, {
-      move: (_dx, _dy, ev) => {
-        // the handle sits below the element, so "straight down" means 0°
-        let angle = (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180) / Math.PI - 90;
-        if (ev.shiftKey) angle = Math.round(angle / 15) * 15;
-        else {
-          const nearest = Math.round(angle / 45) * 45;
-          if (Math.abs(angle - nearest) < 3) angle = nearest;
-        }
-        angle = ((angle + 540) % 360) - 180;
-        updateEl(el.id, { rotation: Math.round(angle * 10) / 10 }, { key, hold: true });
-      },
-    });
-  }, [zoom, updateEl]);
-
-  const stopEditing = useCallback(() => {
-    setEditingId((id) => {
-      if (id) {
-        const el = page.elements.find((x) => x.id === id);
-        if (el && !el.text.trim()) {
-          patchPage(pageIdx, (p) => ({ elements: p.elements.filter((x) => x.id !== id) }));
-          setSelectedId(null);
-        }
-      }
-      return null;
-    });
-  }, [page.elements, patchPage, pageIdx]);
-
-  const startEditing = useCallback((el) => {
-    if (el.type === 'text' && !el.locked) {
-      setSelectedId(el.id);
-      setEditingId(el.id);
-    }
-  }, []);
-
-  const typeText = useCallback((id, text) => {
-    updateEl(id, { text }, { key: `type-${id}` });
-  }, [updateEl]);
-
-  // ── Keyboard ──
-  useEffect(() => {
-    const onKey = (e) => {
-      if (showDownload || showPreview) return;
-      const tag = e.target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
-      const mod = e.ctrlKey || e.metaKey;
-      const k = e.key.toLowerCase();
-      if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
-      if (mod && k === 'y') { e.preventDefault(); redo(); return; }
-      if (mod && k === 'd') { e.preventDefault(); duplicateSelected(); return; }
-      if (!selected) return;
-      if (e.key === 'Escape') { setSelectedId(null); return; }
-      if (selected.locked) return;
-      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
-      const step = e.shiftKey ? 10 : 1;
-      const nudge = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
-      if (nudge) {
-        e.preventDefault();
-        updateEl(selected.id, { x: selected.x + nudge[0], y: selected.y + nudge[1] }, { key: `nudge-${selected.id}` });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [selected, undo, redo, duplicateSelected, deleteSelected, updateEl, showDownload, showPreview]);
-
-  // ── Pages ──
-  const addPage = () => {
-    const blank = createPage();
-    update((d) => {
-      const pages = [...d.pages];
-      pages.splice(pageIdx + 1, 0, blank);
-      return { ...d, pages };
-    });
-    setPageIdx(pageIdx + 1);
-    setSelectedId(null);
-  };
-
-  const duplicatePage = () => {
-    update((d) => {
-      const pages = [...d.pages];
-      pages.splice(pageIdx + 1, 0, clonePage(page));
-      return { ...d, pages };
-    });
-    setPageIdx(pageIdx + 1);
-    setSelectedId(null);
-  };
-
-  const deletePage = () => {
-    if (design.pages.length < 2) return;
-    update((d) => ({ ...d, pages: d.pages.filter((_, i) => i !== pageIdx) }));
-    setPageIdx(Math.max(0, pageIdx - 1));
-    setSelectedId(null);
-  };
-
-  const dropPage = (target) => {
-    if (dragPage === null || dragPage === target) return;
-    update((d) => {
-      const pages = [...d.pages];
-      const [moved] = pages.splice(dragPage, 1);
-      pages.splice(target, 0, moved);
-      return { ...d, pages };
-    });
-    setPageIdx(target);
-    setDragPage(null);
-  };
+  const exit = useCallback(async () => {
+    await saveNow();
+    onExit();
+  }, [saveNow, onExit]);
 
   const goToPage = (i) => {
     setPageIdx(i);
-    setSelectedId(null);
+    selectOnly(null);
     setEditingId(null);
   };
 
   const pageStrip = (
-    <div className="ds-strip">
-      <div className="ds-strip-pages">
-        {design.pages.map((p, i) => (
-          <button
-            key={p.id}
-            type="button"
-            className={`ds-strip-page ${i === pageIdx ? 'active' : ''}`}
-            aria-label={`Page ${i + 1}`}
-            aria-current={i === pageIdx}
-            draggable
-            onClick={() => goToPage(i)}
-            onDragStart={() => setDragPage(i)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => dropPage(i)}
-          >
-            <PageView design={design} page={p} scale={Math.min(52 / pageW, 72 / pageH)} />
-            <span className="ds-strip-num">{i + 1}</span>
-          </button>
-        ))}
-        <button type="button" className="ds-strip-add" onClick={addPage}>
-          <DesignIcon name="plus" size={18} /> Page
-        </button>
-      </div>
-      <div className="ds-strip-actions">
-        <button type="button" className="ds-text-btn" onClick={duplicatePage}>Duplicate page</button>
-        <button type="button" className="ds-text-btn ds-danger" disabled={design.pages.length < 2} onClick={deletePage}>Delete page</button>
-      </div>
-    </div>
+    <DesignPageStrip
+      design={design}
+      pageIdx={pageIdx}
+      update={update}
+      setPageIdx={setPageIdx}
+      selectOnly={selectOnly}
+      onGoToPage={goToPage}
+    />
   );
 
   const presetValue = PAGE_PRESETS.find((p) => Math.abs(fromUnit(p.w, p.unit) - pageW) < 0.5 && Math.abs(fromUnit(p.h, p.unit) - pageH) < 0.5)?.id || 'custom';
-  const statusText = { idle: 'Autosaves in this browser', saved: 'Saved in this browser', saving: 'Saving…', failed: "Couldn't save in this browser" }[saveState];
   const mobilePanels = [...PANELS, { id: 'pages', label: 'Pages', icon: 'pages' }];
   const panelInfo = mobilePanels.find((p) => p.id === panel);
   const showMobileProps = isMobile && propsOpen && selected;
@@ -609,7 +136,7 @@ export default function DesignEditor({ initial, onExit }) {
               <span className="ds-visually-hidden">Design name</span>
               <input value={design.name} onChange={(e) => update((d) => ({ ...d, name: e.target.value }), { key: 'name' })} />
             </label>
-            <span className={`ds-status ${saveState === 'failed' ? 'failed' : ''}`} role="status"><span className="ds-status-dot" />{statusText}</span>
+            <span className={`ds-status ${saveState === 'failed' ? 'failed' : ''}`} role="status"><span className="ds-status-dot" />{SAVE_STATUS[saveState]}</span>
           </div>
           <span className="ds-topbar-sep" />
           <button type="button" className="ds-icon-btn" aria-label="Undo" disabled={!canUndo} onClick={undo}><DesignIcon name="undo" /></button>
@@ -661,50 +188,31 @@ export default function DesignEditor({ initial, onExit }) {
         <section className="ds-workspace" aria-label="Page canvas">
           {selected && !isMobile && !editingId && <FloatingToolbar el={selected} api={api} />}
 
-          <div
-            ref={stageRef}
-            className="ds-stage"
-            onPointerDown={(e) => { if (e.target === e.currentTarget || e.target.dataset.deselect) { setSelectedId(null); setEditingId(null); } }}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/'));
-              if (files.length) api.addImageFiles(files);
-            }}
-          >
-            <div ref={scalerRef} className="ds-scaler" style={{ width: pageW * zoom, height: pageH * zoom }}>
-              <div
-                className="ds-page"
-                data-deselect="1"
-                style={{ width: pageW, height: pageH, background: page.background, transform: `scale(${zoom})` }}
-              >
-                {page.elements.map((el) => (
-                  <EditableElement
-                    key={el.id}
-                    el={el}
-                    editing={editingId === el.id}
-                    onPointerDown={startDrag}
-                    onDoubleClick={startEditing}
-                    onMeasure={measure}
-                    onText={typeText}
-                    onStopEditing={stopEditing}
-                  />
-                ))}
-              </div>
-              {design.unit !== 'px' && (
-                <div className="ds-safe" style={{ inset: SAFE_MARGIN * zoom }} aria-hidden="true" />
-              )}
-              {guides?.x !== null && guides?.x !== undefined && <div className="ds-guide ds-guide-v" style={{ left: guides.x * zoom }} />}
-              {guides?.y !== null && guides?.y !== undefined && <div className="ds-guide ds-guide-h" style={{ top: guides.y * zoom }} />}
-              {selected && !editingId && <SelectionFrame el={selected} zoom={zoom} onResize={startResize} onRotate={startRotate} />}
-            </div>
-          </div>
+          <DesignCanvas
+            design={design}
+            page={page}
+            selected={selected}
+            editingId={editingId}
+            guides={guides}
+            zoom={zoom}
+            stageRef={stageRef}
+            scalerRef={scalerRef}
+            onDeselect={() => { selectOnly(null); setEditingId(null); }}
+            onDropImages={api.addImageFiles}
+            onStartDrag={startDrag}
+            onStartResize={startResize}
+            onStartRotate={startRotate}
+            onStartEditing={startEditing}
+            onStopEditing={stopEditing}
+            onMeasure={measure}
+            onTypeText={typeText}
+          />
 
           <div className="ds-zoom">
-            <button type="button" aria-label="Zoom out" onClick={() => setZoomOverride(Math.max(ZOOM_MIN, zoom / 1.2))}>−</button>
+            <button type="button" aria-label="Zoom out" onClick={zoomOut}>−</button>
             <span>{Math.round(zoom * 100)}%</span>
-            <button type="button" aria-label="Zoom in" onClick={() => setZoomOverride(Math.min(ZOOM_MAX, zoom * 1.2))}>+</button>
-            <button type="button" className="ds-zoom-fit" onClick={() => setZoomOverride(null)}>Fit</button>
+            <button type="button" aria-label="Zoom in" onClick={zoomIn}>+</button>
+            <button type="button" className="ds-zoom-fit" onClick={zoomToFit}>Fit</button>
           </div>
 
           {isMobile ? (
@@ -755,7 +263,7 @@ export default function DesignEditor({ initial, onExit }) {
       </div>
 
       {showDownload && <DesignDownload design={design} pageIdx={pageIdx} onClose={() => setShowDownload(false)} />}
-      {showPreview && <PreviewDialog design={design} startIndex={pageIdx} onClose={() => setShowPreview(false)} />}
+      {showPreview && <DesignPreview design={design} startIndex={pageIdx} onClose={() => setShowPreview(false)} />}
     </div>
   );
 }
