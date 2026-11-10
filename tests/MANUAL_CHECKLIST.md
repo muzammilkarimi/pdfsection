@@ -52,3 +52,5 @@ Open these beside the editor and compare them closely.
 - [ ] Drag the signature with a finger; resize it from the corner; remove it with the red ×.
 - [ ] Tap the page again: another copy is added where you tapped.
 - [ ] Edit PDF → Sign: the signature lands in the visible part of the page.
+- [ ] On a phone the signature box opens on Draw, and the keyboard doesn't pop up by itself.
+- [ ] Type tab: type a name, then tap "Use signature" once while the keyboard is open. It's added (the box doesn't just close), and the new signature pulses on the page.

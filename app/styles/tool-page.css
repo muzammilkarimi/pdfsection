@@ -1372,6 +1372,16 @@ body:has(.tool-layout-app-fixed) .related-guides {
   touch-action: none;
 }
 
+/* a stamp that was just added pulses, so it is easy to spot */
+.sign-stamp.is-new {
+  animation: sign-stamp-new 0.8s ease-out 2;
+}
+
+@keyframes sign-stamp-new {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 55%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+
 .sign-stamp.is-dragging {
   border-style: solid;
 }

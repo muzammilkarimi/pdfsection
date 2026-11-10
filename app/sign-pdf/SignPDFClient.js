@@ -44,8 +44,17 @@ export default function SignPDFClient() {
   // Resizing from the corner handle: which stamp, and where the pointer and width started.
   const [resize, setResize] = useState(null); // { index, startX, startW }
   const justMovedRef = useRef(false);
+  const [newStamp, setNewStamp] = useState(null); // { page, index } of the stamp just added, shown with a pulse
 
   const canvasRef = useRef(null);
+  const stampedRef = useRef({});
+  useEffect(() => { stampedRef.current = stampedSignatures; }, [stampedSignatures]);
+  // the pulse on a new stamp fades after a moment
+  useEffect(() => {
+    if (!newStamp) return undefined;
+    const t = setTimeout(() => setNewStamp(null), 1600);
+    return () => clearTimeout(t);
+  }, [newStamp]);
 
   const handleFilesSelected = useCallback(async (files) => {
     const f = files[0];
@@ -111,7 +120,8 @@ export default function SignPDFClient() {
     setStampImages((prev) => ({ ...prev, [kind]: image }));
     setActiveKind(kind);
     setDialogKind(null);
-    placeInView(kind, image);
+    // on a phone the keyboard may still be closing and the page moving: place it once that settles
+    setTimeout(() => placeInView(kind, image), window.matchMedia?.('(pointer: coarse)').matches ? 350 : 0);
     if (SAVED_KEYS[kind]) {
       try {
         if (remember) localStorage.setItem(SAVED_KEYS[kind], image);
@@ -134,6 +144,7 @@ export default function SignPDFClient() {
     const x = cx - wFraction / 2;
     const y = cy - hFraction / 2;
 
+    setNewStamp({ page: currentPageIndex, index: (stampedRef.current[currentPageIndex] || []).length });
     setStampedSignatures((prev) => ({
       ...prev,
       [currentPageIndex]: [
@@ -388,7 +399,7 @@ export default function SignPDFClient() {
                 {(stampedSignatures[currentPageIndex] || []).map((sig, idx) => (
                   <div
                     key={idx}
-                    className={`sign-stamp ${dragIndex === idx ? 'is-dragging' : ''}`}
+                    className={`sign-stamp ${dragIndex === idx ? 'is-dragging' : ''} ${newStamp?.page === currentPageIndex && newStamp.index === idx ? 'is-new' : ''}`}
                     style={{ left: `${sig.x * 100}%`, top: `${sig.y * 100}%`, width: `${(sig.w / PLACEMENT_WIDTH) * 100}%` }}
                     onPointerDown={(e) => handleSignatureStartDrag(e, idx, sig)}
                   >

@@ -68,7 +68,12 @@ export function trimCanvas(canvas, padding = 8) {
 }
 
 export async function textToImage(text, fontFamily, color, fontSize = 96) {
-  await document.fonts.load(`${fontSize}px ${fontFamily}`);
+  // wait for the handwriting font, but never forever: a font that fails to load must not block
+  try {
+    await Promise.race([document.fonts.load(`${fontSize}px ${fontFamily}`), new Promise((r) => setTimeout(r, 2500))]);
+  } catch {
+    // draw with the fallback font
+  }
   const measure = document.createElement('canvas').getContext('2d');
   measure.font = `${fontSize}px ${fontFamily}`;
   const width = Math.ceil(measure.measureText(text).width) + 40;
@@ -83,9 +88,15 @@ export async function textToImage(text, fontFamily, color, fontSize = 96) {
   return (trimCanvas(canvas) || canvas).toDataURL('image/png');
 }
 
+// Phones and tablets: drawing with a finger is the natural way to sign, and opening the keyboard
+// straight away makes the dialog jump when it closes.
+const isTouch = () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+
 export default function SignatureDialog({ kind, ink, onInkChange, onClose, onCreate }) {
   const isText = kind === 'text';
-  const [method, setMethod] = useState('type');
+  const [method, setMethod] = useState(() => (!isText && isTouch() ? 'draw' : 'type'));
+  const [busy, setBusy] = useState(false);
+  const backdropDownRef = useRef(false);
   const [value, setValue] = useState('');
   const [styleId, setStyleId] = useState(HANDWRITING[0].id);
   const [remember, setRemember] = useState(true);
@@ -170,6 +181,21 @@ export default function SignatureDialog({ kind, ink, onInkChange, onClose, onCre
   };
 
   const create = async () => {
+    if (busy) return;
+    // close the phone keyboard first, so the page has settled when the stamp is placed
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    setBusy(true);
+    try {
+      await makeImage();
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong making the image. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const makeImage = async () => {
     let image = null;
     if (method === 'draw') {
       if (!hasInkRef.current) {
@@ -195,7 +221,16 @@ export default function SignatureDialog({ kind, ink, onInkChange, onClose, onCre
   };
 
   return (
-    <div className="sign-dialog-backdrop" onClick={onClose}>
+    <div
+      className="sign-dialog-backdrop"
+      // close only on a tap that starts and ends outside the box: when the phone keyboard closes the
+      // box moves, and a tap meant for a button must not land here and close it
+      onPointerDown={(e) => { backdropDownRef.current = e.target === e.currentTarget; }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && backdropDownRef.current) onClose();
+        backdropDownRef.current = false;
+      }}
+    >
       <div
         className="sign-dialog"
         role="dialog"
@@ -258,7 +293,7 @@ export default function SignatureDialog({ kind, ink, onInkChange, onClose, onCre
                   setValue(e.target.value);
                   setError('');
                 }}
-                autoFocus
+                autoFocus={!isTouch()}
               />
             </label>
             {!isText && (
@@ -325,8 +360,8 @@ export default function SignatureDialog({ kind, ink, onInkChange, onClose, onCre
 
         <div className="sign-dialog-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={create}>
-            {isText ? 'Add text' : `Use ${kind === 'initials' ? 'initials' : 'signature'}`}
+          <button type="button" className="btn btn-primary" onClick={create} disabled={busy} aria-busy={busy}>
+            {busy ? 'Adding…' : isText ? 'Add text' : `Use ${kind === 'initials' ? 'initials' : 'signature'}`}
           </button>
         </div>
       </div>
